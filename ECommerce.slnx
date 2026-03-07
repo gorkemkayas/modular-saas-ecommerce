@@ -1,1 +1,17 @@
-<Solution />
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/BuildingBlocks/">
+    <Project Path="src/BuildingBlocks/BuildingBlocks.Application/BuildingBlocks.Application.csproj" Id="f7695c99-8bd6-4bb6-b4fc-d63c95ff933d" />
+    <Project Path="src/BuildingBlocks/BuildingBlocks.Domain/BuildingBlocks.Domain.csproj" Id="eb6b6448-4d35-41e1-b708-d63d532433da" />
+    <Project Path="src/BuildingBlocks/BuildingBlocks.Infrastructure/BuildingBlocks.Infrastructure.csproj" Id="e63b8de0-9c1d-499b-aa56-97d90592da7f" />
+  </Folder>
+  <Folder Name="/src/Host/">
+    <Project Path="src/Host/ECommerce.API/ECommerce.API.csproj" Id="8a3dc5dc-e78d-44a2-89bf-a9e8a3d3dac2" />
+  </Folder>
+  <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Catalog/">
+    <Project Path="src/Modules/Catalog/Catalog.Application/Catalog.Application.csproj" Id="43850b28-8b2c-44bc-ac9f-19603e7984b7" />
+    <Project Path="src/Modules/Catalog/Catalog.Domain/Catalog.Domain.csproj" Id="ff6c67f5-bfb2-4c7b-9876-bdbcc5ae068f" />
+    <Project Path="src/Modules/Catalog/Catalog.Infrastructure/Catalog.Infrastructure.csproj" Id="2e6a7e0d-5d0a-4bb9-8576-52605d307bf6" />
+  </Folder>
+</Solution>
