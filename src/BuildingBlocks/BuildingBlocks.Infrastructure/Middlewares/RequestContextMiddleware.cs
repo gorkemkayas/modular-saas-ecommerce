@@ -43,8 +43,6 @@ namespace BuildingBlocks.Infrastructure.Middlewares
                 {
                     tenantRequestContext.TenantId = tenantId;
                 }
-
-                tenantRequestContext.TenantDomain = user.FindFirstValue("tenantDomain");
             }
 
             await _next(context);

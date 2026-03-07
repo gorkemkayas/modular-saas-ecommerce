@@ -15,8 +15,6 @@ namespace BuildingBlocks.Infrastructure.Tenancy
 
         public int? TenantId => _tenantRequestContext.TenantId;
 
-        public string? TenantDomain => _tenantRequestContext.TenantDomain;
-
         public bool HasTenant => TenantId.HasValue;
     }
 }
