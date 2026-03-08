@@ -14,4 +14,9 @@
     <Project Path="src/Modules/Catalog/Catalog.Domain/Catalog.Domain.csproj" Id="ff6c67f5-bfb2-4c7b-9876-bdbcc5ae068f" />
     <Project Path="src/Modules/Catalog/Catalog.Infrastructure/Catalog.Infrastructure.csproj" Id="2e6a7e0d-5d0a-4bb9-8576-52605d307bf6" />
   </Folder>
+  <Folder Name="/src/Modules/Store/">
+    <Project Path="src/Modules/Store/Store.Application/Store.Application.csproj" Id="a108953a-6d73-404e-a2c1-746725f34faf" />
+    <Project Path="src/Modules/Store/Store.Domain/Store.Domain.csproj" Id="d05d0387-07e0-4cd3-bc98-7a6286e8ef80" />
+    <Project Path="src/Modules/Store/Store.Infrastructure/Store.Infrastructure.csproj" Id="b852b9e9-8612-4f7e-ae87-a78a6d017165" />
+  </Folder>
 </Solution>
