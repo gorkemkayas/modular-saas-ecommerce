@@ -2,6 +2,7 @@ using BuildingBlocks.Application.Abstractions.Authentication;
 using BuildingBlocks.Application.Abstractions.Tenancy;
 using BuildingBlocks.Infrastructure.Extensions.Authentication;
 using BuildingBlocks.Infrastructure.Extensions.Middleware;
+using Store.Infrastructure.DependencyInjection;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,6 +13,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddJwtAuthentication(builder.Configuration);
 // Add user context extension
 builder.Services.AddRequestContexts();
+
+// Register Store module
+builder.Services.AddStoreModule(builder.Configuration);
 
 // For return enums as string, not int
 builder.Services
