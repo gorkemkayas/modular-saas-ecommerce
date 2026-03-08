@@ -7,13 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Abstractions\" />
-    <Folder Include="DTOs\" />
-    <Folder Include="Stores\Commands\" />
-    <Folder Include="Stores\Queries\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Store.Domain\Store.Domain.csproj" />
   </ItemGroup>
 

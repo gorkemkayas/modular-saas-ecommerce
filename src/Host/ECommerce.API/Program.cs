@@ -2,6 +2,7 @@ using BuildingBlocks.Application.Abstractions.Authentication;
 using BuildingBlocks.Application.Abstractions.Tenancy;
 using BuildingBlocks.Infrastructure.Extensions.Authentication;
 using BuildingBlocks.Infrastructure.Extensions.Middleware;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,7 +13,13 @@ builder.Services.AddJwtAuthentication(builder.Configuration);
 // Add user context extension
 builder.Services.AddRequestContexts();
 
-builder.Services.AddControllers();
+// For return enums as string, not int
+builder.Services
+    .AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
@@ -69,7 +76,6 @@ app.MapGet("/me", (ICurrentUser currentUser, ITenantContext tenantContext) =>
         currentUser.Name,
         currentUser.TokenType,
         tenantContext.TenantId,
-        tenantContext.TenantDomain,
         tenantContext.HasTenant
     });
 }).RequireAuthorization();
