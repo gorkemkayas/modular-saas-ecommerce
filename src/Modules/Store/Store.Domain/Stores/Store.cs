@@ -92,9 +92,6 @@ namespace Store.Domain.Stores
             if (Status != StoreStatus.Active)
                 throw new InvalidOperationException("Only active stores can be published.");
 
-            if (string.IsNullOrWhiteSpace(Name))
-                throw new InvalidOperationException("Store name is required.");
-
             IsPublished = true;
             UpdatedAtUtc = DateTime.UtcNow;
         }
