@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using BuildingBlocks.Infrastructure.Extensions.Authorization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -6,37 +7,48 @@ using System.Text;
 
 namespace BuildingBlocks.Infrastructure.Extensions.Authentication
 {
-    public static class AuthExtensions
+    public static partial class AuthExtensions
     {
         public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.MapInboundClaims = false;
+            .AddJwtBearer(options =>
+            {
+                options.MapInboundClaims = false;
 
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidIssuer = "https://auth.kayas.dev",
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidIssuer = "https://auth.kayas.dev",
 
-            ValidateAudience = true,
-            ValidAudience = "tenant-api",
+                    ValidateAudience = true,
+                    ValidAudience = "tenant-api",
 
-            ValidateLifetime = true,
+                    ValidateLifetime = true,
 
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(configuration["Jwt:Secret"]!)),
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(configuration["Jwt:Secret"]!)),
 
-            NameClaimType = "sub",
-            RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role",
+                    NameClaimType = "sub",
+                    RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role",
 
-            ClockSkew = TimeSpan.Zero
-        };
-    });
+                    ClockSkew = TimeSpan.Zero
+                };
+            });
 
-            services.AddAuthorization();
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy(AppPolicies.TenantAdmin, policy =>
+                policy.RequireRole(AppRoles.TenantAdmin));
+
+                options.AddPolicy(AppPolicies.SuperAdmin, policy =>
+                    policy.RequireRole(AppRoles.SuperAdmin));
+
+                options.AddPolicy(AppPolicies.TenantOrSuperAdmin, policy =>
+                    policy.RequireRole(AppRoles.TenantAdmin, AppRoles.SuperAdmin));
+            }
+                );
 
             return services;
         }

@@ -1,0 +1,25 @@
+﻿using MediatR;
+using Microsoft.AspNetCore.Mvc;
+using Store.Application.Stores.Queries.GetPublishedStorefrontBySlug;
+
+namespace ECommerce.API.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class StorefrontController : ControllerBase
+    {
+        private readonly ISender _sender;
+
+        public StorefrontController(ISender sender)
+        {
+            _sender = sender;
+        }
+
+        [HttpGet("{slug}")]
+        public async Task<IActionResult> GetPublishedStoreFrontBySlug([FromRoute]string slug, CancellationToken cancellationToken)
+        {
+            var res = await _sender.Send(new GetPublishedStoreFrontBySlugQuery(slug), cancellationToken);
+            return res is not null ? Ok(res) : NotFound();
+        }
+    }
+}

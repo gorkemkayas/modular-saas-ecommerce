@@ -1,8 +1,8 @@
-﻿namespace BuildingBlocks.Application.Abstractions.Tenancy
+﻿namespace BuildingBlocks.Application.Abstractions.Tenancy;
+
+public interface ITenantContext
 {
-    public interface ITenantContext
-    {
-        int? TenantId { get; }
-        bool HasTenant { get; }
-    }
+    int? TenantId { get; }
+    Guid? TenantIdAsGuid { get; } // Yeni property
+    bool HasTenant { get; }
 }
