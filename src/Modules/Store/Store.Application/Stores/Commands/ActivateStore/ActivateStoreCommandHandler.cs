@@ -1,9 +1,10 @@
-﻿using Store.Application.Abstractions;
+﻿using MediatR;
+using Store.Application.Abstractions;
 using Store.Domain.Stores;
 
 namespace Store.Application.Stores.Commands.ActivateStore
 {
-    public sealed class ActivateStoreCommandHandler
+    public sealed class ActivateStoreCommandHandler : IRequestHandler<ActivateStoreCommand>
     {
         private readonly IStoreRepository _storeRepository;
         private readonly IUnitOfWork _unitOfWork;

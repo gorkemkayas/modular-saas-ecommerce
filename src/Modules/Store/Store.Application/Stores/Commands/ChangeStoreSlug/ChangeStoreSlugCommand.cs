@@ -1,4 +1,6 @@
-﻿namespace Store.Application.Stores.Commands.ChangeStoreSlug
+﻿using MediatR;
+
+namespace Store.Application.Stores.Commands.ChangeStoreSlug
 {
-    public sealed record ChangeStoreSlugCommand(Guid TenantId, string NewSlug);
+    public sealed record ChangeStoreSlugCommand(Guid TenantId, string NewSlug) : IRequest;
 }

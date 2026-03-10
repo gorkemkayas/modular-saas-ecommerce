@@ -1,9 +1,10 @@
-﻿using Store.Application.Abstractions;
+﻿using MediatR;
+using Store.Application.Abstractions;
 using Store.Domain.Stores;
 
 namespace Store.Application.Stores.Commands.SuspendStore
 {
-    public sealed class SuspendStoreCommandHandler
+    public sealed class SuspendStoreCommandHandler : IRequestHandler<SuspendStoreCommand>
     {
         private readonly IStoreRepository _storeRepository;
         private readonly IUnitOfWork _unitOfWork;

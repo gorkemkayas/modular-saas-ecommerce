@@ -1,10 +1,11 @@
-﻿using Store.Application.Abstractions;
+﻿using MediatR;
+using Store.Application.Abstractions;
 using Store.Application.DTOs;
 using Store.Domain.Stores;
 
 namespace Store.Application.Stores.Queries.GetStoreById
 {
-    public sealed class GetStoreByIdQueryHandler
+    public sealed class GetStoreByIdQueryHandler : IRequestHandler<GetStoreByIdQuery, StoreDto?>
     {
         private readonly IStoreRepository _storeRepository;
         private readonly IUnitOfWork _unitOfWork;

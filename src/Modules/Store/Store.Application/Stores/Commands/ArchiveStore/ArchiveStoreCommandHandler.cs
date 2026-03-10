@@ -1,9 +1,10 @@
-﻿using Store.Application.Abstractions;
+﻿using MediatR;
+using Store.Application.Abstractions;
 using Store.Domain.Stores;
 
 namespace Store.Application.Stores.Commands.ArchiveStore
 {
-    public sealed class ArchiveStoreCommandHandler
+    public sealed class ArchiveStoreCommandHandler : IRequestHandler<ArchiveStoreCommand>
     {
         private readonly IStoreRepository _storeRepository;
         private readonly IUnitOfWork _unitOfWork;

@@ -1,9 +1,10 @@
-﻿using Store.Application.Abstractions;
+﻿using MediatR;
+using Store.Application.Abstractions;
 using Store.Domain.Stores;
 
 namespace Store.Application.Stores.Commands.PublishStore
 {
-    public sealed class PublishStoreCommandHandler
+    public sealed class PublishStoreCommandHandler : IRequestHandler<PublishStoreCommand>
     {
         private readonly IStoreRepository _repository;
         private readonly IUnitOfWork _unitOfWork;

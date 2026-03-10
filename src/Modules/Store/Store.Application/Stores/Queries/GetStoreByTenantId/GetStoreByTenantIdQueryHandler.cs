@@ -1,9 +1,10 @@
-﻿using Store.Application.DTOs;
+﻿using MediatR;
+using Store.Application.DTOs;
 using Store.Domain.Stores;
 
 namespace Store.Application.Stores.Queries.GetStoreByTenantId
 {
-    public sealed class GetStoreByTenantIdQueryHandler
+    public sealed class GetStoreByTenantIdQueryHandler : IRequestHandler<GetStoreByTenantIdQuery, StoreDto?>
     {
         private readonly IStoreRepository _storeRepository;
 

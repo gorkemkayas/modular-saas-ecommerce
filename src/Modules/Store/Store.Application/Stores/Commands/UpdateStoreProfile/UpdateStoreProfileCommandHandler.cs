@@ -1,9 +1,10 @@
-﻿using Store.Application.Abstractions;
+﻿using MediatR;
+using Store.Application.Abstractions;
 using Store.Domain.Stores;
 
 namespace Store.Application.Stores.Commands.UpdateStoreProfile
 {
-    public sealed class UpdateStoreProfileCommandHandler
+    public sealed class UpdateStoreProfileCommandHandler : IRequestHandler<UpdateStoreProfileCommand>
     {
         private readonly IStoreRepository _storeRepository;
         private readonly IUnitOfWork _unitOfWork;

@@ -1,10 +1,11 @@
-﻿using Store.Application.Abstractions;
+﻿using MediatR;
+using Store.Application.Abstractions;
 using Store.Domain.Stores;
 using Store.Domain.ValueObjects;
 
 namespace Store.Application.Stores.Commands.ChangeStoreSlug
 {
-    public sealed class ChangeStoreSlugCommandHandler
+    public sealed class ChangeStoreSlugCommandHandler : IRequestHandler<ChangeStoreSlugCommand>
     {
         private readonly IStoreRepository _storeRepository;
         private readonly IUnitOfWork _unitOfWork;

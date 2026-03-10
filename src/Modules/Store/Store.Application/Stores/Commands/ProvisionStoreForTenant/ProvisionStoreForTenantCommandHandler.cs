@@ -1,11 +1,12 @@
 ﻿
+using MediatR;
 using Store.Application.Abstractions;
 using Store.Domain.Stores;
 using Store.Domain.ValueObjects;
 
 namespace Store.Application.Stores.Commands.ProvisionStoreForTenant
 {
-    public sealed class ProvisionStoreForTenantCommandHandler
+    public sealed class ProvisionStoreForTenantCommandHandler : IRequestHandler<ProvisionStoreForTenantCommand, Guid>
     {
         private readonly IStoreRepository _storeRepository;
         private readonly IUnitOfWork _unitOfWork;

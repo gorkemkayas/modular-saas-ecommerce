@@ -1,9 +1,10 @@
-﻿using Store.Domain.Stores;
+﻿using MediatR;
+using Store.Domain.Stores;
 using Store.Domain.ValueObjects;
 
 namespace Store.Application.Stores.Queries.CheckStoreSlugAvailability
 {
-    public sealed class CheckStoreSlugAvailabilityQueryHandler
+    public sealed class CheckStoreSlugAvailabilityQueryHandler : IRequestHandler<CheckStoreSlugAvailabilityQuery, bool>
     {
         private readonly IStoreRepository _storeRepository;
         public CheckStoreSlugAvailabilityQueryHandler(IStoreRepository storeRepository)

@@ -16,6 +16,7 @@ builder.Services.AddRequestContexts();
 
 // Register Store module
 builder.Services.AddStoreModule(builder.Configuration);
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Store.Application.AssemblyReference).Assembly));
 
 // For return enums as string, not int
 builder.Services

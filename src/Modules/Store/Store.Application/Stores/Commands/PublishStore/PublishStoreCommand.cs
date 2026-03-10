@@ -1,4 +1,6 @@
-﻿namespace Store.Application.Stores.Commands.PublishStore
+﻿using MediatR;
+
+namespace Store.Application.Stores.Commands.PublishStore
 {
-    public sealed record PublishStoreCommand(Guid TenantId);
+    public sealed record PublishStoreCommand(Guid TenantId) : IRequest;
 }

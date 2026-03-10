@@ -1,8 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using MediatR;
+using Store.Application.DTOs;
 
 namespace Store.Application.Stores.Queries.GetPublishedStorefrontBySlug
 {
-    public sealed record GetPublishedStoreFrontBySlugQuery(string Slug);
+    public sealed record GetPublishedStoreFrontBySlugQuery(string Slug) : IRequest<StorefrontDto?>;
 }

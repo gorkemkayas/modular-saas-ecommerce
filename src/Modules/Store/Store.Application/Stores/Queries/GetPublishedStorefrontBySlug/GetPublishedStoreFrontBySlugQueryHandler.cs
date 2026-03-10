@@ -1,10 +1,11 @@
-﻿using Store.Application.DTOs;
+﻿using MediatR;
+using Store.Application.DTOs;
 using Store.Domain.Stores;
 using Store.Domain.ValueObjects;
 
 namespace Store.Application.Stores.Queries.GetPublishedStorefrontBySlug
 {
-    public sealed class GetPublishedStoreFrontBySlugQueryHandler
+    public sealed class GetPublishedStoreFrontBySlugQueryHandler : IRequestHandler<GetPublishedStoreFrontBySlugQuery, StorefrontDto?>
     {
         private readonly IStoreRepository _storeRepository;
 

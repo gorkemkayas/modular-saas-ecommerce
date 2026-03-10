@@ -1,10 +1,10 @@
-﻿using Store.Application.Abstractions;
-using Store.Application.Stores.Commands.PublishStore;
+﻿using MediatR;
+using Store.Application.Abstractions;
 using Store.Domain.Stores;
 
 namespace Store.Application.Stores.Commands.UnpublishStore
 {
-    public sealed class UnpublishStoreCommandHandler
+    public sealed class UnpublishStoreCommandHandler : IRequestHandler<UnpublishStoreCommand>
     {
         private readonly IStoreRepository _repository;
         private readonly IUnitOfWork _unitOfWork;
@@ -15,7 +15,7 @@ namespace Store.Application.Stores.Commands.UnpublishStore
             _unitOfWork = unitOfWork;
         }
 
-        public async Task Handle(PublishStoreCommand command, CancellationToken cancellationToken)
+        public async Task Handle(UnpublishStoreCommand command, CancellationToken cancellationToken)
         {
             var store = await _repository.GetByTenantIdAsync(command.TenantId, cancellationToken);
             if (store == null)

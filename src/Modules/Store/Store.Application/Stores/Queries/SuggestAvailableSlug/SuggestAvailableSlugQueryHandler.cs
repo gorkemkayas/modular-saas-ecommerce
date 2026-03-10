@@ -1,4 +1,5 @@
-﻿using Store.Application.DTOs;
+﻿using MediatR;
+using Store.Application.DTOs;
 using Store.Domain.Stores;
 using Store.Domain.ValueObjects;
 using System.Text;
@@ -6,7 +7,7 @@ using System.Text.RegularExpressions;
 
 namespace Store.Application.Stores.Queries.SuggestAvailableSlug
 {
-    public sealed class SuggestAvailableSlugQueryHandler
+    public sealed class SuggestAvailableSlugQueryHandler : IRequestHandler<SuggestAvailableSlugQuery, SlugSuggestionDto>
     {
         private readonly IStoreRepository _storeRepository;
 

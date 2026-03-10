@@ -1,10 +1,11 @@
-﻿using Store.Application.DTOs;
+﻿using MediatR;
+using Store.Application.DTOs;
 using Store.Domain.Stores;
 using Store.Domain.ValueObjects;
 
 namespace Store.Application.Stores.Queries.GetStoreBySlug
 {
-    public sealed class GetStoreBySlugQueryHandler
+    public sealed class GetStoreBySlugQueryHandler : IRequestHandler<GetStoreBySlugQuery, StoreDto?>
     {
         private readonly IStoreRepository _storeRepository;
 

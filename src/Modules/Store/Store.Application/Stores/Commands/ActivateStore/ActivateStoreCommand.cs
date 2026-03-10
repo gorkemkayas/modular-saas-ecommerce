@@ -1,4 +1,6 @@
-﻿namespace Store.Application.Stores.Commands.ActivateStore
+﻿using MediatR;
+
+namespace Store.Application.Stores.Commands.ActivateStore
 {
-    public sealed record ActivateStoreCommand(Guid TenantId);
+    public sealed record ActivateStoreCommand(Guid TenantId) : IRequest;
 }
