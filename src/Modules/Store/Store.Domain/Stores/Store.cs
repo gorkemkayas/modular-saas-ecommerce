@@ -1,4 +1,5 @@
 ﻿using Store.Domain.Abstractions;
+using Store.Domain.Exceptions;
 using Store.Domain.ValueObjects;
 
 namespace Store.Domain.Stores
@@ -29,10 +30,10 @@ namespace Store.Domain.Stores
             string? logoUrl)
         {
             if (tenantId == Guid.Empty)
-                throw new ArgumentException("TenantId cannot be empty.");
+                throw new InvalidTenantException();
 
             if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Store name cannot be empty.");
+                throw new InvalidStoreNameException();
 
             Id = id;
             TenantId = tenantId;
@@ -66,7 +67,7 @@ namespace Store.Domain.Stores
             EnsureNotArchived();
 
             if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Store name cannot be empty.");
+                throw new InvalidStoreNameException();
 
             Name = name.Trim();
             Description = description?.Trim();
@@ -79,7 +80,7 @@ namespace Store.Domain.Stores
             EnsureNotArchived();
 
             if (Slug == newSlug)
-                throw new InvalidOperationException("New slug cannot be the same as current slug.");
+                throw new DuplicateSlugException();
 
             Slug = newSlug;
             UpdatedAtUtc = DateTime.UtcNow;
@@ -90,7 +91,7 @@ namespace Store.Domain.Stores
             EnsureNotArchived();
 
             if (Status != StoreStatus.Active)
-                throw new InvalidOperationException("Only active stores can be published.");
+                throw InvalidStoreStatusException.CannotPublish();
 
             IsPublished = true;
             UpdatedAtUtc = DateTime.UtcNow;
@@ -116,7 +117,7 @@ namespace Store.Domain.Stores
         public void Activate()
         {
             if (Status == StoreStatus.Archived)
-                throw new InvalidOperationException("Archived store cannot be activated.");
+                throw InvalidStoreStatusException.CannotActivate();
 
             Status = StoreStatus.Active;
             UpdatedAtUtc = DateTime.UtcNow;
@@ -132,7 +133,7 @@ namespace Store.Domain.Stores
         private void EnsureNotArchived()
         {
             if (Status == StoreStatus.Archived)
-                throw new InvalidOperationException("Archived store cannot be modified.");
+                throw new ArchivedStoreException();
         }
     }
 }

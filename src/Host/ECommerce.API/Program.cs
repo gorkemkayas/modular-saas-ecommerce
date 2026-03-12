@@ -1,87 +1,71 @@
 using BuildingBlocks.Application.Abstractions.Authentication;
 using BuildingBlocks.Application.Abstractions.Tenancy;
+using BuildingBlocks.Application.Behaviors;
 using BuildingBlocks.Infrastructure.Extensions.Authentication;
 using BuildingBlocks.Infrastructure.Extensions.Middleware;
-using Store.Infrastructure.DependencyInjection;
+using ECommerce.API.ExceptionHandlers;
+using ECommerce.API.Extensions;
+using Serilog;
 using System.Text.Json.Serialization;
 
-var builder = WebApplication.CreateBuilder(args);
+Log.Logger = SerilogExtensions.CreateBootstrapLogger();
 
-// Add services to the container.
+try
+{
+    Log.Information("Starting ECommerce.API application");
 
-// Add authentication extension
-builder.Services.AddJwtAuthentication(builder.Configuration);
-// Add user context extension
-builder.Services.AddRequestContexts();
+    var builder = WebApplication.CreateBuilder(args);
 
-// Register Store module
-builder.Services.AddStoreModule(builder.Configuration);
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Store.Application.AssemblyReference).Assembly));
+    // Serilog'u ASP.NET Core'a entegre et
+    builder.Host.UseSerilog();
 
-// For return enums as string, not int
-builder.Services
-    .AddControllers()
-    .AddJsonOptions(options =>
+    // Add services to the container.
+    builder.Services.AddJwtAuthentication(builder.Configuration);
+    builder.Services.AddRequestContexts();
+    builder.Services.AddStoreModule(builder.Configuration);
+    builder.Services.AddMediatR(cfg =>
     {
-        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        cfg.RegisterServicesFromAssembly(typeof(Store.Application.AssemblyReference).Assembly);
+        cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
     });
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
 
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
-
-app.UseHttpsRedirection();
-
-// Use the custom request context middleware to populate user and tenant information
-app.UseRequestContext();
-app.UseAuthorization();
-
-app.MapControllers();
-app.MapGet("/health", () => Results.Ok("API is running"));
-app.MapGet("/secure", (HttpContext httpContext) =>
-{
-    var user = httpContext.User;
-
-    var sub = user.Claims.FirstOrDefault(x => x.Type == "sub")?.Value;
-    var tenantId = user.Claims.FirstOrDefault(x => x.Type == "tenantId")?.Value;
-    var email = user.Claims.FirstOrDefault(x => x.Type == "email")?.Value;
-    var tokenType = user.Claims.FirstOrDefault(x => x.Type == "token_type")?.Value;
-
-    return Results.Ok(new
-    {
-        sub,
-        tenantId,
-        email,
-        tokenType
-    });
-}).RequireAuthorization();
-app.MapGet("/claims", (HttpContext httpContext) =>
-{
-    return Results.Ok(
-        httpContext.User.Claims.Select(c => new
+    builder.Services
+        .AddControllers()
+        .AddJsonOptions(options =>
         {
-            c.Type,
-            c.Value
-        }));
-}).RequireAuthorization();
+            options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        });
+    
+    builder.Services.AddOpenApi();
+    builder.Services.AddExceptionHandler<StoreExceptionHandler>();
+    builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+    builder.Services.AddProblemDetails();
 
-app.MapGet("/me", (ICurrentUser currentUser, ITenantContext tenantContext) =>
-{
-    return Results.Ok(new
+    var app = builder.Build();
+
+    // Serilog HTTP Request Logging
+    app.UseEnrichedSerilogRequestLogging();
+
+    app.UseExceptionHandler();
+
+    // Configure the HTTP request pipeline.
+    if (app.Environment.IsDevelopment())
     {
-        currentUser.IsAuthenticated,
-        currentUser.UserId,
-        currentUser.Email,
-        currentUser.Name,
-        currentUser.TokenType,
-        tenantContext.TenantId,
-        tenantContext.HasTenant
-    });
-}).RequireAuthorization();
-app.Run();
+        app.MapOpenApi();
+    }
+
+    app.UseHttpsRedirection();
+    app.UseRequestContext();
+    app.UseAuthorization();
+    app.MapControllers();
+    
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}

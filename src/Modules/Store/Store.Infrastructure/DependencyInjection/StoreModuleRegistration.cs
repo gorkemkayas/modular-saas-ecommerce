@@ -10,29 +10,30 @@ using Store.Infrastructure.Persistance.Repositories;
 
 namespace Store.Infrastructure.DependencyInjection
 {
-    public static class StoreModuleRegistration
-    {
-        public static IServiceCollection AddStoreModule(
-       this IServiceCollection services,
-       IConfiguration configuration)
-        {
-            services.Configure<StoreDatabaseOptions>(
-                configuration.GetSection(StoreDatabaseOptions.SectionName));
+    //public static class StoreModuleRegistration
+    //{
+    //    public static IServiceCollection AddStoreModule(
+    //   this IServiceCollection services,
+    //   IConfiguration configuration)
+    //    {
 
-            services.AddDbContext<StoreDbContext>((sp, options) =>
-            {
-                var dbOptions = sp.GetRequiredService<IOptions<StoreDatabaseOptions>>().Value;
+    //        services.Configure<StoreDatabaseOptions>(
+    //            configuration.GetSection(StoreDatabaseOptions.SectionName));
 
-                if (string.IsNullOrWhiteSpace(dbOptions.ConnectionString))
-                    throw new InvalidOperationException("Store module connection string is missing.");
+    //        services.AddDbContext<StoreDbContext>((sp, options) =>
+    //        {
+    //            var dbOptions = sp.GetRequiredService<IOptions<StoreDatabaseOptions>>().Value;
 
-                options.UseNpgsql(dbOptions.ConnectionString);
-            });
+    //            if (string.IsNullOrWhiteSpace(dbOptions.ConnectionString))
+    //                throw new InvalidOperationException("Store module connection string is missing.");
 
-            services.AddScoped<IStoreRepository, StoreRepository>();
-            services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<StoreDbContext>());
+    //            options.UseNpgsql(dbOptions.ConnectionString);
+    //        });
 
-            return services;
-        }
-    }
+    //        services.AddScoped<IStoreRepository, StoreRepository>();
+    //        services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<StoreDbContext>());
+
+    //        return services;
+    //    }
+    //}
 }

@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using Store.Application.Abstractions;
+using Store.Application.Exceptions;
 using Store.Domain.Stores;
 
 namespace Store.Application.Stores.Commands.ActivateStore
@@ -19,7 +20,7 @@ namespace Store.Application.Stores.Commands.ActivateStore
         {
             var store = await _storeRepository.GetByTenantIdAsync(command.TenantId, cancellationToken);
             if (store is null)
-                throw new InvalidOperationException($"Store with Tenant ID {command.TenantId} not found.");
+                throw new StoreNotFoundException(command.TenantId);
 
             store.Activate();
             await _unitOfWork.SaveChangesAsync(cancellationToken);

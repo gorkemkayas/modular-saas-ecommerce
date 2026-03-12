@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using Store.Application.Abstractions;
+using Store.Application.Exceptions;
 using Store.Domain.Stores;
 
 namespace Store.Application.Stores.Commands.UnpublishStore
@@ -19,7 +20,7 @@ namespace Store.Application.Stores.Commands.UnpublishStore
         {
             var store = await _repository.GetByTenantIdAsync(command.TenantId, cancellationToken);
             if (store == null)
-                throw new InvalidOperationException("Store not found.");
+                throw new StoreNotFoundException(command.TenantId);
 
             store.Unpublish();
             await _unitOfWork.SaveChangesAsync(cancellationToken);
