@@ -11,6 +11,7 @@ using Store.Application.Stores.Commands.SuspendStore;
 using Store.Application.Stores.Queries.GetStoreById;
 using Store.Application.Stores.Queries.GetStoreBySlug;
 using Store.Application.Stores.Queries.GetStoreByTenantId;
+using Store.Application.DTOs;
 
 namespace ECommerce.API.Controllers.Admin;
 
@@ -26,6 +27,8 @@ public sealed class AdminStoresController : ControllerBase
     }
 
     [HttpGet("by-tenant/{tenantId:int}")]
+    [ProducesResponseType(typeof(StoreDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetStoreByTenantId([FromRoute] int tenantId, CancellationToken cancellationToken)
     {
         var store = await _sender.Send(new GetStoreByTenantIdQuery(TenantIdConverter.ToGuid(tenantId)));
@@ -36,6 +39,8 @@ public sealed class AdminStoresController : ControllerBase
     }
 
     [HttpGet("by-id/{storeId:guid}")]
+    [ProducesResponseType(typeof(StoreDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetStoreById([FromRoute] Guid storeId, CancellationToken cancellationToken)
     {
         var store = await _sender.Send(new GetStoreByIdQuery(storeId), cancellationToken);
@@ -44,6 +49,8 @@ public sealed class AdminStoresController : ControllerBase
         return Ok(store);
     }
     [HttpGet("by-slug/{slug}")]
+    [ProducesResponseType(typeof(StoreDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetStoreBySlug([FromRoute] string slug, CancellationToken cancellationToken)
     {
         var store = await _sender.Send(new GetStoreBySlugQuery(slug), cancellationToken);
@@ -53,6 +60,9 @@ public sealed class AdminStoresController : ControllerBase
     }
 
     [HttpPost("{tenantId:int}/activate")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ActivateStore([FromRoute] int tenantId, CancellationToken cancellationToken)
     {
         await _sender.Send(new ActivateStoreCommand(TenantIdConverter.ToGuid(tenantId)), cancellationToken);
@@ -60,6 +70,9 @@ public sealed class AdminStoresController : ControllerBase
     }
 
     [HttpPost("{tenantId:int}/suspend")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SuspendStore([FromRoute] int tenantId, CancellationToken cancellationToken)
     {
         await _sender.Send(new SuspendStoreCommand(TenantIdConverter.ToGuid(tenantId)), cancellationToken);
@@ -67,6 +80,9 @@ public sealed class AdminStoresController : ControllerBase
     }
 
     [HttpPost("{tenantId:int}/archive")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ArchiveStore([FromRoute] int tenantId, CancellationToken cancellationToken)
     {
         await _sender.Send(new ArchiveStoreCommand(TenantIdConverter.ToGuid(tenantId)), cancellationToken);
@@ -74,6 +90,9 @@ public sealed class AdminStoresController : ControllerBase
     }
 
     [HttpPost("{tenantId:int}/provision")]
+    [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> ProvisionStoreForTenant([FromRoute] int tenantId, [FromBody] ProvisionStoreForTenantRequest request, CancellationToken cancellationToken)
     {
         var storeId = await _sender.Send(new ProvisionStoreForTenantCommand(TenantIdConverter.ToGuid(tenantId), request.Name, request.Slug), cancellationToken);
