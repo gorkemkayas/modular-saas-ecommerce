@@ -47,6 +47,14 @@ public class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, 
 
             stopwatch.Stop();
 
+            if (stopwatch.ElapsedMilliseconds > 500) // 500ms'den uzun sürdüyse
+            {
+                _logger.LogWarning(
+                    "Long running request {RequestName} took {ElapsedMilliseconds}ms",
+                    requestName,
+                    stopwatch.ElapsedMilliseconds);
+            }
+
             _logger.LogInformation(
                 "Handled {RequestName} successfully in {ElapsedMilliseconds}ms | User: {UserId} | Tenant: {TenantId}",
                 requestName,

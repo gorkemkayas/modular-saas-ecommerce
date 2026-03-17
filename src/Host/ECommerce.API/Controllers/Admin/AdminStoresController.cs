@@ -11,6 +11,8 @@ using Store.Application.Stores.Commands.SuspendStore;
 using Store.Application.Stores.Queries.GetStoreById;
 using Store.Application.Stores.Queries.GetStoreBySlug;
 using Store.Application.Stores.Queries.GetStoreByTenantId;
+using Store.Application.DTOs;
+using Store.Application.Stores.Queries.SuggestAvailableSlug;
 
 namespace ECommerce.API.Controllers.Admin;
 
@@ -20,12 +22,16 @@ namespace ECommerce.API.Controllers.Admin;
 public sealed class AdminStoresController : ControllerBase
 {
     private readonly ISender _sender;
-    public AdminStoresController(ISender sender)
+    private readonly string _serviceToken; // mvp için geçici çözüm, OAuth2 Credentials Flow ile güncellenecek.
+    public AdminStoresController(ISender sender, IConfiguration configuration)
     {
         _sender = sender;
+        _serviceToken = configuration["ServiceTokens:ECommerce"]!;
     }
 
     [HttpGet("by-tenant/{tenantId:int}")]
+    [ProducesResponseType(typeof(StoreDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetStoreByTenantId([FromRoute] int tenantId, CancellationToken cancellationToken)
     {
         var store = await _sender.Send(new GetStoreByTenantIdQuery(TenantIdConverter.ToGuid(tenantId)));
@@ -36,6 +42,8 @@ public sealed class AdminStoresController : ControllerBase
     }
 
     [HttpGet("by-id/{storeId:guid}")]
+    [ProducesResponseType(typeof(StoreDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetStoreById([FromRoute] Guid storeId, CancellationToken cancellationToken)
     {
         var store = await _sender.Send(new GetStoreByIdQuery(storeId), cancellationToken);
@@ -44,6 +52,8 @@ public sealed class AdminStoresController : ControllerBase
         return Ok(store);
     }
     [HttpGet("by-slug/{slug}")]
+    [ProducesResponseType(typeof(StoreDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetStoreBySlug([FromRoute] string slug, CancellationToken cancellationToken)
     {
         var store = await _sender.Send(new GetStoreBySlugQuery(slug), cancellationToken);
@@ -53,6 +63,9 @@ public sealed class AdminStoresController : ControllerBase
     }
 
     [HttpPost("{tenantId:int}/activate")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ActivateStore([FromRoute] int tenantId, CancellationToken cancellationToken)
     {
         await _sender.Send(new ActivateStoreCommand(TenantIdConverter.ToGuid(tenantId)), cancellationToken);
@@ -60,6 +73,9 @@ public sealed class AdminStoresController : ControllerBase
     }
 
     [HttpPost("{tenantId:int}/suspend")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SuspendStore([FromRoute] int tenantId, CancellationToken cancellationToken)
     {
         await _sender.Send(new SuspendStoreCommand(TenantIdConverter.ToGuid(tenantId)), cancellationToken);
@@ -67,6 +83,9 @@ public sealed class AdminStoresController : ControllerBase
     }
 
     [HttpPost("{tenantId:int}/archive")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ArchiveStore([FromRoute] int tenantId, CancellationToken cancellationToken)
     {
         await _sender.Send(new ArchiveStoreCommand(TenantIdConverter.ToGuid(tenantId)), cancellationToken);
@@ -74,9 +93,18 @@ public sealed class AdminStoresController : ControllerBase
     }
 
     [HttpPost("{tenantId:int}/provision")]
-    public async Task<IActionResult> ProvisionStoreForTenant([FromRoute] int tenantId, [FromBody] ProvisionStoreForTenantRequest request, CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    [AllowAnonymous] // mvp için hızlı bir yol, mvp den sonra OAuth2 Credentials Flow ile güncellenecek.
+    public async Task<IActionResult> ProvisionStoreForTenant([FromRoute] int tenantId, [FromBody] ProvisionStoreForTenantRequest request, CancellationToken cancellationToken, [FromHeader(Name = "Authorization")] string authHeader)
     {
-        var storeId = await _sender.Send(new ProvisionStoreForTenantCommand(TenantIdConverter.ToGuid(tenantId), request.Name, request.Slug), cancellationToken);
+        var token = authHeader?.Replace("Bearer ", "");
+        if (token != _serviceToken)
+            return Unauthorized();
+
+        var suggestion = _sender.Send(new SuggestAvailableSlugQuery(request.Name), cancellationToken).Result;
+        var storeId = await _sender.Send(new ProvisionStoreForTenantCommand(TenantIdConverter.ToGuid(tenantId), request.Name, suggestion.Slug), cancellationToken);
         return CreatedAtAction(nameof(GetStoreById), new { storeId = storeId }, null);
     }
 }
