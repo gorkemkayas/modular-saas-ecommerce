@@ -12,6 +12,7 @@ using Store.Application.Stores.Queries.GetStoreById;
 using Store.Application.Stores.Queries.GetStoreBySlug;
 using Store.Application.Stores.Queries.GetStoreByTenantId;
 using Store.Application.DTOs;
+using Store.Application.Stores.Queries.SuggestAvailableSlug;
 
 namespace ECommerce.API.Controllers.Admin;
 
@@ -21,9 +22,11 @@ namespace ECommerce.API.Controllers.Admin;
 public sealed class AdminStoresController : ControllerBase
 {
     private readonly ISender _sender;
-    public AdminStoresController(ISender sender)
+    private readonly string _serviceToken; // mvp için geçici çözüm, OAuth2 Credentials Flow ile güncellenecek.
+    public AdminStoresController(ISender sender, IConfiguration configuration)
     {
         _sender = sender;
+        _serviceToken = configuration["ServiceTokens:ECommerce"]!;
     }
 
     [HttpGet("by-tenant/{tenantId:int}")]
@@ -93,9 +96,15 @@ public sealed class AdminStoresController : ControllerBase
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> ProvisionStoreForTenant([FromRoute] int tenantId, [FromBody] ProvisionStoreForTenantRequest request, CancellationToken cancellationToken)
+    [AllowAnonymous] // mvp için hızlı bir yol, mvp den sonra OAuth2 Credentials Flow ile güncellenecek.
+    public async Task<IActionResult> ProvisionStoreForTenant([FromRoute] int tenantId, [FromBody] ProvisionStoreForTenantRequest request, CancellationToken cancellationToken, [FromHeader(Name = "Authorization")] string authHeader)
     {
-        var storeId = await _sender.Send(new ProvisionStoreForTenantCommand(TenantIdConverter.ToGuid(tenantId), request.Name, request.Slug), cancellationToken);
+        var token = authHeader?.Replace("Bearer ", "");
+        if (token != _serviceToken)
+            return Unauthorized();
+
+        var suggestion = _sender.Send(new SuggestAvailableSlugQuery(request.Name), cancellationToken).Result;
+        var storeId = await _sender.Send(new ProvisionStoreForTenantCommand(TenantIdConverter.ToGuid(tenantId), request.Name, suggestion.Slug), cancellationToken);
         return CreatedAtAction(nameof(GetStoreById), new { storeId = storeId }, null);
     }
 }

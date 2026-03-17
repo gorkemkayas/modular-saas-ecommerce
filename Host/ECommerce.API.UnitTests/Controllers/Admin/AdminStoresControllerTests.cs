@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -7,6 +7,7 @@ using ECommerce.API.Contracts.Store.ProvisionStoreForTenant;
 using ECommerce.API.Controllers.Admin;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Store.Application.DTOs;
@@ -17,6 +18,7 @@ using Store.Application.Stores.Commands.SuspendStore;
 using Store.Application.Stores.Queries.GetStoreById;
 using Store.Application.Stores.Queries.GetStoreBySlug;
 using Store.Application.Stores.Queries.GetStoreByTenantId;
+using Store.Application.Stores.Queries.SuggestAvailableSlug;
 using Store.Domain.Stores;
 
 namespace ECommerce.API.Controllers.Admin.UnitTests;
@@ -28,6 +30,18 @@ namespace ECommerce.API.Controllers.Admin.UnitTests;
 [TestClass]
 public sealed class AdminStoresControllerTests
 {
+    private const string ValidAuthHeader = "Bearer DEV_SERVICE_TOKEN_12345";
+
+    private static IConfiguration CreateConfiguration()
+    {
+        var mockConfiguration = new Mock<IConfiguration>();
+        mockConfiguration.Setup(c => c["ServiceTokens:ECommerce"]).Returns("DEV_SERVICE_TOKEN_12345");
+        return mockConfiguration.Object;
+    }
+
+    private static AdminStoresController CreateController(ISender sender)
+        => new(sender, CreateConfiguration());
+
     /// <summary>
     /// Tests that GetStoreByTenantId returns OkObjectResult with the store when the store exists.
     /// </summary>
@@ -56,7 +70,10 @@ public sealed class AdminStoresControllerTests
             .Setup(s => s.Send(It.Is<GetStoreByTenantIdQuery>(q => q.TenantId == expectedTenantIdGuid), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedStore);
 
-        var controller = new AdminStoresController(mockSender.Object);
+        var mockConfiguration = new Mock<IConfiguration>();
+        mockConfiguration.Setup(c => c["ServiceTokens:ECommerce"]).Returns("DEV_SERVICE_TOKEN_12345");
+
+        var controller = new AdminStoresController(mockSender.Object, mockConfiguration.Object);
         var cancellationToken = CancellationToken.None;
 
         // Act
@@ -90,7 +107,10 @@ public sealed class AdminStoresControllerTests
             .Setup(s => s.Send(It.Is<GetStoreByTenantIdQuery>(q => q.TenantId == expectedTenantIdGuid), It.IsAny<CancellationToken>()))
             .ReturnsAsync((StoreDto?)null);
 
-        var controller = new AdminStoresController(mockSender.Object);
+        var mockConfiguration = new Mock<IConfiguration>();
+        mockConfiguration.Setup(c => c["ServiceTokens:ECommerce"]).Returns("DEV_SERVICE_TOKEN_12345");
+
+        var controller = new AdminStoresController(mockSender.Object, mockConfiguration.Object);
         var cancellationToken = CancellationToken.None;
 
         // Act
@@ -128,7 +148,7 @@ public sealed class AdminStoresControllerTests
             .Setup(s => s.Send(It.Is<GetStoreByTenantIdQuery>(q => q.TenantId == expectedTenantIdGuid), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedStore);
 
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
         var cancellationToken = CancellationToken.None;
 
         // Act
@@ -169,7 +189,10 @@ public sealed class AdminStoresControllerTests
             .Setup(s => s.Send(It.Is<GetStoreByTenantIdQuery>(q => q.TenantId == expectedTenantIdGuid), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedStore);
 
-        var controller = new AdminStoresController(mockSender.Object);
+        var mockConfiguration = new Mock<IConfiguration>();
+        mockConfiguration.Setup(c => c["ServiceTokens:ECommerce"]).Returns("DEV_SERVICE_TOKEN_12345");
+
+        var controller = new AdminStoresController(mockSender.Object, mockConfiguration.Object);
         var cancellationToken = CancellationToken.None;
 
         // Act
@@ -212,7 +235,7 @@ public sealed class AdminStoresControllerTests
             .Setup(s => s.Send(It.IsAny<GetStoreByTenantIdQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedStore);
 
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
 
         // Act
         var result = await controller.GetStoreByTenantId(tenantId, cancellationToken);
@@ -237,7 +260,10 @@ public sealed class AdminStoresControllerTests
             .Setup(s => s.Send(It.IsAny<GetStoreByTenantIdQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((StoreDto?)null);
 
-        var controller = new AdminStoresController(mockSender.Object);
+        var mockConfiguration = new Mock<IConfiguration>();
+        mockConfiguration.Setup(c => c["ServiceTokens:ECommerce"]).Returns("DEV_SERVICE_TOKEN_12345");
+
+        var controller = new AdminStoresController(mockSender.Object, mockConfiguration.Object);
 
         // Act
         await controller.GetStoreByTenantId(tenantId, CancellationToken.None);
@@ -267,7 +293,7 @@ public sealed class AdminStoresControllerTests
             .Setup(s => s.Send(It.Is<GetStoreByTenantIdQuery>(q => q.TenantId == expectedTenantIdGuid), It.IsAny<CancellationToken>()))
             .ReturnsAsync((StoreDto?)null);
 
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
 
         // Act
         var result = await controller.GetStoreByTenantId(tenantId, CancellationToken.None);
@@ -294,7 +320,7 @@ public sealed class AdminStoresControllerTests
             .Setup(s => s.Send(It.IsAny<ActivateStoreCommand>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
         var cancellationToken = CancellationToken.None;
 
         // Act
@@ -325,7 +351,7 @@ public sealed class AdminStoresControllerTests
             .Setup(s => s.Send(It.IsAny<ActivateStoreCommand>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
         var cancellationToken = CancellationToken.None;
 
         // Act
@@ -355,7 +381,7 @@ public sealed class AdminStoresControllerTests
             .Callback<IRequest, CancellationToken>((cmd, ct) => capturedCommand = cmd as ActivateStoreCommand)
             .Returns(Task.CompletedTask);
 
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
         var cancellationToken = CancellationToken.None;
 
         // Act
@@ -386,7 +412,7 @@ public sealed class AdminStoresControllerTests
             .Callback<IRequest, CancellationToken>((cmd, ct) => capturedToken = ct)
             .Returns(Task.CompletedTask);
 
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
 
         // Act
         await controller.ActivateStore(tenantId, cancellationToken);
@@ -414,7 +440,7 @@ public sealed class AdminStoresControllerTests
             .Setup(s => s.Send(It.IsAny<ActivateStoreCommand>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
 
         // Act
         var result = await controller.ActivateStore(tenantId, cancelledToken);
@@ -445,7 +471,7 @@ public sealed class AdminStoresControllerTests
             .Setup(s => s.Send(It.IsAny<ActivateStoreCommand>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
         var cancellationToken = CancellationToken.None;
 
         // Act
@@ -477,7 +503,7 @@ public sealed class AdminStoresControllerTests
     {
         // Arrange
         var mockSender = new Mock<ISender>();
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
         var cancellationToken = CancellationToken.None;
         var expectedGuid = TenantIdConverter.ToGuid(tenantId);
 
@@ -507,7 +533,7 @@ public sealed class AdminStoresControllerTests
     {
         // Arrange
         var mockSender = new Mock<ISender>();
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
         var cancellationTokenSource = new CancellationTokenSource();
         var cancellationToken = cancellationTokenSource.Token;
         var tenantId = 123;
@@ -538,18 +564,26 @@ public sealed class AdminStoresControllerTests
     {
         // Arrange
         var mockSender = new Mock<ISender>();
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
         int tenantId = 123;
-        var request = new ProvisionStoreForTenantRequest("Test Store", "test-store");
+        var request = new ProvisionStoreForTenantRequest("Test Store");
+        var suggestedSlug = "test-store";
         var expectedStoreId = Guid.NewGuid();
         var cancellationToken = CancellationToken.None;
 
         mockSender
-            .Setup(s => s.Send(It.IsAny<ProvisionStoreForTenantCommand>(), cancellationToken))
+            .Setup(s => s.Send(It.Is<SuggestAvailableSlugQuery>(q => q.Name == request.Name), cancellationToken))
+            .ReturnsAsync(new SlugSuggestionDto(suggestedSlug));
+
+        mockSender
+            .Setup(s => s.Send(It.Is<ProvisionStoreForTenantCommand>(
+                    c => c.TenantId == TenantIdConverter.ToGuid(tenantId)
+                      && c.Name == request.Name
+                      && c.Slug == suggestedSlug), cancellationToken))
             .ReturnsAsync(expectedStoreId);
 
         // Act
-        var result = await controller.ProvisionStoreForTenant(tenantId, request, cancellationToken);
+        var result = await controller.ProvisionStoreForTenant(tenantId, request, cancellationToken, ValidAuthHeader);
 
         // Assert
         Assert.IsNotNull(result);
@@ -560,6 +594,7 @@ public sealed class AdminStoresControllerTests
         Assert.IsTrue(createdResult.RouteValues.ContainsKey("storeId"));
         Assert.AreEqual(expectedStoreId, createdResult.RouteValues["storeId"]);
         Assert.IsNull(createdResult.Value);
+        mockSender.Verify(s => s.Send(It.Is<SuggestAvailableSlugQuery>(q => q.Name == request.Name), cancellationToken), Times.Once);
     }
 
     /// <summary>
@@ -568,22 +603,26 @@ public sealed class AdminStoresControllerTests
     /// </summary>
     /// <param name="tenantId">The tenant ID to test.</param>
     /// <param name="name">The store name.</param>
-    /// <param name="slug">The store slug.</param>
+    /// <param name="suggestedSlug">The suggested slug value returned from slug suggestion query.</param>
     [TestMethod]
-    [DataRow(1, "Store Name", "store-slug")]
-    [DataRow(0, "Zero Tenant Store", "zero-tenant")]
+    [DataRow(1, "Store Name", "store-name")]
+    [DataRow(0, "Zero Tenant Store", "zero-tenant-store")]
     [DataRow(-1, "Negative Tenant", "negative-tenant")]
     [DataRow(int.MaxValue, "Max Tenant", "max-tenant")]
     [DataRow(int.MinValue, "Min Tenant", "min-tenant")]
-    public async Task ProvisionStoreForTenant_VariousTenantIds_SendsCommandWithCorrectParameters(int tenantId, string name, string slug)
+    public async Task ProvisionStoreForTenant_VariousTenantIds_SendsCommandWithCorrectParameters(int tenantId, string name, string suggestedSlug)
     {
         // Arrange
         var mockSender = new Mock<ISender>();
-        var controller = new AdminStoresController(mockSender.Object);
-        var request = new ProvisionStoreForTenantRequest(name, slug);
+        var controller = CreateController(mockSender.Object);
+        var request = new ProvisionStoreForTenantRequest(name);
         var expectedStoreId = Guid.NewGuid();
         var cancellationToken = CancellationToken.None;
         ProvisionStoreForTenantCommand? capturedCommand = null;
+
+        mockSender
+            .Setup(s => s.Send(It.Is<SuggestAvailableSlugQuery>(q => q.Name == name), cancellationToken))
+            .ReturnsAsync(new SlugSuggestionDto(suggestedSlug));
 
         mockSender
             .Setup(s => s.Send(It.IsAny<ProvisionStoreForTenantCommand>(), cancellationToken))
@@ -591,13 +630,14 @@ public sealed class AdminStoresControllerTests
             .ReturnsAsync(expectedStoreId);
 
         // Act
-        await controller.ProvisionStoreForTenant(tenantId, request, cancellationToken);
+        await controller.ProvisionStoreForTenant(tenantId, request, cancellationToken, ValidAuthHeader);
 
         // Assert
         Assert.IsNotNull(capturedCommand);
         Assert.AreEqual(TenantIdConverter.ToGuid(tenantId), capturedCommand.TenantId);
         Assert.AreEqual(name, capturedCommand.Name);
-        Assert.AreEqual(slug, capturedCommand.Slug);
+        Assert.AreEqual(suggestedSlug, capturedCommand.Slug);
+        mockSender.Verify(s => s.Send(It.Is<SuggestAvailableSlugQuery>(q => q.Name == name), cancellationToken), Times.Once);
         mockSender.Verify(s => s.Send(It.IsAny<ProvisionStoreForTenantCommand>(), cancellationToken), Times.Once);
     }
 
@@ -606,24 +646,28 @@ public sealed class AdminStoresControllerTests
     /// Verifies empty strings, whitespace, and strings with special characters are passed through correctly.
     /// </summary>
     /// <param name="name">The store name to test.</param>
-    /// <param name="slug">The store slug to test.</param>
     [TestMethod]
-    [DataRow("", "")]
-    [DataRow(" ", " ")]
-    [DataRow("   ", "   ")]
-    [DataRow("Name with spaces", "slug-with-dashes")]
-    [DataRow("Special!@#$%^&*()", "special-chars-slug")]
-    [DataRow("Very Long Name That Exceeds Normal Length Expectations For Testing Purposes With Many Characters", "very-long-slug-that-exceeds-normal-length-expectations")]
-    public async Task ProvisionStoreForTenant_EdgeCaseStrings_SendsCommandWithProvidedValues(string name, string slug)
+    [DataRow("")]
+    [DataRow(" ")]
+    [DataRow("   ")]
+    [DataRow("Name with spaces")]
+    [DataRow("Special!@#$%^&*()")]
+    [DataRow("Very Long Name That Exceeds Normal Length Expectations For Testing Purposes With Many Characters")]
+    public async Task ProvisionStoreForTenant_EdgeCaseStrings_SendsCommandWithProvidedValues(string name)
     {
         // Arrange
         var mockSender = new Mock<ISender>();
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
         int tenantId = 1;
-        var request = new ProvisionStoreForTenantRequest(name, slug);
+        var request = new ProvisionStoreForTenantRequest(name);
+        var suggestedSlug = "generated-slug";
         var expectedStoreId = Guid.NewGuid();
         var cancellationToken = CancellationToken.None;
         ProvisionStoreForTenantCommand? capturedCommand = null;
+
+        mockSender
+            .Setup(s => s.Send(It.Is<SuggestAvailableSlugQuery>(q => q.Name == name), cancellationToken))
+            .ReturnsAsync(new SlugSuggestionDto(suggestedSlug));
 
         mockSender
             .Setup(s => s.Send(It.IsAny<ProvisionStoreForTenantCommand>(), cancellationToken))
@@ -631,12 +675,12 @@ public sealed class AdminStoresControllerTests
             .ReturnsAsync(expectedStoreId);
 
         // Act
-        await controller.ProvisionStoreForTenant(tenantId, request, cancellationToken);
+        await controller.ProvisionStoreForTenant(tenantId, request, cancellationToken, ValidAuthHeader);
 
         // Assert
         Assert.IsNotNull(capturedCommand);
         Assert.AreEqual(name, capturedCommand.Name);
-        Assert.AreEqual(slug, capturedCommand.Slug);
+        Assert.AreEqual(suggestedSlug, capturedCommand.Slug);
     }
 
     /// <summary>
@@ -648,17 +692,25 @@ public sealed class AdminStoresControllerTests
     {
         // Arrange
         var mockSender = new Mock<ISender>();
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
         int tenantId = 123;
-        var request = new ProvisionStoreForTenantRequest("Test Store", "test-store");
+        var request = new ProvisionStoreForTenantRequest("Test Store");
+        var suggestedSlug = "test-store";
         var cancellationToken = CancellationToken.None;
 
         mockSender
-            .Setup(s => s.Send(It.IsAny<ProvisionStoreForTenantCommand>(), cancellationToken))
+            .Setup(s => s.Send(It.Is<SuggestAvailableSlugQuery>(q => q.Name == request.Name), cancellationToken))
+            .ReturnsAsync(new SlugSuggestionDto(suggestedSlug));
+
+        mockSender
+            .Setup(s => s.Send(It.Is<ProvisionStoreForTenantCommand>(
+                    c => c.TenantId == TenantIdConverter.ToGuid(tenantId)
+                      && c.Name == request.Name
+                      && c.Slug == suggestedSlug), cancellationToken))
             .ReturnsAsync(Guid.Empty);
 
         // Act
-        var result = await controller.ProvisionStoreForTenant(tenantId, request, cancellationToken);
+        var result = await controller.ProvisionStoreForTenant(tenantId, request, cancellationToken, ValidAuthHeader);
 
         // Assert
         Assert.IsNotNull(result);
@@ -677,7 +729,7 @@ public sealed class AdminStoresControllerTests
     {
         // Arrange
         var mockSender = new Mock<ISender>();
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
         var slug = "test-store";
         var expectedStore = new StoreDto(
             Id: Guid.NewGuid(),
@@ -716,7 +768,7 @@ public sealed class AdminStoresControllerTests
     {
         // Arrange
         var mockSender = new Mock<ISender>();
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
         var slug = "non-existent-store";
         var cancellationToken = CancellationToken.None;
 
@@ -743,7 +795,7 @@ public sealed class AdminStoresControllerTests
     {
         // Arrange
         var mockSender = new Mock<ISender>();
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
         var slug = string.Empty;
         var cancellationToken = CancellationToken.None;
 
@@ -770,7 +822,7 @@ public sealed class AdminStoresControllerTests
     {
         // Arrange
         var mockSender = new Mock<ISender>();
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
         var slug = "   ";
         var cancellationToken = CancellationToken.None;
 
@@ -797,7 +849,7 @@ public sealed class AdminStoresControllerTests
     {
         // Arrange
         var mockSender = new Mock<ISender>();
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
         var slug = "my-store_123";
         var expectedStore = new StoreDto(
             Id: Guid.NewGuid(),
@@ -836,7 +888,7 @@ public sealed class AdminStoresControllerTests
     {
         // Arrange
         var mockSender = new Mock<ISender>();
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
         var slug = new string('a', 1000);
         var cancellationToken = CancellationToken.None;
 
@@ -863,7 +915,7 @@ public sealed class AdminStoresControllerTests
     {
         // Arrange
         var mockSender = new Mock<ISender>();
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
         var slug = "test-store";
         var cancellationTokenSource = new CancellationTokenSource();
         var cancellationToken = cancellationTokenSource.Token;
@@ -900,7 +952,7 @@ public sealed class AdminStoresControllerTests
     {
         // Arrange
         var mockSender = new Mock<ISender>();
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
         var slug = "%20%21%40";
         var cancellationToken = CancellationToken.None;
 
@@ -927,7 +979,7 @@ public sealed class AdminStoresControllerTests
         var mockSender = new Mock<ISender>();
 
         // Act
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
 
         // Assert
         Assert.IsNotNull(controller);
@@ -945,7 +997,7 @@ public sealed class AdminStoresControllerTests
         ISender? nullSender = null;
 
         // Act
-        var controller = new AdminStoresController(nullSender!);
+        var controller = new AdminStoresController(nullSender!, CreateConfiguration());
 
         // Assert
         Assert.IsNotNull(controller);
@@ -975,7 +1027,7 @@ public sealed class AdminStoresControllerTests
         mockSender
             .Setup(s => s.Send(It.Is<GetStoreByIdQuery>(q => q.StoreId == storeId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedStore);
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
         var cancellationToken = CancellationToken.None;
 
         // Act
@@ -1004,7 +1056,7 @@ public sealed class AdminStoresControllerTests
         mockSender
             .Setup(s => s.Send(It.Is<GetStoreByIdQuery>(q => q.StoreId == storeId), It.IsAny<CancellationToken>()))
             .ReturnsAsync((StoreDto?)null);
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
         var cancellationToken = CancellationToken.None;
 
         // Act
@@ -1032,7 +1084,7 @@ public sealed class AdminStoresControllerTests
         mockSender
             .Setup(s => s.Send(It.Is<GetStoreByIdQuery>(q => q.StoreId == storeId), It.IsAny<CancellationToken>()))
             .ReturnsAsync((StoreDto?)null);
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
         var cancellationToken = CancellationToken.None;
 
         // Act
@@ -1071,7 +1123,7 @@ public sealed class AdminStoresControllerTests
         mockSender
             .Setup(s => s.Send(It.IsAny<GetStoreByIdQuery>(), cancellationToken))
             .ReturnsAsync(expectedStore);
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
 
         // Act
         var result = await controller.GetStoreById(storeId, cancellationToken);
@@ -1105,7 +1157,7 @@ public sealed class AdminStoresControllerTests
         mockSender
             .Setup(s => s.Send(It.Is<GetStoreByIdQuery>(q => q.StoreId == storeId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedStore);
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
         var cancellationToken = CancellationToken.None;
 
         // Act
@@ -1150,7 +1202,7 @@ public sealed class AdminStoresControllerTests
         mockSender
             .Setup(s => s.Send(It.Is<GetStoreByIdQuery>(q => q.StoreId == storeId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedStore);
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
         var cancellationToken = CancellationToken.None;
 
         // Act
@@ -1184,7 +1236,7 @@ public sealed class AdminStoresControllerTests
             .Setup(s => s.Send(It.Is<SuspendStoreCommand>(cmd => cmd.TenantId == expectedGuid), cancellationToken))
             .Returns(Task.CompletedTask);
 
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
 
         // Act
         var result = await controller.SuspendStore(tenantId, cancellationToken);
@@ -1213,7 +1265,7 @@ public sealed class AdminStoresControllerTests
             .Setup(s => s.Send(It.Is<SuspendStoreCommand>(cmd => cmd.TenantId == expectedGuid), cancellationToken))
             .Returns(Task.CompletedTask);
 
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
 
         // Act
         var result = await controller.SuspendStore(tenantId, cancellationToken);
@@ -1244,7 +1296,7 @@ public sealed class AdminStoresControllerTests
             .Setup(s => s.Send(It.Is<SuspendStoreCommand>(cmd => cmd.TenantId == expectedGuid), cancellationToken))
             .Returns(Task.CompletedTask);
 
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
 
         // Act
         var result = await controller.SuspendStore(tenantId, cancellationToken);
@@ -1273,7 +1325,7 @@ public sealed class AdminStoresControllerTests
             .Setup(s => s.Send(It.Is<SuspendStoreCommand>(cmd => cmd.TenantId == expectedGuid), cancellationToken))
             .Returns(Task.CompletedTask);
 
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
 
         // Act
         var result = await controller.SuspendStore(tenantId, cancellationToken);
@@ -1302,7 +1354,7 @@ public sealed class AdminStoresControllerTests
             .Setup(s => s.Send(It.Is<SuspendStoreCommand>(cmd => cmd.TenantId == expectedGuid), cancellationToken))
             .Returns(Task.CompletedTask);
 
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
 
         // Act
         var result = await controller.SuspendStore(tenantId, cancellationToken);
@@ -1332,7 +1384,7 @@ public sealed class AdminStoresControllerTests
             .Setup(s => s.Send(It.Is<SuspendStoreCommand>(cmd => cmd.TenantId == expectedGuid), cancellationToken))
             .Returns(Task.CompletedTask);
 
-        var controller = new AdminStoresController(mockSender.Object);
+        var controller = CreateController(mockSender.Object);
 
         // Act
         var result = await controller.SuspendStore(tenantId, cancellationToken);
