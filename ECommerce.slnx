@@ -6,6 +6,7 @@
     <Project Path="src/BuildingBlocks/BuildingBlocks.Infrastructure/BuildingBlocks.Infrastructure.csproj" Id="e63b8de0-9c1d-499b-aa56-97d90592da7f" />
   </Folder>
   <Folder Name="/src/Host/">
+    <Project Path="Host/ECommerce.API.UnitTests/ECommerce.API.UnitTests.csproj" Id="cb31cd83-3abc-4251-b6d1-3f5ce50357b6" />
     <Project Path="src/Host/ECommerce.API/ECommerce.API.csproj" Id="8a3dc5dc-e78d-44a2-89bf-a9e8a3d3dac2" />
   </Folder>
   <Folder Name="/src/Modules/" />
@@ -19,4 +20,10 @@
     <Project Path="src/Modules/Store/Store.Domain/Store.Domain.csproj" Id="d05d0387-07e0-4cd3-bc98-7a6286e8ef80" />
     <Project Path="src/Modules/Store/Store.Infrastructure/Store.Infrastructure.csproj" Id="b852b9e9-8612-4f7e-ae87-a78a6d017165" />
   </Folder>
+  <Folder Name="/src/Modules/Store/tests/">
+    <Project Path="src/Modules/Store/tests/Store.Application.UnitTests/Store.Application.UnitTests.csproj" Id="62235dac-4485-4c36-84cc-591e87e1abc0" />
+    <Project Path="src/Modules/Store/tests/Store.Domain.UnitTests/Store.Domain.UnitTests.csproj" Id="a777c7d7-2eb0-4119-b5b9-339ee05760fb" />
+    <Project Path="src/Modules/Store/tests/Store.Infrastructure.IntegrationTests/Store.Infrastructure.IntegrationTests.csproj" />
+  </Folder>
 </Solution>
+

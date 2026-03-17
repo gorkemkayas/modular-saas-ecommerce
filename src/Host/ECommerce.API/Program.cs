@@ -1,12 +1,12 @@
-using BuildingBlocks.Application.Abstractions.Authentication;
-using BuildingBlocks.Application.Abstractions.Tenancy;
 using BuildingBlocks.Application.Behaviors;
 using BuildingBlocks.Infrastructure.Extensions.Authentication;
 using BuildingBlocks.Infrastructure.Extensions.Middleware;
 using ECommerce.API.ExceptionHandlers;
 using ECommerce.API.Extensions;
+using Scalar.AspNetCore;
 using Serilog;
 using System.Text.Json.Serialization;
+using Microsoft.OpenApi;
 
 Log.Logger = SerilogExtensions.CreateBootstrapLogger();
 
@@ -35,8 +35,9 @@ try
         {
             options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
         });
-    
+
     builder.Services.AddOpenApi();
+    
     builder.Services.AddExceptionHandler<StoreExceptionHandler>();
     builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
     builder.Services.AddProblemDetails();
@@ -52,13 +53,14 @@ try
     if (app.Environment.IsDevelopment())
     {
         app.MapOpenApi();
+        app.MapScalarApiReference();
     }
 
     app.UseHttpsRedirection();
     app.UseRequestContext();
     app.UseAuthorization();
     app.MapControllers();
-    
+
     app.Run();
 }
 catch (Exception ex)

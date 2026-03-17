@@ -12,6 +12,7 @@ using Store.Application.Stores.Commands.UpdateStoreProfile;
 using Store.Application.Stores.Queries.CheckStoreSlugAvailability;
 using Store.Application.Stores.Queries.GetStoreByTenantId;
 using Store.Application.Stores.Queries.SuggestAvailableSlug;
+using Store.Application.DTOs;
 
 namespace ECommerce.API.Controllers
 {
@@ -29,6 +30,8 @@ namespace ECommerce.API.Controllers
         }
 
         [HttpGet("me")]
+        [ProducesResponseType(typeof(StoreDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetStore(CancellationToken cancellationToken)
         {
             var res = await _sender.Send(new GetStoreByTenantIdQuery(_tenantContext.TenantIdAsGuid!.Value), cancellationToken);
@@ -37,6 +40,9 @@ namespace ECommerce.API.Controllers
         }
 
         [HttpPut("profile")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> UpdateStoreProfile([FromBody] UpdateStoreProfileRequest updateStoreProfileRequest, CancellationToken cancellationToken)
         {
             var command = new UpdateStoreProfileCommand(
@@ -50,6 +56,10 @@ namespace ECommerce.API.Controllers
         }
 
         [HttpPut("slug")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
         public async Task<IActionResult> ChangeStoreSlug([FromQuery] string newSlug, CancellationToken cancellationToken)
         {
             await _sender.Send(new ChangeStoreSlugCommand(_tenantContext.TenantIdAsGuid!.Value, newSlug), cancellationToken);
@@ -57,6 +67,9 @@ namespace ECommerce.API.Controllers
         }
 
         [HttpPost("publish")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> PublishStore(CancellationToken cancellationToken)
         {
             await _sender.Send(new PublishStoreCommand(_tenantContext.TenantIdAsGuid!.Value), cancellationToken);
@@ -64,6 +77,9 @@ namespace ECommerce.API.Controllers
         }
 
         [HttpPost("unpublish")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> UnpublishStore(CancellationToken cancellationToken)
         {
             await _sender.Send(new UnpublishStoreCommand(_tenantContext.TenantIdAsGuid!.Value), cancellationToken);
@@ -71,6 +87,7 @@ namespace ECommerce.API.Controllers
         }
 
         [HttpGet("slug-availability")]
+        [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
         public async Task<IActionResult> CheckStoreSlugAvailability([FromQuery] string slug, CancellationToken cancellationToken)
         {
             var isAvailable = await _sender.Send(new CheckStoreSlugAvailabilityQuery(slug), cancellationToken);
@@ -78,6 +95,7 @@ namespace ECommerce.API.Controllers
         }
 
         [HttpGet("suggest-slug")]
+        [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
         public async Task<IActionResult> SuggestAvailableSlug([FromQuery] string slug, CancellationToken cancellationToken)
         {
             var suggestedSlug = await _sender.Send(new SuggestAvailableSlugQuery(slug), cancellationToken);
