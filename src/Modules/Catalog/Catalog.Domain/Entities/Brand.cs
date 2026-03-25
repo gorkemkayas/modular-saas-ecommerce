@@ -1,7 +1,7 @@
 ﻿using Catalog.Domain.Common;
 using Catalog.Domain.ValueObjects;
 
-namespace Catalog.Domain.Entitites
+namespace Catalog.Domain.Entities
 {
     public sealed class Brand : IAggregateRoot
     {

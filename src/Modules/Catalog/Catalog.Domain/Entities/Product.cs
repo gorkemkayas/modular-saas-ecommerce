@@ -1,10 +1,11 @@
-﻿using Catalog.Domain.Enums;
+﻿using Catalog.Domain.Common;
+using Catalog.Domain.Enums;
 using Catalog.Domain.Exceptions;
 using Catalog.Domain.ValueObjects;
 
-namespace Catalog.Domain.Entitites
+namespace Catalog.Domain.Entities
 {
-    public sealed class Product
+    public sealed class Product : IAggregateRoot
     {
         private readonly List<ProductVariant> _variants = new();
         private readonly List<ProductCategory> _categories = new();
@@ -18,6 +19,11 @@ namespace Catalog.Domain.Entitites
         public string? Description { get; private set; }
         public Slug Slug { get; private set; } = default!;
         public Guid? BrandId { get; private set; }
+
+        // Simple product için kullanılır.
+        // Variant product ise null olmalıdır.
+        public Sku? Sku { get; private set; }
+
         public ProductType ProductType { get; private set; }
         public ProductStatus ProductStatus { get; private set; }
         public bool IsPublished { get; private set; }
@@ -42,13 +48,20 @@ namespace Catalog.Domain.Entitites
             string? description,
             Slug slug,
             Guid? brandId,
-            ProductType productType)
+            ProductType productType,
+            Sku? sku)
         {
             if (storeId == Guid.Empty)
                 throw new ArgumentException("StoreId cannot be empty.", nameof(storeId));
 
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("Product name cannot be empty.", nameof(name));
+
+            if (productType == ProductType.Simple && sku is null)
+                throw new CatalogDomainException("Simple product must have a SKU.");
+
+            if (productType == ProductType.Variant && sku is not null)
+                throw new CatalogDomainException("Variant product cannot have a product-level SKU.");
 
             Id = id;
             StoreId = storeId;
@@ -58,6 +71,7 @@ namespace Catalog.Domain.Entitites
             Slug = slug;
             BrandId = brandId;
             ProductType = productType;
+            Sku = sku;
             ProductStatus = ProductStatus.Draft;
             IsPublished = false;
             PublishedAtUtc = null;
@@ -70,6 +84,7 @@ namespace Catalog.Domain.Entitites
             string name,
             Slug slug,
             ProductType productType,
+            Sku? sku = null,
             string? shortDescription = null,
             string? description = null,
             Guid? brandId = null)
@@ -82,7 +97,49 @@ namespace Catalog.Domain.Entitites
                 description,
                 slug,
                 brandId,
-                productType);
+                productType,
+                sku);
+        }
+
+        public static Product CreateSimple(
+            Guid storeId,
+            string name,
+            Slug slug,
+            Sku sku,
+            string? shortDescription = null,
+            string? description = null,
+            Guid? brandId = null)
+        {
+            return new Product(
+                Guid.NewGuid(),
+                storeId,
+                name,
+                shortDescription,
+                description,
+                slug,
+                brandId,
+                ProductType.Simple,
+                sku);
+        }
+
+        public static Product CreateVariant(
+            Guid storeId,
+            string name,
+            Slug slug,
+            string? shortDescription = null,
+            string? description = null,
+            Guid? brandId = null)
+        {
+            return new Product(
+                Guid.NewGuid(),
+                storeId,
+                name,
+                shortDescription,
+                description,
+                slug,
+                brandId,
+                ProductType.Variant,
+                sku: null);
         }
 
         public void UpdateDetails(string name, string? shortDescription, string? description)
@@ -108,12 +165,55 @@ namespace Catalog.Domain.Entitites
             UpdatedAtUtc = DateTime.UtcNow;
         }
 
-        public void ChangeType(ProductType productType)
+        public void SetSku(Sku sku)
+        {
+            if (ProductType != ProductType.Simple)
+                throw new CatalogDomainException("Only simple products can have a product-level SKU.");
+
+            Sku = sku;
+            UpdatedAtUtc = DateTime.UtcNow;
+        }
+
+        public void ClearSku()
+        {
+            if (ProductType == ProductType.Simple)
+                throw new CatalogDomainException("Simple product must have a SKU.");
+
+            Sku = null;
+            UpdatedAtUtc = DateTime.UtcNow;
+        }
+
+        public void ConvertToVariant()
         {
             if (IsPublished)
                 throw new CatalogDomainException("Published product type cannot be changed directly.");
 
-            ProductType = productType;
+            if (ProductType == ProductType.Variant)
+                return;
+
+            // simple -> variant
+            Sku = null;
+            ProductType = ProductType.Variant;
+            UpdatedAtUtc = DateTime.UtcNow;
+        }
+
+        public void ConvertToSimple(Sku sku)
+        {
+            if (IsPublished)
+                throw new CatalogDomainException("Published product type cannot be changed directly.");
+
+            if (ProductType == ProductType.Simple)
+            {
+                Sku = sku;
+                UpdatedAtUtc = DateTime.UtcNow;
+                return;
+            }
+
+            // variant -> simple
+            RemoveAllVariantsAndTheirMedia();
+
+            Sku = sku;
+            ProductType = ProductType.Simple;
             UpdatedAtUtc = DateTime.UtcNow;
         }
 
@@ -236,6 +336,7 @@ namespace Catalog.Domain.Entitites
             if (variant is null)
                 return;
 
+            _mediaItems.RemoveAll(x => x.ProductVariantId == variantId);
             _variants.Remove(variant);
             UpdatedAtUtc = DateTime.UtcNow;
         }
@@ -257,8 +358,17 @@ namespace Catalog.Domain.Entitites
             UpdatedAtUtc = DateTime.UtcNow;
         }
 
-        public void AddMedia(MediaType mediaType, string url, string? altText, bool isMain, int sortOrder, Guid? productVariantId = null)
+        public void AddMedia(
+            MediaType mediaType,
+            string url,
+            string? altText,
+            bool isMain,
+            int sortOrder,
+            Guid? productVariantId = null)
         {
+            if (productVariantId.HasValue && !_variants.Any(x => x.Id == productVariantId.Value))
+                throw new CatalogDomainException("Media can only be linked to a variant that belongs to this product.");
+
             if (isMain)
             {
                 foreach (var media in _mediaItems.Where(x => x.ProductVariantId == productVariantId))
@@ -289,11 +399,23 @@ namespace Catalog.Domain.Entitites
             if (Slug is null)
                 throw new InvalidProductPublishStateException("Product slug is required.");
 
-            if (ProductType == ProductType.Variant && !_variants.Any())
-                throw new InvalidProductPublishStateException("Variant product must have at least one variant.");
-
             if (!_categories.Any())
                 throw new InvalidProductPublishStateException("Product must have at least one category.");
+
+            if (ProductType == ProductType.Simple)
+            {
+                if (Sku is null)
+                    throw new InvalidProductPublishStateException("Simple product must have a SKU.");
+            }
+
+            if (ProductType == ProductType.Variant)
+            {
+                if (_variants.Count == 0)
+                    throw new InvalidProductPublishStateException("Variant product must have at least one variant.");
+
+                if (_variants.Any(x => x.Sku is null))
+                    throw new InvalidProductPublishStateException("All variants must have a SKU.");
+            }
 
             ProductStatus = ProductStatus.Active;
             IsPublished = true;
@@ -319,6 +441,16 @@ namespace Catalog.Domain.Entitites
                     .Where(x => x.attributeDefinitionId != Guid.Empty)
                     .Select(x => $"{x.attributeDefinitionId:N}={x.value.Trim().ToLowerInvariant()}")
                     .OrderBy(x => x));
+        }
+        private void RemoveAllVariantsAndTheirMedia()
+        {
+            if (_variants.Count == 0)
+                return;
+
+            var variantIds = _variants.Select(x => x.Id).ToHashSet();
+
+            _mediaItems.RemoveAll(x => x.ProductVariantId.HasValue && variantIds.Contains(x.ProductVariantId.Value));
+            _variants.Clear();
         }
     }
 }
