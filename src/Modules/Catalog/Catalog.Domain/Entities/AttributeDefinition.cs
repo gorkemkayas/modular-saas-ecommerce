@@ -2,7 +2,7 @@
 using Catalog.Domain.Enums;
 using Catalog.Domain.ValueObjects;
 
-namespace Catalog.Domain.Entitites
+namespace Catalog.Domain.Entities
 {
     public sealed class AttributeDefinition : IAggregateRoot
     {

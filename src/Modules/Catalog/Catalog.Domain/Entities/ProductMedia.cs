@@ -1,6 +1,6 @@
 ﻿using Catalog.Domain.Enums;
 
-namespace Catalog.Domain.Entitites
+namespace Catalog.Domain.Entities
 {
     public sealed class ProductMedia
     {

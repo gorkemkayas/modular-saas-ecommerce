@@ -1,6 +1,6 @@
 ﻿using Catalog.Domain.Exceptions;
 
-namespace Catalog.Domain.Entitites
+namespace Catalog.Domain.Entities
 {
     public sealed class ProductAttributeValue
     {

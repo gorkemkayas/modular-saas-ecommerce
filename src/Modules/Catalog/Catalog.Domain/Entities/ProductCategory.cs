@@ -1,8 +1,8 @@
 ﻿using Catalog.Domain.Common;
 
-namespace Catalog.Domain.Entitites
+namespace Catalog.Domain.Entities
 {
-    public sealed class ProductCategory : IAggregateRoot
+    public sealed class ProductCategory
     {
         public Guid ProductId { get; private set; }
         public Guid CategoryId { get; private set; }
