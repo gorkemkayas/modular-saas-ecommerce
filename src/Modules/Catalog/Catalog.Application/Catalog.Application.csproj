@@ -6,6 +6,21 @@
     <ProjectReference Include="..\..\..\BuildingBlocks\BuildingBlocks.Domain\BuildingBlocks.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Attributes\Commands\" />
+    <Folder Include="Attributes\DTOs\" />
+    <Folder Include="Attributes\Queries\" />
+    <Folder Include="Brands\Commands\" />
+    <Folder Include="Brands\DTOs\" />
+    <Folder Include="Brands\Queries\" />
+    <Folder Include="Categories\Commands\" />
+    <Folder Include="Categories\DTOs\" />
+    <Folder Include="Categories\Queries\" />
+    <Folder Include="Products\Commands\" />
+    <Folder Include="Products\DTOs\" />
+    <Folder Include="Products\Queries\" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
