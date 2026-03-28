@@ -17,6 +17,7 @@
   </Folder>
   <Folder Name="/src/Modules/Catalog/tests/">
     <Project Path="src/Modules/Catalog/tests/Catalog.Application.UnitTests/Catalog.Application.UnitTests.csproj" Id="8fe82fe4-73ca-4301-a5d8-25eddb7ea960" />
+    <Project Path="src/Modules/Catalog/tests/Catalog.Infrastructure.IntegrationTests/Catalog.Infrastructure.IntegrationTests.csproj" Id="21b89e54-b53a-44e0-bf70-a61644f6d6d9" />
   </Folder>
   <Folder Name="/src/Modules/Store/">
     <Project Path="src/Modules/Store/Store.Application/Store.Application.csproj" Id="a108953a-6d73-404e-a2c1-746725f34faf" />

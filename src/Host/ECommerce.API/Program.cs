@@ -22,6 +22,7 @@ try
     // Add services to the container.
     builder.Services.AddJwtAuthentication(builder.Configuration);
     builder.Services.AddRequestContexts();
+    builder.Services.AddCatalogModule(builder.Configuration);
     builder.Services.AddStoreModule(builder.Configuration);
     builder.Services.AddMediatR(cfg =>
     {
@@ -39,7 +40,6 @@ try
 
     builder.Services.AddOpenApi();
     
-    builder.Services.AddExceptionHandler<CatalogExceptionHandler>();
     builder.Services.AddExceptionHandler<StoreExceptionHandler>();
     builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
     builder.Services.AddProblemDetails();
