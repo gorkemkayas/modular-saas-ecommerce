@@ -25,6 +25,7 @@ try
     builder.Services.AddStoreModule(builder.Configuration);
     builder.Services.AddMediatR(cfg =>
     {
+        cfg.RegisterServicesFromAssembly(typeof(Catalog.Application.AssemblyReference).Assembly);
         cfg.RegisterServicesFromAssembly(typeof(Store.Application.AssemblyReference).Assembly);
         cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
     });
@@ -38,6 +39,7 @@ try
 
     builder.Services.AddOpenApi();
     
+    builder.Services.AddExceptionHandler<CatalogExceptionHandler>();
     builder.Services.AddExceptionHandler<StoreExceptionHandler>();
     builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
     builder.Services.AddProblemDetails();
