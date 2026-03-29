@@ -14,7 +14,7 @@ using Store.Application.Stores.Queries.GetStoreByTenantId;
 using Store.Application.DTOs;
 using Store.Application.Stores.Queries.SuggestAvailableSlug;
 
-namespace ECommerce.API.Controllers.Admin;
+namespace ECommerce.API.Controllers.Store.Admin;
 
 [Route("api/admin/stores")]
 [ApiController]

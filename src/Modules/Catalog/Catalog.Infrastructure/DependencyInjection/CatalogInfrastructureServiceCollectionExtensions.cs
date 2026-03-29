@@ -40,6 +40,7 @@ namespace Catalog.Infrastructure.DependencyInjection
             services.AddScoped<ICategoryReadService, CategoryReadService>();
             services.AddScoped<IBrandReadService, BrandReadService>();
             services.AddScoped<IAttributeDefinitionReadService, AttributeDefinitionReadService>();
+            services.AddScoped<IStorefrontCatalogReadService, StorefrontCatalogReadService>();
 
             services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<CatalogDbContext>());
 
