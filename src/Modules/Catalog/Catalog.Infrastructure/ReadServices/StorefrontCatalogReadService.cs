@@ -3,6 +3,7 @@ using Catalog.Application.Common.Models;
 using Catalog.Application.Storefront.DTOs;
 using Catalog.Domain.Entities;
 using Catalog.Domain.Enums;
+using Catalog.Domain.ValueObjects;
 using Catalog.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,15 +24,6 @@ namespace Catalog.Infrastructure.ReadServices
         {
             var query = BuildVisibleProductsQuery(criteria.StoreId);
 
-            var normalizedSearchTerm = Normalize(criteria.SearchTerm);
-
-            if (normalizedSearchTerm is not null)
-            {
-                query = query.Where(x =>
-                    x.Name.ToLower().Contains(normalizedSearchTerm) ||
-                    EF.Property<string>(x, nameof(Product.Slug)).ToLower().Contains(normalizedSearchTerm));
-            }
-
             if (criteria.CategoryId.HasValue)
             {
                 query = query.Where(x => x.Categories.Any(category => category.CategoryId == criteria.CategoryId.Value));
@@ -42,17 +34,15 @@ namespace Catalog.Infrastructure.ReadServices
                 query = query.Where(x => x.BrandId == criteria.BrandId.Value);
             }
 
-            var totalCount = await query.CountAsync(cancellationToken);
+            var normalizedSearchTerm = Normalize(criteria.SearchTerm);
 
-            var items = await query
+            var orderedQuery = query
                 .OrderByDescending(x => x.PublishedAtUtc)
                 .ThenBy(x => x.Name)
-                .Skip((criteria.PageNumber - 1) * criteria.PageSize)
-                .Take(criteria.PageSize)
-                .Select(x => new StorefrontProductSummaryDto(
+                .Select(x => new StorefrontProductSummaryRow(
                     x.Id,
                     x.Name,
-                    EF.Property<string>(x, nameof(Product.Slug)),
+                    x.Slug,
                     x.ShortDescription,
                     x.BrandId,
                     x.BrandId.HasValue
@@ -68,8 +58,38 @@ namespace Catalog.Infrastructure.ReadServices
                         .OrderByDescending(media => media.IsMain)
                         .ThenBy(media => media.SortOrder)
                         .Select(media => media.Url)
-                        .FirstOrDefault()))
-                .ToArrayAsync(cancellationToken);
+                        .FirstOrDefault()));
+
+            IReadOnlyCollection<StorefrontProductSummaryDto> items;
+            int totalCount;
+
+            if (normalizedSearchTerm is null)
+            {
+                totalCount = await query.CountAsync(cancellationToken);
+
+                var rows = await orderedQuery
+                    .Skip((criteria.PageNumber - 1) * criteria.PageSize)
+                    .Take(criteria.PageSize)
+                    .ToArrayAsync(cancellationToken);
+
+                items = rows.Select(MapSummary).ToArray();
+            }
+            else
+            {
+                var rows = await orderedQuery.ToArrayAsync(cancellationToken);
+
+                var filteredRows = rows
+                    .Where(x => MatchesSearch(x.Name, x.Slug.Value, normalizedSearchTerm))
+                    .ToArray();
+
+                totalCount = filteredRows.Length;
+
+                items = filteredRows
+                    .Skip((criteria.PageNumber - 1) * criteria.PageSize)
+                    .Take(criteria.PageSize)
+                    .Select(MapSummary)
+                    .ToArray();
+            }
 
             return new PagedResult<StorefrontProductSummaryDto>(
                 items,
@@ -301,39 +321,51 @@ namespace Catalog.Infrastructure.ReadServices
                     brandCount.ProductCount
                 };
 
+            var rows = await query
+                .OrderByDescending(x => x.ProductCount)
+                .ThenBy(x => x.Name)
+                .ToArrayAsync(cancellationToken);
+
             var normalizedSearch = Normalize(searchTerm);
 
             if (normalizedSearch is not null)
             {
-                query = query.Where(x =>
-                    x.Name.ToLower().Contains(normalizedSearch) ||
-                    x.Slug.ToLower().Contains(normalizedSearch));
+                rows = rows
+                    .Where(x => MatchesSearch(x.Name, x.Slug, normalizedSearch))
+                    .ToArray();
             }
 
-            return await query
-                .OrderByDescending(x => x.ProductCount)
-                .ThenBy(x => x.Name)
+            return rows
                 .Select(x => new StorefrontBrandDto(
                     x.Id,
                     x.Name,
                     x.Slug,
                     x.Description,
                     x.ProductCount))
-                .ToArrayAsync(cancellationToken);
+                .ToArray();
         }
 
         public async Task<StorefrontCatalogFacetsDto> GetFacetsAsync(
             StorefrontCatalogFacetCriteria criteria,
             CancellationToken cancellationToken = default)
         {
-            var filteredProductsQuery = ApplyStorefrontFilters(
-                BuildVisibleProductsQuery(criteria.StoreId),
+            var filteredProductIds = await GetFilteredProductIdsAsync(
+                criteria.StoreId,
                 criteria.SearchTerm,
                 criteria.CategoryId,
-                criteria.BrandId);
+                criteria.BrandId,
+                cancellationToken);
+
+            if (filteredProductIds.Length == 0)
+            {
+                return new StorefrontCatalogFacetsDto(
+                    Array.Empty<StorefrontBrandFacetDto>(),
+                    Array.Empty<StorefrontAttributeFacetDto>());
+            }
 
             var brandFacetQuery =
-                from product in filteredProductsQuery
+                from product in _context.Products.AsNoTracking()
+                where filteredProductIds.Contains(product.Id)
                 where product.BrandId.HasValue
                 group product by product.BrandId!.Value into productGroup
                 join brand in _context.Brands.AsNoTracking().Where(x => x.StoreId == criteria.StoreId && x.IsActive)
@@ -345,11 +377,9 @@ namespace Catalog.Infrastructure.ReadServices
                     brand.Slug.Value,
                     productGroup.Count());
 
-            var visibleProductIdsQuery = filteredProductsQuery.Select(x => x.Id);
-
             var productAttributeRows =
                 from value in _context.ProductAttributeValues.AsNoTracking()
-                where value.ProductId.HasValue && visibleProductIdsQuery.Contains(value.ProductId.Value)
+                where value.ProductId.HasValue && filteredProductIds.Contains(value.ProductId.Value)
                 join definition in _context.AttributeDefinitions.AsNoTracking()
                     on value.AttributeDefinitionId equals definition.Id
                 where definition.StoreId == criteria.StoreId && definition.IsActive && definition.IsFilterable
@@ -362,7 +392,7 @@ namespace Catalog.Infrastructure.ReadServices
 
             var variantAttributeRows =
                 from variant in _context.ProductVariants.AsNoTracking()
-                where variant.IsActive && visibleProductIdsQuery.Contains(variant.ProductId)
+                where variant.IsActive && filteredProductIds.Contains(variant.ProductId)
                 join value in _context.ProductAttributeValues.AsNoTracking()
                     on variant.Id equals value.ProductVariantId
                 join definition in _context.AttributeDefinitions.AsNoTracking()
@@ -430,21 +460,12 @@ namespace Catalog.Infrastructure.ReadServices
                 .AsSplitQuery();
         }
 
-        private static IQueryable<Product> ApplyStorefrontFilters(
+        private IQueryable<Product> ApplyStorefrontFilters(
             IQueryable<Product> query,
             string? searchTerm,
             Guid? categoryId,
             Guid? brandId)
         {
-            var normalizedSearch = Normalize(searchTerm);
-
-            if (normalizedSearch is not null)
-            {
-                query = query.Where(x =>
-                    x.Name.ToLower().Contains(normalizedSearch) ||
-                    EF.Property<string>(x, nameof(Product.Slug)).ToLower().Contains(normalizedSearch));
-            }
-
             if (categoryId.HasValue)
             {
                 query = query.Where(x => x.Categories.Any(category => category.CategoryId == categoryId.Value));
@@ -456,6 +477,38 @@ namespace Catalog.Infrastructure.ReadServices
             }
 
             return query;
+        }
+
+        private async Task<Guid[]> GetFilteredProductIdsAsync(
+            Guid storeId,
+            string? searchTerm,
+            Guid? categoryId,
+            Guid? brandId,
+            CancellationToken cancellationToken)
+        {
+            var query = ApplyStorefrontFilters(
+                BuildVisibleProductsQuery(storeId),
+                searchTerm,
+                categoryId,
+                brandId);
+
+            var normalizedSearch = Normalize(searchTerm);
+
+            if (normalizedSearch is null)
+            {
+                return await query
+                    .Select(x => x.Id)
+                    .ToArrayAsync(cancellationToken);
+            }
+
+            var searchableRows = await query
+                .Select(x => new ProductSearchRow(x.Id, x.Name, x.Slug))
+                .ToArrayAsync(cancellationToken);
+
+            return searchableRows
+                .Where(x => MatchesSearch(x.Name, x.Slug.Value, normalizedSearch))
+                .Select(x => x.Id)
+                .ToArray();
         }
 
         private static StorefrontProductMediaDto MapMedia(ProductMedia media)
@@ -501,11 +554,47 @@ namespace Catalog.Infrastructure.ReadServices
             return value.Trim().ToLowerInvariant();
         }
 
+        private static bool MatchesSearch(string name, string slug, string normalizedSearch)
+        {
+            return name.Contains(normalizedSearch, StringComparison.OrdinalIgnoreCase)
+                || slug.Contains(normalizedSearch, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static StorefrontProductSummaryDto MapSummary(StorefrontProductSummaryRow row)
+        {
+            return new StorefrontProductSummaryDto(
+                row.Id,
+                row.Name,
+                row.Slug.Value,
+                row.ShortDescription,
+                row.BrandId,
+                row.BrandName,
+                row.ProductType,
+                row.PublishedAtUtc,
+                row.MainImageUrl);
+        }
+
         private sealed record StorefrontAttributeDefinitionLookup(
             Guid Id,
             string Name,
             string Code,
             bool IsVariantDefining);
+
+        private sealed record ProductSearchRow(
+            Guid Id,
+            string Name,
+            Slug Slug);
+
+        private sealed record StorefrontProductSummaryRow(
+            Guid Id,
+            string Name,
+            Slug Slug,
+            string? ShortDescription,
+            Guid? BrandId,
+            string? BrandName,
+            ProductType ProductType,
+            DateTime? PublishedAtUtc,
+            string? MainImageUrl);
 
         private sealed record StorefrontAttributeFacetRow(
             Guid ProductId,

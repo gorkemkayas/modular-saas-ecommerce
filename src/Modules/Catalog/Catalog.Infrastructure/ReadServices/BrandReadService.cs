@@ -1,6 +1,7 @@
 using Catalog.Application.Abstractions.Queries;
 using Catalog.Application.Brands.DTOs;
 using Catalog.Domain.Entities;
+using Catalog.Domain.ValueObjects;
 using Catalog.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -51,23 +52,68 @@ namespace Catalog.Infrastructure.ReadServices
             {
                 var normalizedSearch = searchTerm.Trim().ToLowerInvariant();
 
-                query = query.Where(x =>
-                    x.Name.ToLower().Contains(normalizedSearch) ||
-                    EF.Property<string>(x, nameof(Brand.Slug)).ToLower().Contains(normalizedSearch));
+                var rows = await query
+                    .OrderBy(x => x.Name)
+                    .Select(x => new BrandRow(
+                        x.Id,
+                        x.StoreId,
+                        x.Name,
+                        x.Slug,
+                        x.Description,
+                        x.IsActive,
+                        x.CreatedAtUtc,
+                        x.UpdatedAtUtc))
+                    .ToArrayAsync(cancellationToken);
+
+                return rows
+                    .Where(x => MatchesSearch(x.Name, x.Slug.Value, normalizedSearch))
+                    .Select(MapBrand)
+                    .ToArray();
             }
 
-            return await query
+            var unfilteredRows = await query
                 .OrderBy(x => x.Name)
-                .Select(x => new BrandDto(
+                .Select(x => new BrandRow(
                     x.Id,
                     x.StoreId,
                     x.Name,
-                    EF.Property<string>(x, nameof(Brand.Slug)),
+                    x.Slug,
                     x.Description,
                     x.IsActive,
                     x.CreatedAtUtc,
                     x.UpdatedAtUtc))
                 .ToArrayAsync(cancellationToken);
+
+            return unfilteredRows.Select(MapBrand).ToArray();
         }
+
+        private static bool MatchesSearch(string name, string slug, string normalizedSearch)
+        {
+            return name.Contains(normalizedSearch, StringComparison.OrdinalIgnoreCase)
+                || slug.Contains(normalizedSearch, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static BrandDto MapBrand(BrandRow row)
+        {
+            return new BrandDto(
+                row.Id,
+                row.StoreId,
+                row.Name,
+                row.Slug.Value,
+                row.Description,
+                row.IsActive,
+                row.CreatedAtUtc,
+                row.UpdatedAtUtc);
+        }
+
+        private sealed record BrandRow(
+            Guid Id,
+            Guid StoreId,
+            string Name,
+            Slug Slug,
+            string? Description,
+            bool IsActive,
+            DateTime CreatedAtUtc,
+            DateTime UpdatedAtUtc);
     }
 }
