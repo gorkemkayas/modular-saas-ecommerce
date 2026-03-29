@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Store.Application.Stores.Queries.GetPublishedStorefrontBySlug;
 using Store.Application.DTOs;
 
-namespace ECommerce.API.Controllers
+namespace ECommerce.API.Controllers.Store
 {
     [Route("api/[controller]")]
     [ApiController]
