@@ -15,6 +15,10 @@
     <Project Path="src/Modules/Catalog/Catalog.Domain/Catalog.Domain.csproj" Id="ff6c67f5-bfb2-4c7b-9876-bdbcc5ae068f" />
     <Project Path="src/Modules/Catalog/Catalog.Infrastructure/Catalog.Infrastructure.csproj" Id="2e6a7e0d-5d0a-4bb9-8576-52605d307bf6" />
   </Folder>
+  <Folder Name="/src/Modules/Catalog/tests/">
+    <Project Path="src/Modules/Catalog/tests/Catalog.Application.UnitTests/Catalog.Application.UnitTests.csproj" Id="8fe82fe4-73ca-4301-a5d8-25eddb7ea960" />
+    <Project Path="src/Modules/Catalog/tests/Catalog.Infrastructure.IntegrationTests/Catalog.Infrastructure.IntegrationTests.csproj" Id="21b89e54-b53a-44e0-bf70-a61644f6d6d9" />
+  </Folder>
   <Folder Name="/src/Modules/Store/">
     <Project Path="src/Modules/Store/Store.Application/Store.Application.csproj" Id="a108953a-6d73-404e-a2c1-746725f34faf" />
     <Project Path="src/Modules/Store/Store.Domain/Store.Domain.csproj" Id="d05d0387-07e0-4cd3-bc98-7a6286e8ef80" />

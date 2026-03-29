@@ -22,9 +22,11 @@ try
     // Add services to the container.
     builder.Services.AddJwtAuthentication(builder.Configuration);
     builder.Services.AddRequestContexts();
+    builder.Services.AddCatalogModule(builder.Configuration);
     builder.Services.AddStoreModule(builder.Configuration);
     builder.Services.AddMediatR(cfg =>
     {
+        cfg.RegisterServicesFromAssembly(typeof(Catalog.Application.AssemblyReference).Assembly);
         cfg.RegisterServicesFromAssembly(typeof(Store.Application.AssemblyReference).Assembly);
         cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
     });
