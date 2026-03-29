@@ -2,6 +2,7 @@ using Catalog.Application.Abstractions.Queries;
 using Catalog.Application.Common.Models;
 using Catalog.Application.Products.DTOs;
 using Catalog.Domain.Entities;
+using Catalog.Domain.ValueObjects;
 using Catalog.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -47,13 +48,6 @@ namespace Catalog.Infrastructure.ReadServices
                 ? null
                 : criteria.SearchTerm.Trim().ToLowerInvariant();
 
-            if (normalizedSearchTerm is not null)
-            {
-                query = query.Where(x =>
-                    x.Name.ToLower().Contains(normalizedSearchTerm) ||
-                    EF.Property<string>(x, nameof(Product.Slug)).ToLower().Contains(normalizedSearchTerm));
-            }
-
             if (criteria.Status.HasValue)
                 query = query.Where(x => x.ProductStatus == criteria.Status.Value);
 
@@ -69,25 +63,51 @@ namespace Catalog.Infrastructure.ReadServices
             if (criteria.CategoryId.HasValue)
                 query = query.Where(x => x.Categories.Any(category => category.CategoryId == criteria.CategoryId.Value));
 
-            var totalCount = await query.CountAsync(cancellationToken);
-
-            var items = await query
+            var orderedQuery = query
                 .OrderByDescending(x => x.UpdatedAtUtc)
                 .ThenBy(x => x.Name)
-                .Skip((criteria.PageNumber - 1) * criteria.PageSize)
-                .Take(criteria.PageSize)
-                .Select(x => new ProductSummaryDto(
+                .Select(x => new ProductSummaryRow(
                     x.Id,
                     x.StoreId,
                     x.Name,
-                    EF.Property<string>(x, nameof(Product.Slug)),
+                    x.Slug,
                     x.BrandId,
                     x.ProductType,
                     x.ProductStatus,
                     x.IsPublished,
                     x.CreatedAtUtc,
-                    x.UpdatedAtUtc))
-                .ToArrayAsync(cancellationToken);
+                    x.UpdatedAtUtc));
+
+            IReadOnlyCollection<ProductSummaryDto> items;
+            int totalCount;
+
+            if (normalizedSearchTerm is null)
+            {
+                totalCount = await query.CountAsync(cancellationToken);
+
+                var rows = await orderedQuery
+                    .Skip((criteria.PageNumber - 1) * criteria.PageSize)
+                    .Take(criteria.PageSize)
+                    .ToArrayAsync(cancellationToken);
+
+                items = rows.Select(MapSummary).ToArray();
+            }
+            else
+            {
+                var rows = await orderedQuery.ToArrayAsync(cancellationToken);
+
+                var filteredRows = rows
+                    .Where(x => MatchesSearch(x.Name, x.Slug.Value, normalizedSearchTerm))
+                    .ToArray();
+
+                totalCount = filteredRows.Length;
+
+                items = filteredRows
+                    .Skip((criteria.PageNumber - 1) * criteria.PageSize)
+                    .Take(criteria.PageSize)
+                    .Select(MapSummary)
+                    .ToArray();
+            }
 
             return new PagedResult<ProductSummaryDto>(
                 items,
@@ -171,5 +191,38 @@ namespace Catalog.Infrastructure.ReadServices
                         x.SortOrder))
                     .ToArray());
         }
+
+        private static bool MatchesSearch(string name, string slug, string normalizedSearchTerm)
+        {
+            return name.Contains(normalizedSearchTerm, StringComparison.OrdinalIgnoreCase)
+                || slug.Contains(normalizedSearchTerm, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static ProductSummaryDto MapSummary(ProductSummaryRow row)
+        {
+            return new ProductSummaryDto(
+                row.Id,
+                row.StoreId,
+                row.Name,
+                row.Slug.Value,
+                row.BrandId,
+                row.ProductType,
+                row.ProductStatus,
+                row.IsPublished,
+                row.CreatedAtUtc,
+                row.UpdatedAtUtc);
+        }
+
+        private sealed record ProductSummaryRow(
+            Guid Id,
+            Guid StoreId,
+            string Name,
+            Slug Slug,
+            Guid? BrandId,
+            Catalog.Domain.Enums.ProductType ProductType,
+            Catalog.Domain.Enums.ProductStatus ProductStatus,
+            bool IsPublished,
+            DateTime CreatedAtUtc,
+            DateTime UpdatedAtUtc);
     }
 }
