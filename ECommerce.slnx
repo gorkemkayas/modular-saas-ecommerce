@@ -19,6 +19,15 @@
     <Project Path="src/Modules/Catalog/tests/Catalog.Application.UnitTests/Catalog.Application.UnitTests.csproj" Id="8fe82fe4-73ca-4301-a5d8-25eddb7ea960" />
     <Project Path="src/Modules/Catalog/tests/Catalog.Infrastructure.IntegrationTests/Catalog.Infrastructure.IntegrationTests.csproj" Id="21b89e54-b53a-44e0-bf70-a61644f6d6d9" />
   </Folder>
+  <Folder Name="/src/Modules/Customer/">
+    <Project Path="src/Modules/Customer/Customer.Application/Customer.Application.csproj" Id="32af1196-3fc8-4e5b-b040-8b052cb2d3af" />
+    <Project Path="src/Modules/Customer/Customer.Domain/Customer.Domain.csproj" Id="d6333f5a-1fd5-4168-95ca-a1827e3d5e8f" />
+    <Project Path="src/Modules/Customer/Customer.Infrastructure/Customer.Infrastructure.csproj" Id="548ea6ec-8e88-4c66-a6bb-7bf5958a9ab4" />
+  </Folder>
+  <Folder Name="/src/Modules/Customer/tests/">
+    <Project Path="src/Modules/Customer/tests/Customer.Application.UnitTests/Customer.Application.UnitTests.csproj" Id="ea40142e-0a85-441f-9d1b-c1e8e4056e0a" />
+    <Project Path="src/Modules/Customer/tests/Customer.Domain.UnitTests/Customer.Domain.UnitTests.csproj" Id="4d8ca2d8-9204-4479-86cd-398596f89b38" />
+  </Folder>
   <Folder Name="/src/Modules/Store/">
     <Project Path="src/Modules/Store/Store.Application/Store.Application.csproj" Id="a108953a-6d73-404e-a2c1-746725f34faf" />
     <Project Path="src/Modules/Store/Store.Domain/Store.Domain.csproj" Id="d05d0387-07e0-4cd3-bc98-7a6286e8ef80" />
