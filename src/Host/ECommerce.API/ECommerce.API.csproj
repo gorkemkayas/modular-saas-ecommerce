@@ -33,6 +33,8 @@
     <ProjectReference Include="..\..\BuildingBlocks\BuildingBlocks.Infrastructure\BuildingBlocks.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Modules\Catalog\Catalog.Application\Catalog.Application.csproj" />
     <ProjectReference Include="..\..\Modules\Catalog\Catalog.Infrastructure\Catalog.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Customer\Customer.Application\Customer.Application.csproj" />
+    <ProjectReference Include="..\..\Modules\Customer\Customer.Infrastructure\Customer.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Modules\Store\Store.Application\Store.Application.csproj" />
     <ProjectReference Include="..\..\Modules\Store\Store.Infrastructure\Store.Infrastructure.csproj" />
   </ItemGroup>
