@@ -87,6 +87,7 @@ namespace ECommerce.API.ExceptionHandlers
                 Catalog.Application.Exceptions.DuplicateBrandSlugException => (StatusCodes.Status409Conflict, "Duplicate Brand Slug"),
                 Catalog.Application.Exceptions.DuplicateAttributeCodeException => (StatusCodes.Status409Conflict, "Duplicate Attribute Code"),
 
+                Catalog.Application.Exceptions.ProductPricingRequiredException => (StatusCodes.Status400BadRequest, "Product Pricing Required"),
                 Catalog.Application.Exceptions.ProductNotFoundException => (StatusCodes.Status404NotFound, "Product Not Found"),
                 Catalog.Application.Exceptions.CategoryNotFoundException => (StatusCodes.Status404NotFound, "Category Not Found"),
                 Catalog.Application.Exceptions.BrandNotFoundException => (StatusCodes.Status404NotFound, "Brand Not Found"),
@@ -102,6 +103,10 @@ namespace ECommerce.API.ExceptionHandlers
         {
             switch (exception)
             {
+                case Catalog.Application.Exceptions.ProductPricingRequiredException pricingRequired:
+                    problemDetails.Extensions["productId"] = pricingRequired.ProductId;
+                    break;
+
                 case Catalog.Application.Exceptions.ProductNotFoundException notFound:
                     problemDetails.Extensions["productId"] = notFound.ProductId;
                     break;
