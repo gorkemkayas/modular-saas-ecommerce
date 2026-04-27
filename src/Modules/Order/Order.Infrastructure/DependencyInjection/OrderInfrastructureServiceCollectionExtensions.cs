@@ -6,6 +6,10 @@ using Order.Application.Abstractions;
 using Order.Application.Abstractions.Queries;
 using Order.Application.Integrations;
 using Order.Domain.Repositories;
+using Order.Infrastructure.Integrations.Catalog;
+using Order.Infrastructure.Integrations.Customer;
+using Order.Infrastructure.Integrations.Inventory;
+using Order.Infrastructure.Integrations.Pricing;
 using Order.Infrastructure.Options;
 using Order.Infrastructure.Persistence;
 using Order.Infrastructure.Persistence.Repositories;
@@ -33,6 +37,10 @@ public static class OrderInfrastructureServiceCollectionExtensions
             options.UseNpgsql(dbOptions.ConnectionString);
         });
 
+        services.AddScoped<IOrderCustomerContextService, OrderCustomerContextService>();
+        services.AddScoped<IOrderCatalogProductService, OrderCatalogProductService>();
+        services.AddScoped<IOrderPricingService, OrderPricingService>();
+        services.AddScoped<IOrderInventoryService, NoOpOrderInventoryService>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IOrderReadService, OrderReadService>();
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<OrderDbContext>());

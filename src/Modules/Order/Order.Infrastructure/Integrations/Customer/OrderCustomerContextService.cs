@@ -1,17 +1,15 @@
-using Customer.Application.Customers.DTOs;
-using Customer.Application.Customers.Queries.GetMyProfile;
-using MediatR;
+using Customer.Contracts;
 using Order.Application.Integrations;
 
-namespace ECommerce.API.Integrations.Order;
+namespace Order.Infrastructure.Integrations.Customer;
 
 public sealed class OrderCustomerContextService : IOrderCustomerContextService
 {
-    private readonly ISender _sender;
+    private readonly ICustomerModuleApi _customerModuleApi;
 
-    public OrderCustomerContextService(ISender sender)
+    public OrderCustomerContextService(ICustomerModuleApi customerModuleApi)
     {
-        _sender = sender;
+        _customerModuleApi = customerModuleApi;
     }
 
     public async Task<OrderCustomerIdentity?> GetCustomerIdentityAsync(
@@ -19,8 +17,11 @@ public sealed class OrderCustomerContextService : IOrderCustomerContextService
         Guid externalUserId,
         CancellationToken cancellationToken = default)
     {
-        var customer = await _sender.Send(new GetMyProfileQuery(storeId, externalUserId), cancellationToken);
-        return customer is null ? null : new OrderCustomerIdentity(customer.Id);
+        var customer = await _customerModuleApi.GetCustomerByExternalUserIdAsync(
+            new GetCustomerByExternalUserIdRequest(storeId, externalUserId),
+            cancellationToken);
+
+        return customer is null ? null : new OrderCustomerIdentity(customer.CustomerId);
     }
 
     public async Task<OrderCustomerContext?> GetCustomerContextAsync(
@@ -30,16 +31,19 @@ public sealed class OrderCustomerContextService : IOrderCustomerContextService
         Guid? billingAddressId,
         CancellationToken cancellationToken = default)
     {
-        var customer = await _sender.Send(new GetMyProfileQuery(storeId, externalUserId), cancellationToken);
+        var customer = await _customerModuleApi.GetCustomerByExternalUserIdAsync(
+            new GetCustomerByExternalUserIdRequest(storeId, externalUserId),
+            cancellationToken);
+
         if (customer is null)
             return null;
 
-        var shippingAddress = customer.Addresses.FirstOrDefault(x => x.Id == shippingAddressId);
+        var shippingAddress = customer.Addresses.FirstOrDefault(x => x.AddressId == shippingAddressId);
         if (shippingAddress is null)
             return null;
 
         var billingAddress = billingAddressId.HasValue
-            ? customer.Addresses.FirstOrDefault(x => x.Id == billingAddressId.Value)
+            ? customer.Addresses.FirstOrDefault(x => x.AddressId == billingAddressId.Value)
             : customer.Addresses.FirstOrDefault(x => x.IsDefaultBilling) ?? shippingAddress;
 
         if (billingAddress is null)
@@ -48,16 +52,16 @@ public sealed class OrderCustomerContextService : IOrderCustomerContextService
         var fullName = $"{customer.FirstName} {customer.LastName}".Trim();
 
         return new OrderCustomerContext(
-            customer.Id,
+            customer.CustomerId,
             customer.Email,
             fullName,
             customer.PhoneNumber,
-            customer.Preferences.PreferredCurrency,
+            customer.PreferredCurrency,
             MapAddress(shippingAddress),
             MapAddress(billingAddress));
     }
 
-    private static OrderAddressSnapshotData MapAddress(CustomerAddressDto address)
+    private static OrderAddressSnapshotData MapAddress(CustomerAddressResult address)
     {
         return new OrderAddressSnapshotData(
             address.Title,

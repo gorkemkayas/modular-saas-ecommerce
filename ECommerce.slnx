@@ -12,6 +12,7 @@
   <Folder Name="/src/Modules/" />
   <Folder Name="/src/Modules/Catalog/">
     <Project Path="src/Modules/Catalog/Catalog.Application/Catalog.Application.csproj" Id="43850b28-8b2c-44bc-ac9f-19603e7984b7" />
+    <Project Path="src/Modules/Catalog/Catalog.Contracts/Catalog.Contracts.csproj" Id="4d57cb28-c4fc-47aa-ac7e-08c450af5c85" />
     <Project Path="src/Modules/Catalog/Catalog.Domain/Catalog.Domain.csproj" Id="ff6c67f5-bfb2-4c7b-9876-bdbcc5ae068f" />
     <Project Path="src/Modules/Catalog/Catalog.Infrastructure/Catalog.Infrastructure.csproj" Id="2e6a7e0d-5d0a-4bb9-8576-52605d307bf6" />
   </Folder>
@@ -21,6 +22,7 @@
   </Folder>
   <Folder Name="/src/Modules/Customer/">
     <Project Path="src/Modules/Customer/Customer.Application/Customer.Application.csproj" Id="32af1196-3fc8-4e5b-b040-8b052cb2d3af" />
+    <Project Path="src/Modules/Customer/Customer.Contracts/Customer.Contracts.csproj" Id="11356110-f74d-4600-b9f6-bd1a2cb2a426" />
     <Project Path="src/Modules/Customer/Customer.Domain/Customer.Domain.csproj" Id="d6333f5a-1fd5-4168-95ca-a1827e3d5e8f" />
     <Project Path="src/Modules/Customer/Customer.Infrastructure/Customer.Infrastructure.csproj" Id="548ea6ec-8e88-4c66-a6bb-7bf5958a9ab4" />
   </Folder>
