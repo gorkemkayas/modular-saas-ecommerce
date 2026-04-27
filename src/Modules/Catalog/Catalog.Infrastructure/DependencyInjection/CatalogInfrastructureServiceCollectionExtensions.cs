@@ -1,6 +1,8 @@
 using Catalog.Application.Abstractions;
 using Catalog.Application.Abstractions.Integrations;
 using Catalog.Application.Abstractions.Queries;
+using Catalog.Application.Contracts;
+using Catalog.Contracts;
 using Catalog.Domain.Repositories;
 using Catalog.Infrastructure.Integrations.Pricing;
 using Catalog.Infrastructure.Options;
@@ -44,6 +46,7 @@ namespace Catalog.Infrastructure.DependencyInjection
             services.AddScoped<IAttributeDefinitionReadService, AttributeDefinitionReadService>();
             services.AddScoped<IStorefrontCatalogReadService, StorefrontCatalogReadService>();
 
+            services.AddScoped<ICatalogModuleApi, CatalogModuleApi>();
             services.AddScoped<IProductPricingAvailabilityChecker, ProductPricingAvailabilityChecker>();
             services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<CatalogDbContext>());
 
