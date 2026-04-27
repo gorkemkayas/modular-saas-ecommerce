@@ -34,6 +34,15 @@
     <Project Path="src/Modules/Pricing/Pricing.Domain/Pricing.Domain.csproj" Id="7c7bfdc0-f8c4-4db3-80ea-3bc9a77798ea" />
     <Project Path="src/Modules/Pricing/Pricing.Infrastructure/Pricing.Infrastructure.csproj" Id="7028b7cf-7781-4d34-aa95-5224cc97701d" />
   </Folder>
+  <Folder Name="/src/Modules/Order/">
+    <Project Path="src/Modules/Order/Order.Application/Order.Application.csproj" Id="7ff7a64d-57fc-4c6a-a84a-0dc14d22bc79" />
+    <Project Path="src/Modules/Order/Order.Domain/Order.Domain.csproj" Id="f4774075-173c-4e56-90d7-d12f16f339e3" />
+    <Project Path="src/Modules/Order/Order.Infrastructure/Order.Infrastructure.csproj" Id="6f16febe-0938-4907-b29c-faf580ab8e54" />
+  </Folder>
+  <Folder Name="/src/Modules/Order/tests/">
+    <Project Path="src/Modules/Order/tests/Order.Application.UnitTests/Order.Application.UnitTests.csproj" Id="487628b3-e0eb-4f36-bd4c-37ce15f1a11b" />
+    <Project Path="src/Modules/Order/tests/Order.Domain.UnitTests/Order.Domain.UnitTests.csproj" Id="6024f9c5-25f9-4353-9b4f-3d2866cd70cd" />
+  </Folder>
   <Folder Name="/src/Modules/Pricing/tests/">
     <Project Path="src/Modules/Pricing/tests/Pricing.Application.UnitTests/Pricing.Application.UnitTests.csproj" Id="7fd02df4-a4a9-44c7-957d-f409b29878a5" />
     <Project Path="src/Modules/Pricing/tests/Pricing.Domain.UnitTests/Pricing.Domain.UnitTests.csproj" Id="538d35d6-b628-4665-abf5-8eaedb2f968b" />

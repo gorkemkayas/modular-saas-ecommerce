@@ -1,0 +1,43 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Order.Application.Abstractions;
+using Order.Application.Abstractions.Queries;
+using Order.Application.Integrations;
+using Order.Domain.Repositories;
+using Order.Infrastructure.Options;
+using Order.Infrastructure.Persistence;
+using Order.Infrastructure.Persistence.Repositories;
+using Order.Infrastructure.ReadServices;
+using Order.Infrastructure.Services;
+
+namespace Order.Infrastructure.DependencyInjection;
+
+public static class OrderInfrastructureServiceCollectionExtensions
+{
+    public static IServiceCollection AddOrderInfrastructure(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.Configure<OrderDatabaseOptions>(
+            configuration.GetSection(OrderDatabaseOptions.SectionName));
+
+        services.AddDbContext<OrderDbContext>((sp, options) =>
+        {
+            var dbOptions = sp.GetRequiredService<IOptions<OrderDatabaseOptions>>().Value;
+
+            if (string.IsNullOrWhiteSpace(dbOptions.ConnectionString))
+                throw new InvalidOperationException("Order module connection string is missing.");
+
+            options.UseNpgsql(dbOptions.ConnectionString);
+        });
+
+        services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<IOrderReadService, OrderReadService>();
+        services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<OrderDbContext>());
+        services.AddScoped<IOrderNumberGenerator, OrderNumberGenerator>();
+
+        return services;
+    }
+}
