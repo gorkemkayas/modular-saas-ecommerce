@@ -5,8 +5,10 @@ using Microsoft.Extensions.Options;
 using Pricing.Application.Abstractions;
 using Pricing.Application.Abstractions.Queries;
 using Pricing.Application.Contracts;
+using Pricing.Application.Integrations;
 using Pricing.Contracts;
 using Pricing.Domain.Repositories;
+using Pricing.Infrastructure.Integrations.Catalog;
 using Pricing.Infrastructure.Options;
 using Pricing.Infrastructure.Persistence;
 using Pricing.Infrastructure.Persistence.Repositories;
@@ -37,6 +39,7 @@ public static class PricingInfrastructureServiceCollectionExtensions
         services.AddScoped<IPriceListReadService, PriceListReadService>();
         services.AddScoped<IPriceResolutionReadService, PriceResolutionReadService>();
         services.AddScoped<IPriceCoverageReadService, PriceCoverageReadService>();
+        services.AddScoped<ICatalogSellableItemValidator, CatalogSellableItemValidator>();
         services.AddScoped<IPricingModuleApi, PricingModuleApi>();
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<PricingDbContext>());
 
