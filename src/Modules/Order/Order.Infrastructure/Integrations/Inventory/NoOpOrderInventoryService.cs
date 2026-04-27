@@ -1,6 +1,6 @@
 using Order.Application.Integrations;
 
-namespace ECommerce.API.Integrations.Order;
+namespace Order.Infrastructure.Integrations.Inventory;
 
 public sealed class NoOpOrderInventoryService : IOrderInventoryService
 {

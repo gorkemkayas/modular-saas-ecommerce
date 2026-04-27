@@ -1,5 +1,7 @@
 using Customer.Application.Abstractions;
 using Customer.Application.Abstractions.Queries;
+using Customer.Application.Contracts;
+using Customer.Contracts;
 using Customer.Domain.Repositories;
 using Customer.Infrastructure.Options;
 using Customer.Infrastructure.Persistence;
@@ -33,6 +35,7 @@ public static class CustomerInfrastructureServiceCollectionExtensions
 
         services.AddScoped<ICustomerRepository, CustomerRepository>();
         services.AddScoped<ICustomerReadService, CustomerReadService>();
+        services.AddScoped<ICustomerModuleApi, CustomerModuleApi>();
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<CustomerDbContext>());
 
         return services;

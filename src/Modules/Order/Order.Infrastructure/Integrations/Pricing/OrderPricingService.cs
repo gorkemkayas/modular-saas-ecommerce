@@ -1,7 +1,7 @@
 using Order.Application.Integrations;
 using Pricing.Contracts;
 
-namespace ECommerce.API.Integrations.Order;
+namespace Order.Infrastructure.Integrations.Pricing;
 
 public sealed class OrderPricingService : IOrderPricingService
 {
