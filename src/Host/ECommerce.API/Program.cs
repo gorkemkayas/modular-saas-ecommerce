@@ -24,12 +24,14 @@ try
     builder.Services.AddRequestContexts();
     builder.Services.AddCatalogModule(builder.Configuration);
     builder.Services.AddCustomerModule(builder.Configuration);
+    builder.Services.AddOrderModule(builder.Configuration);
     builder.Services.AddPricingModule(builder.Configuration);
     builder.Services.AddStoreModule(builder.Configuration);
     builder.Services.AddMediatR(cfg =>
     {
         cfg.RegisterServicesFromAssembly(typeof(Catalog.Application.AssemblyReference).Assembly);
         cfg.RegisterServicesFromAssembly(typeof(Customer.Application.AssemblyReference).Assembly);
+        cfg.RegisterServicesFromAssembly(typeof(Order.Application.AssemblyReference).Assembly);
         cfg.RegisterServicesFromAssembly(typeof(Pricing.Application.AssemblyReference).Assembly);
         cfg.RegisterServicesFromAssembly(typeof(Store.Application.AssemblyReference).Assembly);
         cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
@@ -45,6 +47,7 @@ try
     builder.Services.AddOpenApi();
     
     builder.Services.AddExceptionHandler<CustomerExceptionHandler>();
+    builder.Services.AddExceptionHandler<OrderExceptionHandler>();
     builder.Services.AddExceptionHandler<PricingExceptionHandler>();
     builder.Services.AddExceptionHandler<StoreExceptionHandler>();
     builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
