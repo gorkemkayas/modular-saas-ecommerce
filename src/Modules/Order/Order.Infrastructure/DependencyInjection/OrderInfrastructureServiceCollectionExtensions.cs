@@ -40,7 +40,7 @@ public static class OrderInfrastructureServiceCollectionExtensions
         services.AddScoped<IOrderCustomerContextService, OrderCustomerContextService>();
         services.AddScoped<IOrderCatalogProductService, OrderCatalogProductService>();
         services.AddScoped<IOrderPricingService, OrderPricingService>();
-        services.AddScoped<IOrderInventoryService, NoOpOrderInventoryService>();
+        services.AddScoped<IOrderInventoryService, OrderInventoryService>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IOrderReadService, OrderReadService>();
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<OrderDbContext>());
