@@ -12,17 +12,20 @@ public sealed class CancelOrderCommandHandler : IRequestHandler<CancelOrderComma
     private readonly IOrderRepository _orderRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IOrderCustomerContextService _customerContextService;
+    private readonly IOrderInventoryService _inventoryService;
     private readonly ILogger<CancelOrderCommandHandler> _logger;
 
     public CancelOrderCommandHandler(
         IOrderRepository orderRepository,
         IUnitOfWork unitOfWork,
         IOrderCustomerContextService customerContextService,
+        IOrderInventoryService inventoryService,
         ILogger<CancelOrderCommandHandler> logger)
     {
         _orderRepository = orderRepository;
         _unitOfWork = unitOfWork;
         _customerContextService = customerContextService;
+        _inventoryService = inventoryService;
         _logger = logger;
     }
 
@@ -47,6 +50,15 @@ public sealed class CancelOrderCommandHandler : IRequestHandler<CancelOrderComma
 
         order.Cancel(command.Reason);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(order.ReservationReference))
+        {
+            await _inventoryService.ReleaseReservationAsync(
+                command.StoreId,
+                order.ReservationReference,
+                command.Reason ?? "Order cancelled by customer.",
+                cancellationToken);
+        }
 
         _logger.LogInformation(
             "Order cancelled | OrderId: {OrderId} | OrderNumber: {OrderNumber} | StoreId: {StoreId} | CustomerId: {CustomerId}",

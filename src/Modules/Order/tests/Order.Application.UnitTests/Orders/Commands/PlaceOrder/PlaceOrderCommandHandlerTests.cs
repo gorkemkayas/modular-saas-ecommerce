@@ -49,6 +49,15 @@ public sealed class PlaceOrderCommandHandlerTests
             .Setup(x => x.EnsureAvailabilityAsync(It.IsAny<Guid>(), It.IsAny<IReadOnlyCollection<OrderInventoryItemRequest>>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
+        inventoryService
+            .Setup(x => x.ReserveAsync(
+                It.IsAny<Guid>(),
+                It.IsAny<Guid>(),
+                It.IsAny<string>(),
+                It.IsAny<IReadOnlyCollection<OrderInventoryItemRequest>>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
         var handler = new PlaceOrderCommandHandler(
             orderRepository.Object,
             unitOfWork.Object,
@@ -76,5 +85,11 @@ public sealed class PlaceOrderCommandHandlerTests
         orderRepository.Verify(x => x.AddAsync(It.IsAny<Order.Domain.Entities.Order>(), It.IsAny<CancellationToken>()), Times.Once);
         unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         inventoryService.Verify(x => x.EnsureAvailabilityAsync(It.IsAny<Guid>(), It.IsAny<IReadOnlyCollection<OrderInventoryItemRequest>>(), It.IsAny<CancellationToken>()), Times.Once);
+        inventoryService.Verify(x => x.ReserveAsync(
+            It.IsAny<Guid>(),
+            It.IsAny<Guid>(),
+            It.IsAny<string>(),
+            It.IsAny<IReadOnlyCollection<OrderInventoryItemRequest>>(),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 }
