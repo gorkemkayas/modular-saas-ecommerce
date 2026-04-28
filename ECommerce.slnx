@@ -30,6 +30,16 @@
     <Project Path="src/Modules/Customer/tests/Customer.Application.UnitTests/Customer.Application.UnitTests.csproj" Id="ea40142e-0a85-441f-9d1b-c1e8e4056e0a" />
     <Project Path="src/Modules/Customer/tests/Customer.Domain.UnitTests/Customer.Domain.UnitTests.csproj" Id="4d8ca2d8-9204-4479-86cd-398596f89b38" />
   </Folder>
+  <Folder Name="/src/Modules/Inventory/">
+    <Project Path="src/Modules/Inventory/Inventory.Application/Inventory.Application.csproj" Id="68d11f48-c3ec-4599-9fd6-322688b4da25" />
+    <Project Path="src/Modules/Inventory/Inventory.Contracts/Inventory.Contracts.csproj" Id="f355cf29-c311-4d32-a7b0-716b2d0dd92d" />
+    <Project Path="src/Modules/Inventory/Inventory.Domain/Inventory.Domain.csproj" Id="c29bd231-7212-4689-a974-b00e306d2b88" />
+    <Project Path="src/Modules/Inventory/Inventory.Infrastructure/Inventory.Infrastructure.csproj" Id="1d8db9a7-e2ec-4462-a813-b9f8b8dd17f1" />
+  </Folder>
+  <Folder Name="/src/Modules/Inventory/tests/">
+    <Project Path="src/Modules/Inventory/tests/Inventory.Application.UnitTests/Inventory.Application.UnitTests.csproj" Id="aa054ab0-9d9c-4eb8-bfac-5e59e646ee50" />
+    <Project Path="src/Modules/Inventory/tests/Inventory.Domain.UnitTests/Inventory.Domain.UnitTests.csproj" Id="f2830d71-6568-4e1f-86ff-890a877f3517" />
+  </Folder>
   <Folder Name="/src/Modules/Pricing/">
     <Project Path="src/Modules/Pricing/Pricing.Application/Pricing.Application.csproj" Id="7a78cb0f-fdc6-4adc-9d59-a3dc16f0b0f7" />
     <Project Path="src/Modules/Pricing/Pricing.Contracts/Pricing.Contracts.csproj" Id="976bfc42-1f17-44c1-a42c-1b1d968ec6db" />

@@ -149,8 +149,43 @@ public sealed class PlaceOrderCommandHandler : IRequestHandler<PlaceOrderCommand
             currencyCode,
             itemDrafts);
 
-        await _orderRepository.AddAsync(order, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        var reservationReference = $"ord-{order.Id:N}";
+
+        await _inventoryService.ReserveAsync(
+            command.StoreId,
+            order.Id,
+            reservationReference,
+            inventoryItems,
+            cancellationToken);
+
+        order.SetReservationReference(reservationReference);
+
+        try
+        {
+            await _orderRepository.AddAsync(order, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+        catch
+        {
+            try
+            {
+                await _inventoryService.ReleaseReservationAsync(
+                    command.StoreId,
+                    reservationReference,
+                    "Order persistence failed after reservation.",
+                    CancellationToken.None);
+            }
+            catch (Exception releaseException)
+            {
+                _logger.LogWarning(
+                    releaseException,
+                    "Inventory reservation compensation failed | ReservationReference: {ReservationReference} | StoreId: {StoreId}",
+                    reservationReference,
+                    command.StoreId);
+            }
+
+            throw;
+        }
 
         _logger.LogInformation(
             "Order placed | OrderId: {OrderId} | OrderNumber: {OrderNumber} | StoreId: {StoreId} | CustomerId: {CustomerId} | Total: {GrandTotal}",
