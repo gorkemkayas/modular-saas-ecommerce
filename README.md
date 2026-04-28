@@ -24,3 +24,10 @@ The platform integrates with an external **AuthService** that provides authentic
 🚧 The project is currently **under development**.
 
 More documentation and architecture details will be added as the project evolves.
+
+
+## We are currently focusing on Stage 1.
+<img width="875" height="515" alt="currentStatus" src="https://github.com/user-attachments/assets/8ed8af28-dd9c-4151-8079-a597aa9102eb" />
+
+## Our next goal is complete Stage 2.
+<img width="1222" height="502" alt="aimedStatus" src="https://github.com/user-attachments/assets/6040709b-88ec-4fbe-9f4f-3c6e65550cd1" />
