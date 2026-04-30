@@ -171,3 +171,6 @@ Short-term roadmap:
 This repository is being developed as a graduation and portfolio project.
 
 The goal is not just to make the system work, but to make the architecture, module boundaries, and implementation style reflect production-minded backend engineering decisions.
+
+👀
+<img width="1253" height="711" alt="image" src="https://github.com/user-attachments/assets/f1647c60-1310-4883-9ee1-4fad850fefa7" />
