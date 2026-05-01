@@ -23,6 +23,8 @@ The project currently contains these modules:
 - `Pricing`
 - `Order`
 - `Inventory`
+- `Payment`
+- `Shipment`
 
 These modules already model the core commerce flow:
 
@@ -32,6 +34,8 @@ These modules already model the core commerce flow:
 - price list and price resolution
 - order placement and cancellation
 - inventory availability, reservation, release, and stock movement tracking
+- payment lifecycle orchestration
+- outbound shipment and tracking management
 
 ## Architecture
 
@@ -76,11 +80,11 @@ Implemented today:
 - pricing module with price lists and resolved pricing
 - order module with order snapshots and lifecycle handling
 - inventory module with reservation-based stock protection
+- payment module with authorization, capture, cancel, refund, and order sync
+- shipment module with package-level fulfillment and tracking events
 
 Planned next core modules:
 
-- `Payment`
-- `Shipment`
 - `Notification`
 
 These three modules are the remaining core pieces needed to complete the first full backend MVP.
@@ -122,9 +126,12 @@ src/
     Pricing/
     Order/
     Inventory/
+    Payment/
+    Shipment/
 docs/
   OrderModuleDesign.md
   PricingModuleDesign.md
+  ShipmentModuleDesign.md
 ```
 
 ## Running the API
@@ -155,16 +162,15 @@ Additional design notes are available in:
 
 - [docs/OrderModuleDesign.md](docs/OrderModuleDesign.md)
 - [docs/PricingModuleDesign.md](docs/PricingModuleDesign.md)
+- [docs/ShipmentModuleDesign.md](docs/ShipmentModuleDesign.md)
 
 ## Roadmap
 
 Short-term roadmap:
 
-1. complete `Payment`
-2. complete `Shipment`
-3. complete `Notification`
-4. build the frontend MVP
-5. expand with optional product modules such as `Cart`, `Promotion`, `Return`, and `Review`
+1. complete `Notification`
+2. build the frontend MVP
+3. expand with optional product modules such as `Cart`, `Promotion`, `Return`, and `Review`
 
 ## Notes
 

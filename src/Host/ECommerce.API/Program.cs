@@ -28,6 +28,7 @@ try
     builder.Services.AddOrderModule(builder.Configuration);
     builder.Services.AddPaymentModule(builder.Configuration);
     builder.Services.AddPricingModule(builder.Configuration);
+    builder.Services.AddShipmentModule(builder.Configuration);
     builder.Services.AddStoreModule(builder.Configuration);
     builder.Services.AddMediatR(cfg =>
     {
@@ -37,6 +38,7 @@ try
         cfg.RegisterServicesFromAssembly(typeof(Order.Application.AssemblyReference).Assembly);
         cfg.RegisterServicesFromAssembly(typeof(Payment.Application.AssemblyReference).Assembly);
         cfg.RegisterServicesFromAssembly(typeof(Pricing.Application.AssemblyReference).Assembly);
+        cfg.RegisterServicesFromAssembly(typeof(Shipment.Application.AssemblyReference).Assembly);
         cfg.RegisterServicesFromAssembly(typeof(Store.Application.AssemblyReference).Assembly);
         cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
     });
@@ -55,6 +57,7 @@ try
     builder.Services.AddExceptionHandler<OrderExceptionHandler>();
     builder.Services.AddExceptionHandler<PaymentExceptionHandler>();
     builder.Services.AddExceptionHandler<PricingExceptionHandler>();
+    builder.Services.AddExceptionHandler<ShipmentExceptionHandler>();
     builder.Services.AddExceptionHandler<StoreExceptionHandler>();
     builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
     builder.Services.AddProblemDetails();

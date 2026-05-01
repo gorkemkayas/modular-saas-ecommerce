@@ -12,6 +12,7 @@ using Payment.Domain.Repositories;
 using Payment.Infrastructure.Gateways;
 using Payment.Infrastructure.Integrations.Inventory;
 using Payment.Infrastructure.Integrations.Order;
+using Payment.Infrastructure.Integrations.Shipment;
 using Payment.Infrastructure.Options;
 using Payment.Infrastructure.Persistence;
 using Payment.Infrastructure.Persistence.Repositories;
@@ -53,6 +54,7 @@ public static class PaymentInfrastructureServiceCollectionExtensions
         services.AddScoped<IOrderPaymentContextService, OrderPaymentContextService>();
         services.AddScoped<IOrderPaymentSyncService, OrderPaymentSyncService>();
         services.AddScoped<IInventoryPaymentService, PaymentInventoryService>();
+        services.AddScoped<IShipmentPaymentService, PaymentShipmentService>();
         services.AddScoped<IPaymentWebhookParser, PaymentWebhookParser>();
         services.AddScoped<MockPaymentGateway>();
         services.AddScoped<IPaymentRepository, PaymentRepository>();
