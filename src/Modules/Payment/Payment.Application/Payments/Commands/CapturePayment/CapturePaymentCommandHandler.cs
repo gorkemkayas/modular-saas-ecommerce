@@ -16,6 +16,7 @@ public sealed class CapturePaymentCommandHandler : IRequestHandler<CapturePaymen
     private readonly IOrderPaymentContextService _orderPaymentContextService;
     private readonly IOrderPaymentSyncService _orderPaymentSyncService;
     private readonly IInventoryPaymentService _inventoryPaymentService;
+    private readonly IShipmentPaymentService _shipmentPaymentService;
     private readonly IPaymentGateway _paymentGateway;
     private readonly ILogger<CapturePaymentCommandHandler> _logger;
 
@@ -25,6 +26,7 @@ public sealed class CapturePaymentCommandHandler : IRequestHandler<CapturePaymen
         IOrderPaymentContextService orderPaymentContextService,
         IOrderPaymentSyncService orderPaymentSyncService,
         IInventoryPaymentService inventoryPaymentService,
+        IShipmentPaymentService shipmentPaymentService,
         IPaymentGateway paymentGateway,
         ILogger<CapturePaymentCommandHandler> logger)
     {
@@ -33,6 +35,7 @@ public sealed class CapturePaymentCommandHandler : IRequestHandler<CapturePaymen
         _orderPaymentContextService = orderPaymentContextService;
         _orderPaymentSyncService = orderPaymentSyncService;
         _inventoryPaymentService = inventoryPaymentService;
+        _shipmentPaymentService = shipmentPaymentService;
         _paymentGateway = paymentGateway;
         _logger = logger;
     }
@@ -109,6 +112,14 @@ public sealed class CapturePaymentCommandHandler : IRequestHandler<CapturePaymen
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (gatewayResult.Outcome == PaymentGatewayOutcome.Captured)
+        {
+            await _shipmentPaymentService.EnsureShipmentCreatedForCapturedOrderAsync(
+                payment.StoreId,
+                payment.OrderId,
+                cancellationToken);
+        }
 
         _logger.LogInformation(
             "Payment capture handled | PaymentId: {PaymentId} | Status: {Status}",

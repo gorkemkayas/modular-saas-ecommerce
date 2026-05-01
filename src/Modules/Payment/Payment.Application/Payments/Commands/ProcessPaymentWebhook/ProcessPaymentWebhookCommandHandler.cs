@@ -15,6 +15,7 @@ public sealed class ProcessPaymentWebhookCommandHandler : IRequestHandler<Proces
     private readonly IOrderPaymentContextService _orderPaymentContextService;
     private readonly IOrderPaymentSyncService _orderPaymentSyncService;
     private readonly IInventoryPaymentService _inventoryPaymentService;
+    private readonly IShipmentPaymentService _shipmentPaymentService;
     private readonly IPaymentWebhookParser _paymentWebhookParser;
     private readonly ILogger<ProcessPaymentWebhookCommandHandler> _logger;
 
@@ -24,6 +25,7 @@ public sealed class ProcessPaymentWebhookCommandHandler : IRequestHandler<Proces
         IOrderPaymentContextService orderPaymentContextService,
         IOrderPaymentSyncService orderPaymentSyncService,
         IInventoryPaymentService inventoryPaymentService,
+        IShipmentPaymentService shipmentPaymentService,
         IPaymentWebhookParser paymentWebhookParser,
         ILogger<ProcessPaymentWebhookCommandHandler> logger)
     {
@@ -32,6 +34,7 @@ public sealed class ProcessPaymentWebhookCommandHandler : IRequestHandler<Proces
         _orderPaymentContextService = orderPaymentContextService;
         _orderPaymentSyncService = orderPaymentSyncService;
         _inventoryPaymentService = inventoryPaymentService;
+        _shipmentPaymentService = shipmentPaymentService;
         _paymentWebhookParser = paymentWebhookParser;
         _logger = logger;
     }
@@ -174,5 +177,13 @@ public sealed class ProcessPaymentWebhookCommandHandler : IRequestHandler<Proces
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (webhook.Outcome == PaymentGatewayOutcome.Captured)
+        {
+            await _shipmentPaymentService.EnsureShipmentCreatedForCapturedOrderAsync(
+                payment.StoreId,
+                payment.OrderId,
+                cancellationToken);
+        }
     }
 }

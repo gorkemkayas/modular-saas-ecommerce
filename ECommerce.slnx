@@ -71,6 +71,16 @@
     <Project Path="src/Modules/Payment/tests/Payment.Application.UnitTests/Payment.Application.UnitTests.csproj" />
     <Project Path="src/Modules/Payment/tests/Payment.Domain.UnitTests/Payment.Domain.UnitTests.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Shipment/">
+    <Project Path="src/Modules/Shipment/Shipment.Application/Shipment.Application.csproj" />
+    <Project Path="src/Modules/Shipment/Shipment.Contracts/Shipment.Contracts.csproj" />
+    <Project Path="src/Modules/Shipment/Shipment.Domain/Shipment.Domain.csproj" />
+    <Project Path="src/Modules/Shipment/Shipment.Infrastructure/Shipment.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Shipment/tests/">
+    <Project Path="src/Modules/Shipment/tests/Shipment.Application.UnitTests/Shipment.Application.UnitTests.csproj" />
+    <Project Path="src/Modules/Shipment/tests/Shipment.Domain.UnitTests/Shipment.Domain.UnitTests.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Store/">
     <Project Path="src/Modules/Store/Store.Application/Store.Application.csproj" Id="a108953a-6d73-404e-a2c1-746725f34faf" />
     <Project Path="src/Modules/Store/Store.Domain/Store.Domain.csproj" Id="d05d0387-07e0-4cd3-bc98-7a6286e8ef80" />

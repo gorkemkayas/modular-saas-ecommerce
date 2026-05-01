@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.3" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Order\Order.Contracts\Order.Contracts.csproj" />
+    <ProjectReference Include="..\Shipment.Application\Shipment.Application.csproj" />
+    <ProjectReference Include="..\Shipment.Contracts\Shipment.Contracts.csproj" />
+    <ProjectReference Include="..\Shipment.Domain\Shipment.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
