@@ -148,6 +148,14 @@ public sealed class Order : IAggregateRoot
         UpdatedAtUtc = DateTime.UtcNow;
     }
 
+    public void MarkPaymentRefunded(string? paymentReference = null)
+    {
+        EnsureNotCancelled();
+        PaymentStatus = PaymentStatus.Refunded;
+        PaymentReference = NormalizeOptional(paymentReference, 200);
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
     public void MarkShipmentCreated(string shipmentReference)
     {
         EnsureNotCancelled();
