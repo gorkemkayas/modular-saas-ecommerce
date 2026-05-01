@@ -159,7 +159,12 @@ public sealed class Order : IAggregateRoot
     public void MarkShipmentCreated(string shipmentReference)
     {
         EnsureNotCancelled();
-        ShipmentReference = NormalizeRequired(shipmentReference, "Shipment reference");
+        var normalizedReference = NormalizeRequired(shipmentReference, "Shipment reference");
+
+        if (!string.IsNullOrWhiteSpace(ShipmentReference) && !string.Equals(ShipmentReference, normalizedReference, StringComparison.Ordinal))
+            throw new OrderDomainException("Order already has a different shipment reference.");
+
+        ShipmentReference = normalizedReference;
         UpdatedAtUtc = DateTime.UtcNow;
     }
 
@@ -176,6 +181,23 @@ public sealed class Order : IAggregateRoot
         EnsureNotCancelled();
         ShipmentReference = NormalizeRequired(shipmentReference, "Shipment reference");
         FulfillmentStatus = FulfillmentStatus.Delivered;
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
+    public void MarkShipmentCancelled(string shipmentReference)
+    {
+        EnsureNotCancelled();
+
+        var normalizedReference = NormalizeRequired(shipmentReference, "Shipment reference");
+
+        if (!string.Equals(ShipmentReference, normalizedReference, StringComparison.Ordinal))
+            throw new OrderDomainException("Shipment reference does not match the order.");
+
+        if (FulfillmentStatus is FulfillmentStatus.Shipped or FulfillmentStatus.Delivered)
+            throw new OrderDomainException("Shipped or delivered order shipment cannot be cancelled.");
+
+        ShipmentReference = null;
+        FulfillmentStatus = FulfillmentStatus.Unfulfilled;
         UpdatedAtUtc = DateTime.UtcNow;
     }
 

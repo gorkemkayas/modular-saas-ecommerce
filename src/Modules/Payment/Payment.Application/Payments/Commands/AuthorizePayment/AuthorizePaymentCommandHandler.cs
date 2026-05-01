@@ -16,6 +16,7 @@ public sealed class AuthorizePaymentCommandHandler : IRequestHandler<AuthorizePa
     private readonly IOrderPaymentContextService _orderPaymentContextService;
     private readonly IOrderPaymentSyncService _orderPaymentSyncService;
     private readonly IInventoryPaymentService _inventoryPaymentService;
+    private readonly IShipmentPaymentService _shipmentPaymentService;
     private readonly IPaymentGateway _paymentGateway;
     private readonly ILogger<AuthorizePaymentCommandHandler> _logger;
 
@@ -25,6 +26,7 @@ public sealed class AuthorizePaymentCommandHandler : IRequestHandler<AuthorizePa
         IOrderPaymentContextService orderPaymentContextService,
         IOrderPaymentSyncService orderPaymentSyncService,
         IInventoryPaymentService inventoryPaymentService,
+        IShipmentPaymentService shipmentPaymentService,
         IPaymentGateway paymentGateway,
         ILogger<AuthorizePaymentCommandHandler> logger)
     {
@@ -33,6 +35,7 @@ public sealed class AuthorizePaymentCommandHandler : IRequestHandler<AuthorizePa
         _orderPaymentContextService = orderPaymentContextService;
         _orderPaymentSyncService = orderPaymentSyncService;
         _inventoryPaymentService = inventoryPaymentService;
+        _shipmentPaymentService = shipmentPaymentService;
         _paymentGateway = paymentGateway;
         _logger = logger;
     }
@@ -172,6 +175,14 @@ public sealed class AuthorizePaymentCommandHandler : IRequestHandler<AuthorizePa
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (gatewayResult.Outcome == PaymentGatewayOutcome.Captured)
+        {
+            await _shipmentPaymentService.EnsureShipmentCreatedForCapturedOrderAsync(
+                payment.StoreId,
+                payment.OrderId,
+                cancellationToken);
+        }
 
         _logger.LogInformation(
             "Payment authorization handled | PaymentId: {PaymentId} | OrderId: {OrderId} | Status: {Status}",

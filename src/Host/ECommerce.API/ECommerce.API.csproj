@@ -43,6 +43,8 @@
     <ProjectReference Include="..\..\Modules\Payment\Payment.Infrastructure\Payment.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Modules\Pricing\Pricing.Application\Pricing.Application.csproj" />
     <ProjectReference Include="..\..\Modules\Pricing\Pricing.Infrastructure\Pricing.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Shipment\Shipment.Application\Shipment.Application.csproj" />
+    <ProjectReference Include="..\..\Modules\Shipment\Shipment.Infrastructure\Shipment.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Modules\Store\Store.Application\Store.Application.csproj" />
     <ProjectReference Include="..\..\Modules\Store\Store.Infrastructure\Store.Infrastructure.csproj" />
   </ItemGroup>
