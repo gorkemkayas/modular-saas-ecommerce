@@ -11,6 +11,7 @@ using Order.Domain.Repositories;
 using Order.Infrastructure.Integrations.Catalog;
 using Order.Infrastructure.Integrations.Customer;
 using Order.Infrastructure.Integrations.Inventory;
+using Order.Infrastructure.Integrations.Notification;
 using Order.Infrastructure.Integrations.Pricing;
 using Order.Infrastructure.Options;
 using Order.Infrastructure.Persistence;
@@ -43,6 +44,7 @@ public static class OrderInfrastructureServiceCollectionExtensions
         services.AddScoped<IOrderCatalogProductService, OrderCatalogProductService>();
         services.AddScoped<IOrderPricingService, OrderPricingService>();
         services.AddScoped<IOrderInventoryService, OrderInventoryService>();
+        services.AddScoped<IOrderNotificationService, OrderNotificationService>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IOrderReadService, OrderReadService>();
         services.AddScoped<IOrderModuleApi, OrderModuleApi>();

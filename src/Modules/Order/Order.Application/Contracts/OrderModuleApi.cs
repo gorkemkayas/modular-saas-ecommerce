@@ -266,6 +266,8 @@ public sealed class OrderModuleApi : IOrderModuleApi
             order.StoreId,
             order.CustomerId,
             order.OrderNumber,
+            order.Customer.Email,
+            order.Customer.FullName,
             order.Status,
             order.PaymentStatus,
             order.FulfillmentStatus,

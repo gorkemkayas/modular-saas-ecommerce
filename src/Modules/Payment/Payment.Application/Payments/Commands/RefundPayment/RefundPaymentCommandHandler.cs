@@ -13,20 +13,26 @@ public sealed class RefundPaymentCommandHandler : IRequestHandler<RefundPaymentC
 {
     private readonly IPaymentRepository _paymentRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IOrderPaymentContextService _orderPaymentContextService;
     private readonly IOrderPaymentSyncService _orderPaymentSyncService;
+    private readonly IPaymentNotificationService _paymentNotificationService;
     private readonly IPaymentGateway _paymentGateway;
     private readonly ILogger<RefundPaymentCommandHandler> _logger;
 
     public RefundPaymentCommandHandler(
         IPaymentRepository paymentRepository,
         IUnitOfWork unitOfWork,
+        IOrderPaymentContextService orderPaymentContextService,
         IOrderPaymentSyncService orderPaymentSyncService,
+        IPaymentNotificationService paymentNotificationService,
         IPaymentGateway paymentGateway,
         ILogger<RefundPaymentCommandHandler> logger)
     {
         _paymentRepository = paymentRepository;
         _unitOfWork = unitOfWork;
+        _orderPaymentContextService = orderPaymentContextService;
         _orderPaymentSyncService = orderPaymentSyncService;
+        _paymentNotificationService = paymentNotificationService;
         _paymentGateway = paymentGateway;
         _logger = logger;
     }
@@ -86,6 +92,47 @@ public sealed class RefundPaymentCommandHandler : IRequestHandler<RefundPaymentC
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (gatewayResult.Outcome == PaymentGatewayOutcome.Refunded)
+        {
+            try
+            {
+                var orderContext = await _orderPaymentContextService.GetStoreOrderContextAsync(
+                    payment.StoreId,
+                    payment.OrderId,
+                    cancellationToken);
+
+                if (orderContext is null)
+                {
+                    _logger.LogWarning(
+                        "Payment refunded notification skipped because order context was missing | PaymentId: {PaymentId} | OrderId: {OrderId}",
+                        payment.Id,
+                        payment.OrderId);
+                }
+                else
+                {
+                    await _paymentNotificationService.SendPaymentRefundedAsync(
+                        payment.StoreId,
+                        payment.Id,
+                        payment.OrderId,
+                        payment.CustomerId,
+                        orderContext.OrderNumber,
+                        orderContext.Customer.Email,
+                        orderContext.Customer.FullName,
+                        command.Amount,
+                        payment.CurrencyCode,
+                        cancellationToken);
+                }
+            }
+            catch (Exception notificationException)
+            {
+                _logger.LogWarning(
+                    notificationException,
+                    "Payment refunded notification failed | PaymentId: {PaymentId} | OrderId: {OrderId}",
+                    payment.Id,
+                    payment.OrderId);
+            }
+        }
 
         _logger.LogInformation(
             "Payment refund handled | PaymentId: {PaymentId} | Status: {Status} | RefundedAmount: {RefundedAmount}",

@@ -13,6 +13,7 @@ public sealed class CancelOrderCommandHandler : IRequestHandler<CancelOrderComma
     private readonly IUnitOfWork _unitOfWork;
     private readonly IOrderCustomerContextService _customerContextService;
     private readonly IOrderInventoryService _inventoryService;
+    private readonly IOrderNotificationService _notificationService;
     private readonly ILogger<CancelOrderCommandHandler> _logger;
 
     public CancelOrderCommandHandler(
@@ -20,12 +21,14 @@ public sealed class CancelOrderCommandHandler : IRequestHandler<CancelOrderComma
         IUnitOfWork unitOfWork,
         IOrderCustomerContextService customerContextService,
         IOrderInventoryService inventoryService,
+        IOrderNotificationService notificationService,
         ILogger<CancelOrderCommandHandler> logger)
     {
         _orderRepository = orderRepository;
         _unitOfWork = unitOfWork;
         _customerContextService = customerContextService;
         _inventoryService = inventoryService;
+        _notificationService = notificationService;
         _logger = logger;
     }
 
@@ -66,5 +69,26 @@ public sealed class CancelOrderCommandHandler : IRequestHandler<CancelOrderComma
             order.OrderNumber.Value,
             order.StoreId,
             order.CustomerId);
+
+        try
+        {
+            await _notificationService.SendOrderCancelledAsync(
+                order.StoreId,
+                order.Id,
+                order.CustomerId,
+                order.OrderNumber.Value,
+                order.CustomerSnapshot.Email,
+                order.CustomerSnapshot.FullName,
+                command.Reason,
+                cancellationToken);
+        }
+        catch (Exception notificationException)
+        {
+            _logger.LogWarning(
+                notificationException,
+                "Order cancelled notification failed | OrderId: {OrderId} | StoreId: {StoreId}",
+                order.Id,
+                order.StoreId);
+        }
     }
 }

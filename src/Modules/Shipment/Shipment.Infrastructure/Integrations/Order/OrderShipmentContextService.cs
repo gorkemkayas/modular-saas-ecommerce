@@ -44,6 +44,8 @@ public sealed class OrderShipmentContextService : IOrderShipmentContextService
             context.StoreId,
             context.CustomerId,
             context.OrderNumber,
+            context.CustomerEmail,
+            context.CustomerFullName,
             (Shipment.Application.Integrations.OrderShipmentStatus)context.Status,
             (Shipment.Application.Integrations.OrderShipmentPaymentStatus)context.PaymentStatus,
             (Shipment.Application.Integrations.OrderShipmentFulfillmentStatus)context.FulfillmentStatus,

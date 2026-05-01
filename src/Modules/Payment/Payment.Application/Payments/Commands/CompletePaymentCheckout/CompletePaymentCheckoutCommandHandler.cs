@@ -16,6 +16,7 @@ public sealed class CompletePaymentCheckoutCommandHandler : IRequestHandler<Comp
     private readonly IOrderPaymentContextService _orderPaymentContextService;
     private readonly IOrderPaymentSyncService _orderPaymentSyncService;
     private readonly IInventoryPaymentService _inventoryPaymentService;
+    private readonly IPaymentNotificationService _paymentNotificationService;
     private readonly IShipmentPaymentService _shipmentPaymentService;
     private readonly IPaymentGateway _paymentGateway;
     private readonly ILogger<CompletePaymentCheckoutCommandHandler> _logger;
@@ -26,6 +27,7 @@ public sealed class CompletePaymentCheckoutCommandHandler : IRequestHandler<Comp
         IOrderPaymentContextService orderPaymentContextService,
         IOrderPaymentSyncService orderPaymentSyncService,
         IInventoryPaymentService inventoryPaymentService,
+        IPaymentNotificationService paymentNotificationService,
         IShipmentPaymentService shipmentPaymentService,
         IPaymentGateway paymentGateway,
         ILogger<CompletePaymentCheckoutCommandHandler> logger)
@@ -35,6 +37,7 @@ public sealed class CompletePaymentCheckoutCommandHandler : IRequestHandler<Comp
         _orderPaymentContextService = orderPaymentContextService;
         _orderPaymentSyncService = orderPaymentSyncService;
         _inventoryPaymentService = inventoryPaymentService;
+        _paymentNotificationService = paymentNotificationService;
         _shipmentPaymentService = shipmentPaymentService;
         _paymentGateway = paymentGateway;
         _logger = logger;
@@ -127,6 +130,81 @@ public sealed class CompletePaymentCheckoutCommandHandler : IRequestHandler<Comp
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            var notificationOrderContext = await _orderPaymentContextService.GetStoreOrderContextAsync(
+                payment.StoreId,
+                payment.OrderId,
+                cancellationToken);
+
+            if (notificationOrderContext is null)
+            {
+                _logger.LogWarning(
+                    "Payment notification skipped because order context was missing | PaymentId: {PaymentId} | OrderId: {OrderId}",
+                    payment.Id,
+                    payment.OrderId);
+            }
+            else
+            {
+                switch (gatewayResult.Outcome)
+                {
+                    case PaymentGatewayOutcome.Authorized:
+                        await _paymentNotificationService.SendPaymentAuthorizedAsync(
+                            payment.StoreId,
+                            payment.Id,
+                            payment.OrderId,
+                            payment.CustomerId,
+                            notificationOrderContext.OrderNumber,
+                            notificationOrderContext.Customer.Email,
+                            notificationOrderContext.Customer.FullName,
+                            payment.Amount,
+                            payment.CurrencyCode,
+                            payment.ExternalPaymentReference,
+                            cancellationToken);
+                        break;
+
+                    case PaymentGatewayOutcome.Captured:
+                        await _paymentNotificationService.SendPaymentCapturedAsync(
+                            payment.StoreId,
+                            payment.Id,
+                            payment.OrderId,
+                            payment.CustomerId,
+                            notificationOrderContext.OrderNumber,
+                            notificationOrderContext.Customer.Email,
+                            notificationOrderContext.Customer.FullName,
+                            payment.Amount,
+                            payment.CurrencyCode,
+                            payment.ExternalPaymentReference,
+                            cancellationToken);
+                        break;
+
+                    case PaymentGatewayOutcome.Failed:
+                        await _paymentNotificationService.SendPaymentFailedAsync(
+                            payment.StoreId,
+                            payment.Id,
+                            payment.OrderId,
+                            payment.CustomerId,
+                            notificationOrderContext.OrderNumber,
+                            notificationOrderContext.Customer.Email,
+                            notificationOrderContext.Customer.FullName,
+                            payment.Amount,
+                            payment.CurrencyCode,
+                            gatewayResult.FailureMessage,
+                            cancellationToken);
+                        break;
+                }
+            }
+        }
+        catch (Exception notificationException)
+        {
+            _logger.LogWarning(
+                notificationException,
+                "Payment notification failed | PaymentId: {PaymentId} | OrderId: {OrderId} | Outcome: {Outcome}",
+                payment.Id,
+                payment.OrderId,
+                gatewayResult.Outcome);
+        }
 
         if (gatewayResult.Outcome == PaymentGatewayOutcome.Captured)
         {

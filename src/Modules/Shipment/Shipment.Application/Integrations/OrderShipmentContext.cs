@@ -5,6 +5,8 @@ public sealed record OrderShipmentContext(
     Guid StoreId,
     Guid CustomerId,
     string OrderNumber,
+    string CustomerEmail,
+    string CustomerFullName,
     OrderShipmentStatus Status,
     OrderShipmentPaymentStatus PaymentStatus,
     OrderShipmentFulfillmentStatus FulfillmentStatus,
