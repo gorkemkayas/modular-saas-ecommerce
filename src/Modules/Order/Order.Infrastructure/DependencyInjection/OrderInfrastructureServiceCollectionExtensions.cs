@@ -4,7 +4,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Order.Application.Abstractions;
 using Order.Application.Abstractions.Queries;
+using Order.Application.Contracts;
 using Order.Application.Integrations;
+using Order.Contracts;
 using Order.Domain.Repositories;
 using Order.Infrastructure.Integrations.Catalog;
 using Order.Infrastructure.Integrations.Customer;
@@ -43,6 +45,7 @@ public static class OrderInfrastructureServiceCollectionExtensions
         services.AddScoped<IOrderInventoryService, OrderInventoryService>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IOrderReadService, OrderReadService>();
+        services.AddScoped<IOrderModuleApi, OrderModuleApi>();
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<OrderDbContext>());
         services.AddScoped<IOrderNumberGenerator, OrderNumberGenerator>();
 
