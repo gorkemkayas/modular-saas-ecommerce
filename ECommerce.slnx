@@ -48,6 +48,7 @@
   </Folder>
   <Folder Name="/src/Modules/Order/">
     <Project Path="src/Modules/Order/Order.Application/Order.Application.csproj" Id="7ff7a64d-57fc-4c6a-a84a-0dc14d22bc79" />
+    <Project Path="src/Modules/Order/Order.Contracts/Order.Contracts.csproj" />
     <Project Path="src/Modules/Order/Order.Domain/Order.Domain.csproj" Id="f4774075-173c-4e56-90d7-d12f16f339e3" />
     <Project Path="src/Modules/Order/Order.Infrastructure/Order.Infrastructure.csproj" Id="6f16febe-0938-4907-b29c-faf580ab8e54" />
   </Folder>
@@ -59,6 +60,16 @@
     <Project Path="src/Modules/Pricing/tests/Pricing.Application.UnitTests/Pricing.Application.UnitTests.csproj" Id="7fd02df4-a4a9-44c7-957d-f409b29878a5" />
     <Project Path="src/Modules/Pricing/tests/Pricing.Domain.UnitTests/Pricing.Domain.UnitTests.csproj" Id="538d35d6-b628-4665-abf5-8eaedb2f968b" />
     <Project Path="src/Modules/Pricing/tests/Pricing.Infrastructure.IntegrationTests/Pricing.Infrastructure.IntegrationTests.csproj" Id="07f9fb18-0f92-40f1-8544-e4b8d41326bf" />
+  </Folder>
+  <Folder Name="/src/Modules/Payment/">
+    <Project Path="src/Modules/Payment/Payment.Application/Payment.Application.csproj" />
+    <Project Path="src/Modules/Payment/Payment.Contracts/Payment.Contracts.csproj" />
+    <Project Path="src/Modules/Payment/Payment.Domain/Payment.Domain.csproj" />
+    <Project Path="src/Modules/Payment/Payment.Infrastructure/Payment.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Payment/tests/">
+    <Project Path="src/Modules/Payment/tests/Payment.Application.UnitTests/Payment.Application.UnitTests.csproj" />
+    <Project Path="src/Modules/Payment/tests/Payment.Domain.UnitTests/Payment.Domain.UnitTests.csproj" />
   </Folder>
   <Folder Name="/src/Modules/Store/">
     <Project Path="src/Modules/Store/Store.Application/Store.Application.csproj" Id="a108953a-6d73-404e-a2c1-746725f34faf" />
