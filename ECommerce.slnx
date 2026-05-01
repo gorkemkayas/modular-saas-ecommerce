@@ -40,6 +40,16 @@
     <Project Path="src/Modules/Inventory/tests/Inventory.Application.UnitTests/Inventory.Application.UnitTests.csproj" Id="aa054ab0-9d9c-4eb8-bfac-5e59e646ee50" />
     <Project Path="src/Modules/Inventory/tests/Inventory.Domain.UnitTests/Inventory.Domain.UnitTests.csproj" Id="f2830d71-6568-4e1f-86ff-890a877f3517" />
   </Folder>
+  <Folder Name="/src/Modules/Notification/">
+    <Project Path="src/Modules/Notification/Notification.Application/Notification.Application.csproj" />
+    <Project Path="src/Modules/Notification/Notification.Contracts/Notification.Contracts.csproj" />
+    <Project Path="src/Modules/Notification/Notification.Domain/Notification.Domain.csproj" />
+    <Project Path="src/Modules/Notification/Notification.Infrastructure/Notification.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Notification/tests/">
+    <Project Path="src/Modules/Notification/tests/Notification.Application.UnitTests/Notification.Application.UnitTests.csproj" />
+    <Project Path="src/Modules/Notification/tests/Notification.Domain.UnitTests/Notification.Domain.UnitTests.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Pricing/">
     <Project Path="src/Modules/Pricing/Pricing.Application/Pricing.Application.csproj" Id="7a78cb0f-fdc6-4adc-9d59-a3dc16f0b0f7" />
     <Project Path="src/Modules/Pricing/Pricing.Contracts/Pricing.Contracts.csproj" Id="976bfc42-1f17-44c1-a42c-1b1d968ec6db" />

@@ -19,6 +19,7 @@ public sealed class PlaceOrderCommandHandler : IRequestHandler<PlaceOrderCommand
     private readonly IOrderCatalogProductService _catalogProductService;
     private readonly IOrderPricingService _pricingService;
     private readonly IOrderInventoryService _inventoryService;
+    private readonly IOrderNotificationService _notificationService;
     private readonly ILogger<PlaceOrderCommandHandler> _logger;
 
     public PlaceOrderCommandHandler(
@@ -29,6 +30,7 @@ public sealed class PlaceOrderCommandHandler : IRequestHandler<PlaceOrderCommand
         IOrderCatalogProductService catalogProductService,
         IOrderPricingService pricingService,
         IOrderInventoryService inventoryService,
+        IOrderNotificationService notificationService,
         ILogger<PlaceOrderCommandHandler> logger)
     {
         _orderRepository = orderRepository;
@@ -38,6 +40,7 @@ public sealed class PlaceOrderCommandHandler : IRequestHandler<PlaceOrderCommand
         _catalogProductService = catalogProductService;
         _pricingService = pricingService;
         _inventoryService = inventoryService;
+        _notificationService = notificationService;
         _logger = logger;
     }
 
@@ -194,6 +197,28 @@ public sealed class PlaceOrderCommandHandler : IRequestHandler<PlaceOrderCommand
             order.StoreId,
             order.CustomerId,
             order.Totals.GrandTotalAmount);
+
+        try
+        {
+            await _notificationService.SendOrderPlacedAsync(
+                order.StoreId,
+                order.Id,
+                order.CustomerId,
+                order.OrderNumber.Value,
+                order.CustomerSnapshot.Email,
+                order.CustomerSnapshot.FullName,
+                order.Totals.GrandTotalAmount,
+                order.CurrencyCode,
+                cancellationToken);
+        }
+        catch (Exception notificationException)
+        {
+            _logger.LogWarning(
+                notificationException,
+                "Order placed notification failed | OrderId: {OrderId} | StoreId: {StoreId}",
+                order.Id,
+                order.StoreId);
+        }
 
         return order.Id;
     }

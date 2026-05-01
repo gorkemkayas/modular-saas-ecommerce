@@ -16,6 +16,7 @@ public sealed class CreateShipmentCommandHandler : IRequestHandler<CreateShipmen
     private readonly IShipmentNumberGenerator _shipmentNumberGenerator;
     private readonly IOrderShipmentContextService _orderShipmentContextService;
     private readonly IOrderShipmentSyncService _orderShipmentSyncService;
+    private readonly IShipmentNotificationService _shipmentNotificationService;
     private readonly ILogger<CreateShipmentCommandHandler> _logger;
 
     public CreateShipmentCommandHandler(
@@ -24,6 +25,7 @@ public sealed class CreateShipmentCommandHandler : IRequestHandler<CreateShipmen
         IShipmentNumberGenerator shipmentNumberGenerator,
         IOrderShipmentContextService orderShipmentContextService,
         IOrderShipmentSyncService orderShipmentSyncService,
+        IShipmentNotificationService shipmentNotificationService,
         ILogger<CreateShipmentCommandHandler> logger)
     {
         _shipmentRepository = shipmentRepository;
@@ -31,6 +33,7 @@ public sealed class CreateShipmentCommandHandler : IRequestHandler<CreateShipmen
         _shipmentNumberGenerator = shipmentNumberGenerator;
         _orderShipmentContextService = orderShipmentContextService;
         _orderShipmentSyncService = orderShipmentSyncService;
+        _shipmentNotificationService = shipmentNotificationService;
         _logger = logger;
     }
 
@@ -98,6 +101,31 @@ public sealed class CreateShipmentCommandHandler : IRequestHandler<CreateShipmen
             shipment.OrderId,
             shipment.ShipmentNumber,
             cancellationToken);
+
+        try
+        {
+            await _shipmentNotificationService.SendShipmentCreatedAsync(
+                shipment.StoreId,
+                shipment.Id,
+                shipment.OrderId,
+                orderContext.CustomerId,
+                shipment.OrderNumber,
+                shipment.ShipmentNumber,
+                orderContext.CustomerEmail,
+                orderContext.CustomerFullName,
+                shipment.CarrierName,
+                shipment.Packages.OrderBy(x => x.CreatedAtUtc).Select(x => x.TrackingNumber).FirstOrDefault(x => x != null),
+                shipment.TrackingUrl,
+                cancellationToken);
+        }
+        catch (Exception notificationException)
+        {
+            _logger.LogWarning(
+                notificationException,
+                "Shipment created notification failed | ShipmentId: {ShipmentId} | OrderId: {OrderId}",
+                shipment.Id,
+                shipment.OrderId);
+        }
 
         _logger.LogInformation(
             "Shipment created | ShipmentId: {ShipmentId} | ShipmentNumber: {ShipmentNumber} | StoreId: {StoreId} | OrderId: {OrderId}",

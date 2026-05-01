@@ -18,6 +18,7 @@ public sealed class CreateShipmentCommandHandlerTests
         var numberGenerator = new Mock<IShipmentNumberGenerator>();
         var orderContextService = new Mock<IOrderShipmentContextService>();
         var orderSyncService = new Mock<IOrderShipmentSyncService>();
+        var notificationService = new Mock<IShipmentNotificationService>();
 
         var storeId = Guid.NewGuid();
         var orderId = Guid.NewGuid();
@@ -33,6 +34,8 @@ public sealed class CreateShipmentCommandHandlerTests
                 storeId,
                 Guid.NewGuid(),
                 "ORD-1001",
+                "customer@example.com",
+                "Jane Doe",
                 OrderShipmentStatus.Confirmed,
                 OrderShipmentPaymentStatus.Captured,
                 OrderShipmentFulfillmentStatus.Unfulfilled,
@@ -57,6 +60,7 @@ public sealed class CreateShipmentCommandHandlerTests
             numberGenerator.Object,
             orderContextService.Object,
             orderSyncService.Object,
+            notificationService.Object,
             NullLogger<CreateShipmentCommandHandler>.Instance);
 
         var shipmentId = await handler.Handle(new CreateShipmentCommand(storeId, orderId, "Fragile"), CancellationToken.None);
