@@ -9,6 +9,7 @@ using Shipment.Application.Integrations;
 using Shipment.Contracts;
 using Shipment.Domain.Repositories;
 using Shipment.Infrastructure.Integrations.Order;
+using Shipment.Infrastructure.Integrations.Notification;
 using Shipment.Infrastructure.Options;
 using Shipment.Infrastructure.Persistence;
 using Shipment.Infrastructure.Persistence.Repositories;
@@ -38,6 +39,7 @@ public static class ShipmentInfrastructureServiceCollectionExtensions
 
         services.AddScoped<IOrderShipmentContextService, OrderShipmentContextService>();
         services.AddScoped<IOrderShipmentSyncService, OrderShipmentSyncService>();
+        services.AddScoped<IShipmentNotificationService, ShipmentNotificationService>();
         services.AddScoped<IShipmentRepository, ShipmentRepository>();
         services.AddScoped<IShipmentReadService, ShipmentReadService>();
         services.AddScoped<IShipmentModuleApi, ShipmentModuleApi>();

@@ -7,6 +7,8 @@ public sealed record OrderShipmentContextResult(
     Guid StoreId,
     Guid CustomerId,
     string OrderNumber,
+    string CustomerEmail,
+    string CustomerFullName,
     OrderStatus Status,
     PaymentStatus PaymentStatus,
     FulfillmentStatus FulfillmentStatus,

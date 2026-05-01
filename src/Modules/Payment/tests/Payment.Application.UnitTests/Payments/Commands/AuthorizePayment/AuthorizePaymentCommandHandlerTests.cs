@@ -19,6 +19,7 @@ public sealed class AuthorizePaymentCommandHandlerTests
         var orderContextService = new Mock<IOrderPaymentContextService>();
         var orderSyncService = new Mock<IOrderPaymentSyncService>();
         var inventoryService = new Mock<IInventoryPaymentService>();
+        var notificationService = new Mock<IPaymentNotificationService>();
         var shipmentService = new Mock<IShipmentPaymentService>();
         var paymentGateway = new Mock<IPaymentGateway>();
 
@@ -71,6 +72,7 @@ public sealed class AuthorizePaymentCommandHandlerTests
             orderContextService.Object,
             orderSyncService.Object,
             inventoryService.Object,
+            notificationService.Object,
             shipmentService.Object,
             paymentGateway.Object,
             NullLogger<AuthorizePaymentCommandHandler>.Instance);
@@ -93,6 +95,7 @@ public sealed class AuthorizePaymentCommandHandlerTests
         var orderContextService = new Mock<IOrderPaymentContextService>();
         var orderSyncService = new Mock<IOrderPaymentSyncService>();
         var inventoryService = new Mock<IInventoryPaymentService>();
+        var notificationService = new Mock<IPaymentNotificationService>();
         var shipmentService = new Mock<IShipmentPaymentService>();
         var paymentGateway = new Mock<IPaymentGateway>();
 
@@ -145,6 +148,7 @@ public sealed class AuthorizePaymentCommandHandlerTests
             orderContextService.Object,
             orderSyncService.Object,
             inventoryService.Object,
+            notificationService.Object,
             shipmentService.Object,
             paymentGateway.Object,
             NullLogger<AuthorizePaymentCommandHandler>.Instance);

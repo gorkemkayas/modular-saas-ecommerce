@@ -3,6 +3,7 @@ using BuildingBlocks.Infrastructure.Extensions.Authentication;
 using BuildingBlocks.Infrastructure.Extensions.Middleware;
 using ECommerce.API.ExceptionHandlers;
 using ECommerce.API.Extensions;
+using Notification.Infrastructure.DependencyInjection;
 using Scalar.AspNetCore;
 using Serilog;
 using System.Text.Json.Serialization;
@@ -25,6 +26,7 @@ try
     builder.Services.AddCatalogModule(builder.Configuration);
     builder.Services.AddCustomerModule(builder.Configuration);
     builder.Services.AddInventoryModule(builder.Configuration);
+    builder.Services.AddNotificationModule(builder.Configuration);
     builder.Services.AddOrderModule(builder.Configuration);
     builder.Services.AddPaymentModule(builder.Configuration);
     builder.Services.AddPricingModule(builder.Configuration);
@@ -35,6 +37,7 @@ try
         cfg.RegisterServicesFromAssembly(typeof(Catalog.Application.AssemblyReference).Assembly);
         cfg.RegisterServicesFromAssembly(typeof(Customer.Application.AssemblyReference).Assembly);
         cfg.RegisterServicesFromAssembly(typeof(Inventory.Application.AssemblyReference).Assembly);
+        cfg.RegisterServicesFromAssembly(typeof(Notification.Application.AssemblyReference).Assembly);
         cfg.RegisterServicesFromAssembly(typeof(Order.Application.AssemblyReference).Assembly);
         cfg.RegisterServicesFromAssembly(typeof(Payment.Application.AssemblyReference).Assembly);
         cfg.RegisterServicesFromAssembly(typeof(Pricing.Application.AssemblyReference).Assembly);
@@ -54,6 +57,7 @@ try
     
     builder.Services.AddExceptionHandler<CustomerExceptionHandler>();
     builder.Services.AddExceptionHandler<InventoryExceptionHandler>();
+    builder.Services.AddExceptionHandler<NotificationExceptionHandler>();
     builder.Services.AddExceptionHandler<OrderExceptionHandler>();
     builder.Services.AddExceptionHandler<PaymentExceptionHandler>();
     builder.Services.AddExceptionHandler<PricingExceptionHandler>();
@@ -63,6 +67,8 @@ try
     builder.Services.AddProblemDetails();
 
     var app = builder.Build();
+
+    await app.Services.SeedNotificationDefaultsAsync();
 
     // Serilog HTTP Request Logging
     app.UseEnrichedSerilogRequestLogging();

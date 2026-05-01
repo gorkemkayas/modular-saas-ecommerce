@@ -25,6 +25,7 @@ The project currently contains these modules:
 - `Inventory`
 - `Payment`
 - `Shipment`
+- `Notification`
 
 These modules already model the core commerce flow:
 
@@ -36,6 +37,7 @@ These modules already model the core commerce flow:
 - inventory availability, reservation, release, and stock movement tracking
 - payment lifecycle orchestration
 - outbound shipment and tracking management
+- transactional customer notifications with delivery history
 
 ## Architecture
 
@@ -82,12 +84,7 @@ Implemented today:
 - inventory module with reservation-based stock protection
 - payment module with authorization, capture, cancel, refund, and order sync
 - shipment module with package-level fulfillment and tracking events
-
-Planned next core modules:
-
-- `Notification`
-
-These three modules are the remaining core pieces needed to complete the first full backend MVP.
+- notification module with store-scoped templates and persisted dispatch history
 
 ## Progress Visuals
 
@@ -128,9 +125,11 @@ src/
     Inventory/
     Payment/
     Shipment/
+    Notification/
 docs/
   OrderModuleDesign.md
   PricingModuleDesign.md
+  NotificationModuleDesign.md
   ShipmentModuleDesign.md
 ```
 
@@ -143,6 +142,38 @@ The API host project is:
 Development configuration is currently stored in:
 
 - `src/Host/ECommerce.API/appsettings.Development.json`
+
+Sensitive development values should be provided through .NET user secrets instead of being committed into `appsettings.Development.json`.
+
+Common keys:
+
+- `Jwt:Secret`
+- `ServiceTokens:ECommerce`
+- `Modules:Store:Database:ConnectionString`
+- `Modules:Catalog:Database:ConnectionString`
+- `Modules:Customer:Database:ConnectionString`
+- `Modules:Pricing:Database:ConnectionString`
+- `Modules:Inventory:Database:ConnectionString`
+- `Modules:Notification:Database:ConnectionString`
+- `Modules:Order:Database:ConnectionString`
+- `Modules:Payment:Database:ConnectionString`
+- `Modules:Shipment:Database:ConnectionString`
+- `Modules:Notification:Email:ApiKey`
+- `Modules:Notification:Email:WebhookSecret`
+- `Modules:Payment:Iyzico:ApiKey`
+- `Modules:Payment:Iyzico:SecretKey`
+
+Example setup:
+
+```powershell
+dotnet user-secrets set "Jwt:Secret" "your-jwt-secret" --project src/Host/ECommerce.API/ECommerce.API.csproj
+dotnet user-secrets set "ServiceTokens:ECommerce" "your-service-token" --project src/Host/ECommerce.API/ECommerce.API.csproj
+dotnet user-secrets set "Modules:Notification:Email:ApiKey" "re_..." --project src/Host/ECommerce.API/ECommerce.API.csproj
+dotnet user-secrets set "Modules:Notification:Email:WebhookSecret" "whsec_..." --project src/Host/ECommerce.API/ECommerce.API.csproj
+dotnet user-secrets set "Modules:Notification:Database:ConnectionString" "Host=localhost;Port=5432;Database=notificationdb;Username=postgres;Password=..." --project src/Host/ECommerce.API/ECommerce.API.csproj
+dotnet user-secrets set "Modules:Payment:Iyzico:ApiKey" "sandbox-api-key" --project src/Host/ECommerce.API/ECommerce.API.csproj
+dotnet user-secrets set "Modules:Payment:Iyzico:SecretKey" "sandbox-secret-key" --project src/Host/ECommerce.API/ECommerce.API.csproj
+```
 
 To build the API:
 
@@ -162,15 +193,16 @@ Additional design notes are available in:
 
 - [docs/OrderModuleDesign.md](docs/OrderModuleDesign.md)
 - [docs/PricingModuleDesign.md](docs/PricingModuleDesign.md)
+- [docs/NotificationModuleDesign.md](docs/NotificationModuleDesign.md)
 - [docs/ShipmentModuleDesign.md](docs/ShipmentModuleDesign.md)
 
 ## Roadmap
 
 Short-term roadmap:
 
-1. complete `Notification`
-2. build the frontend MVP
-3. expand with optional product modules such as `Cart`, `Promotion`, `Return`, and `Review`
+1. build the frontend MVP
+2. expand with optional product modules such as `Cart`, `Promotion`, `Return`, and `Review`
+3. revisit cross-module reliability with event/outbox + saga after MVP
 
 ## Notes
 

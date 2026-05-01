@@ -20,6 +20,7 @@ public sealed class PlaceOrderCommandHandlerTests
         var catalogProductService = new Mock<IOrderCatalogProductService>();
         var pricingService = new Mock<IOrderPricingService>();
         var inventoryService = new Mock<IOrderInventoryService>();
+        var notificationService = new Mock<IOrderNotificationService>();
 
         orderNumberGenerator
             .Setup(x => x.GenerateAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
@@ -66,6 +67,7 @@ public sealed class PlaceOrderCommandHandlerTests
             catalogProductService.Object,
             pricingService.Object,
             inventoryService.Object,
+            notificationService.Object,
             NullLogger<PlaceOrderCommandHandler>.Instance);
 
         var command = new PlaceOrderCommand(
