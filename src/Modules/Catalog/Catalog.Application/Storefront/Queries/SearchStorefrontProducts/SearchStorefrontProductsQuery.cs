@@ -6,6 +6,7 @@ namespace Catalog.Application.Storefront.Queries.SearchStorefrontProducts
 {
     public sealed record SearchStorefrontProductsQuery(
         Guid StoreId,
+        string CurrencyCode,
         string? SearchTerm,
         Guid? CategoryId,
         Guid? BrandId,

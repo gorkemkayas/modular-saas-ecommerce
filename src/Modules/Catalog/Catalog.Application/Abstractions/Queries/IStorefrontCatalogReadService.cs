@@ -12,6 +12,7 @@ namespace Catalog.Application.Abstractions.Queries
         Task<StorefrontProductDto?> GetProductBySlugAsync(
             Guid storeId,
             string slug,
+            string currencyCode,
             CancellationToken cancellationToken = default);
 
         Task<IReadOnlyCollection<StorefrontCategoryTreeNodeDto>> GetCategoryTreeAsync(

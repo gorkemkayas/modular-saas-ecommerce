@@ -6,16 +6,19 @@ using Catalog.Domain.Enums;
 using Catalog.Domain.ValueObjects;
 using Catalog.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Pricing.Contracts;
 
 namespace Catalog.Infrastructure.ReadServices
 {
     public sealed class StorefrontCatalogReadService : IStorefrontCatalogReadService
     {
         private readonly CatalogDbContext _context;
+        private readonly IPricingModuleApi _pricingModuleApi;
 
-        public StorefrontCatalogReadService(CatalogDbContext context)
+        public StorefrontCatalogReadService(CatalogDbContext context, IPricingModuleApi pricingModuleApi)
         {
             _context = context;
+            _pricingModuleApi = pricingModuleApi;
         }
 
         public async Task<PagedResult<StorefrontProductSummaryDto>> SearchProductsAsync(
@@ -72,7 +75,7 @@ namespace Catalog.Infrastructure.ReadServices
                     .Take(criteria.PageSize)
                     .ToArrayAsync(cancellationToken);
 
-                items = rows.Select(MapSummary).ToArray();
+                items = await MapSummariesAsync(criteria.StoreId, criteria.CurrencyCode, rows, cancellationToken);
             }
             else
             {
@@ -84,11 +87,12 @@ namespace Catalog.Infrastructure.ReadServices
 
                 totalCount = filteredRows.Length;
 
-                items = filteredRows
+                var pagedRows = filteredRows
                     .Skip((criteria.PageNumber - 1) * criteria.PageSize)
                     .Take(criteria.PageSize)
-                    .Select(MapSummary)
                     .ToArray();
+
+                items = await MapSummariesAsync(criteria.StoreId, criteria.CurrencyCode, pagedRows, cancellationToken);
             }
 
             return new PagedResult<StorefrontProductSummaryDto>(
@@ -101,6 +105,7 @@ namespace Catalog.Infrastructure.ReadServices
         public async Task<StorefrontProductDto?> GetProductBySlugAsync(
             Guid storeId,
             string slug,
+            string currencyCode,
             CancellationToken cancellationToken = default)
         {
             var normalizedSlug = NormalizeRequired(slug);
@@ -194,9 +199,29 @@ namespace Catalog.Infrastructure.ReadServices
                 .Where(x => x.IsActive)
                 .OrderBy(x => x.SortOrder)
                 .ThenBy(x => x.Name)
+                .ToArray();
+
+            var normalizedCurrencyCode = NormalizeCurrencyCode(currencyCode);
+            var variantPrices = await ResolveVariantPricesAsync(
+                storeId,
+                product.Id,
+                variants.Select(x => x.Id).ToArray(),
+                normalizedCurrencyCode,
+                cancellationToken);
+
+            var productPrice = await ResolveDisplayPriceAsync(
+                storeId,
+                product.Id,
+                variants.Select(x => x.Id).ToArray(),
+                normalizedCurrencyCode,
+                cancellationToken,
+                variantPrices);
+
+            var storefrontVariants = variants
                 .Select(variant => new StorefrontProductVariantDto(
                     variant.Id,
                     variant.Name,
+                    variantPrices.GetValueOrDefault(variant.Id),
                     variant.AttributeValues
                         .Select(x => MapAttribute(x.AttributeDefinitionId, x.Value, attributeDefinitions))
                         .Where(x => x is not null)
@@ -221,9 +246,10 @@ namespace Catalog.Infrastructure.ReadServices
                 brandName,
                 product.ProductType,
                 product.PublishedAtUtc,
+                productPrice,
                 storefrontCategories,
                 productAttributes,
-                variants,
+                storefrontVariants,
                 mediaItems);
         }
 
@@ -560,7 +586,142 @@ namespace Catalog.Infrastructure.ReadServices
                 || slug.Contains(normalizedSearch, StringComparison.OrdinalIgnoreCase);
         }
 
-        private static StorefrontProductSummaryDto MapSummary(StorefrontProductSummaryRow row)
+        private async Task<IReadOnlyCollection<StorefrontProductSummaryDto>> MapSummariesAsync(
+            Guid storeId,
+            string currencyCode,
+            IReadOnlyCollection<StorefrontProductSummaryRow> rows,
+            CancellationToken cancellationToken)
+        {
+            if (rows.Count == 0)
+                return Array.Empty<StorefrontProductSummaryDto>();
+
+            var variantIdsByProduct = await GetActiveVariantIdsByProductAsync(
+                rows.Select(x => x.Id).ToArray(),
+                cancellationToken);
+
+            var normalizedCurrencyCode = NormalizeCurrencyCode(currencyCode);
+            var items = new List<StorefrontProductSummaryDto>(rows.Count);
+
+            foreach (var row in rows)
+            {
+                var activeVariantIds = variantIdsByProduct.GetValueOrDefault(row.Id) ?? Array.Empty<Guid>();
+
+                var price = await ResolveDisplayPriceAsync(
+                    storeId,
+                    row.Id,
+                    activeVariantIds,
+                    normalizedCurrencyCode,
+                    cancellationToken);
+
+                items.Add(MapSummary(row, price));
+            }
+
+            return items;
+        }
+
+        private async Task<Dictionary<Guid, IReadOnlyCollection<Guid>>> GetActiveVariantIdsByProductAsync(
+            IReadOnlyCollection<Guid> productIds,
+            CancellationToken cancellationToken)
+        {
+            if (productIds.Count == 0)
+                return new Dictionary<Guid, IReadOnlyCollection<Guid>>();
+
+            var rows = await _context.ProductVariants
+                .AsNoTracking()
+                .Where(x => productIds.Contains(x.ProductId) && x.IsActive)
+                .OrderBy(x => x.SortOrder)
+                .ThenBy(x => x.Name)
+                .Select(x => new { x.ProductId, x.Id })
+                .ToArrayAsync(cancellationToken);
+
+            return rows
+                .GroupBy(x => x.ProductId)
+                .ToDictionary(
+                    group => group.Key,
+                    group => (IReadOnlyCollection<Guid>)group.Select(x => x.Id).ToArray());
+        }
+
+        private async Task<StorefrontResolvedPriceDto?> ResolveDisplayPriceAsync(
+            Guid storeId,
+            Guid productId,
+            IReadOnlyCollection<Guid> activeVariantIds,
+            string currencyCode,
+            CancellationToken cancellationToken,
+            IReadOnlyDictionary<Guid, StorefrontResolvedPriceDto?>? preResolvedVariantPrices = null)
+        {
+            var productPrice = await ResolvePriceAsync(storeId, productId, null, currencyCode, cancellationToken);
+            if (productPrice is not null)
+                return productPrice;
+
+            IReadOnlyDictionary<Guid, StorefrontResolvedPriceDto?> variantPrices = preResolvedVariantPrices
+                ?? await ResolveVariantPricesAsync(storeId, productId, activeVariantIds, currencyCode, cancellationToken);
+
+            return variantPrices.Values
+                .Where(x => x is not null)
+                .Cast<StorefrontResolvedPriceDto>()
+                .OrderBy(x => x.Amount)
+                .ThenBy(x => x.ProductVariantId)
+                .FirstOrDefault();
+        }
+
+        private async Task<IReadOnlyDictionary<Guid, StorefrontResolvedPriceDto?>> ResolveVariantPricesAsync(
+            Guid storeId,
+            Guid productId,
+            IReadOnlyCollection<Guid> activeVariantIds,
+            string currencyCode,
+            CancellationToken cancellationToken)
+        {
+            if (activeVariantIds.Count == 0)
+                return new Dictionary<Guid, StorefrontResolvedPriceDto?>();
+
+            var tasks = activeVariantIds.Select(async variantId => new
+            {
+                VariantId = variantId,
+                Price = await ResolvePriceAsync(storeId, productId, variantId, currencyCode, cancellationToken)
+            });
+
+            var results = await Task.WhenAll(tasks);
+
+            return results.ToDictionary(
+                x => x.VariantId,
+                x => x.Price);
+        }
+
+        private async Task<StorefrontResolvedPriceDto?> ResolvePriceAsync(
+            Guid storeId,
+            Guid productId,
+            Guid? productVariantId,
+            string currencyCode,
+            CancellationToken cancellationToken)
+        {
+            var result = await _pricingModuleApi.ResolvePriceAsync(
+                new ResolvePriceRequest(storeId, productId, productVariantId, currencyCode),
+                cancellationToken);
+
+            return result is null
+                ? null
+                : MapPrice(result);
+        }
+
+        private static StorefrontResolvedPriceDto MapPrice(ResolvedPriceResult result)
+        {
+            return new StorefrontResolvedPriceDto(
+                result.ProductId,
+                result.ProductVariantId,
+                result.Amount,
+                result.CurrencyCode,
+                result.CompareAtAmount,
+                result.CompareAtAmount.HasValue && result.CompareAtAmount.Value > result.Amount);
+        }
+
+        private static string NormalizeCurrencyCode(string? currencyCode)
+        {
+            return string.IsNullOrWhiteSpace(currencyCode)
+                ? "TRY"
+                : currencyCode.Trim().ToUpperInvariant();
+        }
+
+        private static StorefrontProductSummaryDto MapSummary(StorefrontProductSummaryRow row, StorefrontResolvedPriceDto? price)
         {
             return new StorefrontProductSummaryDto(
                 row.Id,
@@ -571,7 +732,8 @@ namespace Catalog.Infrastructure.ReadServices
                 row.BrandName,
                 row.ProductType,
                 row.PublishedAtUtc,
-                row.MainImageUrl);
+                row.MainImageUrl,
+                price);
         }
 
         private sealed record StorefrontAttributeDefinitionLookup(

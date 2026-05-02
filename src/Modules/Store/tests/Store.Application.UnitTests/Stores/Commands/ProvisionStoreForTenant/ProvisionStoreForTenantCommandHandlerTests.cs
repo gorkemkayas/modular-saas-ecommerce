@@ -28,7 +28,7 @@ namespace Store.Application.Stores.Commands.ProvisionStoreForTenant.UnitTests
         }
 
         [TestMethod]
-        public async Task Handle_TenantAlreadyExists_ThrowsStoreNotFoundException()
+        public async Task Handle_TenantAlreadyExists_ThrowsStoreAlreadyExistsForTenantException()
         {
             var tenantId = Guid.NewGuid();
             var command = new ProvisionStoreForTenantCommand(tenantId, "Store Name", "store-slug");
@@ -45,9 +45,9 @@ namespace Store.Application.Stores.Commands.ProvisionStoreForTenant.UnitTests
             try
             {
                 await handler.Handle(command, cancellationToken);
-                Assert.Fail("Expected StoreNotFoundException was not thrown.");
+                Assert.Fail("Expected StoreAlreadyExistsForTenantException was not thrown.");
             }
-            catch (StoreNotFoundException)
+            catch (StoreAlreadyExistsForTenantException)
             {
                 // expected
             }

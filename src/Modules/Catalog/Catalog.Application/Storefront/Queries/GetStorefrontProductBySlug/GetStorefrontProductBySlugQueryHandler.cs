@@ -21,6 +21,7 @@ namespace Catalog.Application.Storefront.Queries.GetStorefrontProductBySlug
             return _storefrontCatalogReadService.GetProductBySlugAsync(
                 query.StoreId,
                 query.Slug,
+                query.CurrencyCode,
                 cancellationToken);
         }
     }

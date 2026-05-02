@@ -11,5 +11,6 @@ namespace Catalog.Application.Storefront.DTOs
         string? BrandName,
         ProductType ProductType,
         DateTime? PublishedAtUtc,
-        string? MainImageUrl);
+        string? MainImageUrl,
+        StorefrontResolvedPriceDto? Price);
 }

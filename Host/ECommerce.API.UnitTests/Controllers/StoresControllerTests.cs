@@ -1,6 +1,6 @@
 ﻿using BuildingBlocks.Application.Abstractions.Tenancy;
 using ECommerce.API.Contracts.Store.UpdateStoreProfile;
-using ECommerce.API.Controllers;
+using ECommerce.API.Controllers.Store;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

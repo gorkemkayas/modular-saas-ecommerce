@@ -143,6 +143,12 @@ namespace Store.API.ExceptionHandlers
                     "https://tools.ietf.org/html/rfc9110#section-15.5.9"
                 ),
 
+                StoreAlreadyExistsForTenantException => (
+                    StatusCodes.Status409Conflict,
+                    "Store Already Exists",
+                    "https://tools.ietf.org/html/rfc9110#section-15.5.9"
+                ),
+
                 // Application Exceptions (403 - Forbidden)
                 UnauthorizedStoreAccessException => (
                     StatusCodes.Status403Forbidden,
@@ -204,6 +210,10 @@ namespace Store.API.ExceptionHandlers
 
                 case DuplicateStoreSlugException duplicateSlug:
                     problemDetails.Extensions["slug"] = duplicateSlug.Slug;
+                    break;
+
+                case StoreAlreadyExistsForTenantException existingStore:
+                    problemDetails.Extensions["tenantId"] = existingStore.TenantId;
                     break;
 
                 case UnauthorizedStoreAccessException unauthorized:
