@@ -69,6 +69,17 @@ public sealed class AuthorizePaymentCommandHandlerTests
                 null,
                 "request-1"));
 
+        var savedChanges = false;
+        unitOfWork
+            .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .Callback(() => savedChanges = true)
+            .Returns(Task.CompletedTask);
+
+        orderSyncService
+            .Setup(x => x.MarkAuthorizedAsync(payment.StoreId, payment.OrderId, "pay-ref-1", It.IsAny<CancellationToken>()))
+            .Callback(() => Assert.IsTrue(savedChanges))
+            .Returns(Task.CompletedTask);
+
         var handler = new AuthorizePaymentCommandHandler(
             repository.Object,
             unitOfWork.Object,
@@ -147,6 +158,62 @@ public sealed class AuthorizePaymentCommandHandlerTests
                 null,
                 null,
                 "request-2"));
+
+        var savedChanges = false;
+        var orderSynced = false;
+        var inventoryConfirmed = false;
+        var shipmentCreated = false;
+
+        unitOfWork
+            .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .Callback(() => savedChanges = true)
+            .Returns(Task.CompletedTask);
+
+        orderSyncService
+            .Setup(x => x.MarkCapturedAsync(payment.StoreId, payment.OrderId, "pay-ref-2", It.IsAny<CancellationToken>()))
+            .Callback(() =>
+            {
+                Assert.IsTrue(savedChanges);
+                orderSynced = true;
+            })
+            .Returns(Task.CompletedTask);
+
+        inventoryService
+            .Setup(x => x.ConfirmDeductionAsync(payment.StoreId, "res-2", "Payment captured.", It.IsAny<CancellationToken>()))
+            .Callback(() =>
+            {
+                Assert.IsTrue(savedChanges);
+                Assert.IsTrue(orderSynced);
+                inventoryConfirmed = true;
+            })
+            .Returns(Task.CompletedTask);
+
+        shipmentService
+            .Setup(x => x.EnsureShipmentCreatedForCapturedOrderAsync(payment.StoreId, payment.OrderId, It.IsAny<CancellationToken>()))
+            .Callback(() =>
+            {
+                Assert.IsTrue(savedChanges);
+                Assert.IsTrue(orderSynced);
+                Assert.IsTrue(inventoryConfirmed);
+                shipmentCreated = true;
+            })
+            .Returns(Task.CompletedTask);
+
+        notificationService
+            .Setup(x => x.SendPaymentCapturedAsync(
+                payment.StoreId,
+                payment.Id,
+                payment.OrderId,
+                payment.CustomerId,
+                payment.OrderNumber,
+                "customer@example.com",
+                "Jane Doe",
+                payment.Amount,
+                payment.CurrencyCode,
+                "pay-ref-2",
+                It.IsAny<CancellationToken>()))
+            .Callback(() => Assert.IsTrue(shipmentCreated))
+            .Returns(Task.CompletedTask);
 
         var handler = new AuthorizePaymentCommandHandler(
             repository.Object,

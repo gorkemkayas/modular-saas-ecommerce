@@ -85,7 +85,47 @@ public sealed class ProcessPaymentWebhookCommandHandler : IRequestHandler<Proces
                     PaymentOperationType.Webhook,
                     webhook.ExternalConversationId,
                     webhook.ExternalPaymentReference);
+                break;
 
+            case PaymentGatewayOutcome.Captured:
+                payment.MarkCaptured(
+                    webhook.IdempotencyKey,
+                    webhook.ExternalConversationId,
+                    webhook.ExternalPaymentReference);
+                break;
+
+            case PaymentGatewayOutcome.Cancelled:
+                payment.Cancel(
+                    webhook.IdempotencyKey,
+                    webhook.ExternalPaymentReference);
+                break;
+
+            case PaymentGatewayOutcome.Refunded:
+                payment.Refund(
+                    webhook.IdempotencyKey,
+                    webhook.RefundAmount ?? payment.Amount,
+                    "Payment refunded via webhook.",
+                    webhook.ExternalPaymentReference);
+                break;
+
+            case PaymentGatewayOutcome.Failed:
+                payment.MarkFailed(
+                    webhook.IdempotencyKey,
+                    PaymentOperationType.Webhook,
+                    webhook.FailureCode,
+                    webhook.FailureMessage,
+                    providerTransactionReference: webhook.ExternalPaymentReference);
+                break;
+
+            default:
+                throw new PaymentWebhookValidationException("Unsupported webhook outcome.");
+        }
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        switch (webhook.Outcome)
+        {
+            case PaymentGatewayOutcome.Authorized:
                 await _orderPaymentSyncService.MarkAuthorizedAsync(
                     payment.StoreId,
                     payment.OrderId,
@@ -94,11 +134,6 @@ public sealed class ProcessPaymentWebhookCommandHandler : IRequestHandler<Proces
                 break;
 
             case PaymentGatewayOutcome.Captured:
-                payment.MarkCaptured(
-                    webhook.IdempotencyKey,
-                    webhook.ExternalConversationId,
-                    webhook.ExternalPaymentReference);
-
                 await _orderPaymentSyncService.MarkCapturedAsync(
                     payment.StoreId,
                     payment.OrderId,
@@ -118,13 +153,14 @@ public sealed class ProcessPaymentWebhookCommandHandler : IRequestHandler<Proces
                         "Payment captured via webhook.",
                         cancellationToken);
                 }
+
+                await _shipmentPaymentService.EnsureShipmentCreatedForCapturedOrderAsync(
+                    payment.StoreId,
+                    payment.OrderId,
+                    cancellationToken);
                 break;
 
             case PaymentGatewayOutcome.Cancelled:
-                payment.Cancel(
-                    webhook.IdempotencyKey,
-                    webhook.ExternalPaymentReference);
-
                 await _orderPaymentSyncService.MarkFailedAsync(
                     payment.StoreId,
                     payment.OrderId,
@@ -147,12 +183,6 @@ public sealed class ProcessPaymentWebhookCommandHandler : IRequestHandler<Proces
                 break;
 
             case PaymentGatewayOutcome.Refunded:
-                payment.Refund(
-                    webhook.IdempotencyKey,
-                    webhook.RefundAmount ?? payment.Amount,
-                    "Payment refunded via webhook.",
-                    webhook.ExternalPaymentReference);
-
                 await _orderPaymentSyncService.MarkRefundedAsync(
                     payment.StoreId,
                     payment.OrderId,
@@ -161,25 +191,13 @@ public sealed class ProcessPaymentWebhookCommandHandler : IRequestHandler<Proces
                 break;
 
             case PaymentGatewayOutcome.Failed:
-                payment.MarkFailed(
-                    webhook.IdempotencyKey,
-                    PaymentOperationType.Webhook,
-                    webhook.FailureCode,
-                    webhook.FailureMessage,
-                    providerTransactionReference: webhook.ExternalPaymentReference);
-
                 await _orderPaymentSyncService.MarkFailedAsync(
                     payment.StoreId,
                     payment.OrderId,
                     payment.ExternalPaymentReference,
                     cancellationToken);
                 break;
-
-            default:
-                throw new PaymentWebhookValidationException("Unsupported webhook outcome.");
         }
-
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         try
         {
@@ -275,14 +293,6 @@ public sealed class ProcessPaymentWebhookCommandHandler : IRequestHandler<Proces
                 payment.Id,
                 payment.OrderId,
                 webhook.Outcome);
-        }
-
-        if (webhook.Outcome == PaymentGatewayOutcome.Captured)
-        {
-            await _shipmentPaymentService.EnsureShipmentCreatedForCapturedOrderAsync(
-                payment.StoreId,
-                payment.OrderId,
-                cancellationToken);
         }
     }
 }

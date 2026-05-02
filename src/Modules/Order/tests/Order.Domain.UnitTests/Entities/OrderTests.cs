@@ -48,6 +48,25 @@ public sealed class OrderTests
         Assert.ThrowsExactly<OrderDomainException>(() => order.Cancel("Customer changed mind"));
     }
 
+    [TestMethod]
+    public void Cancel_WhenPaymentCaptured_ThrowsOrderDomainException()
+    {
+        var order = CreateOrder();
+        order.MarkPaymentCaptured("PAY-1");
+
+        Assert.ThrowsExactly<OrderDomainException>(() => order.Cancel("Customer changed mind"));
+    }
+
+    [TestMethod]
+    public void Cancel_WhenPaymentRefunded_ThrowsOrderDomainException()
+    {
+        var order = CreateOrder();
+        order.MarkPaymentCaptured("PAY-1");
+        order.MarkPaymentRefunded("PAY-1");
+
+        Assert.ThrowsExactly<OrderDomainException>(() => order.Cancel("Customer changed mind"));
+    }
+
     private static Order.Domain.Entities.Order CreateOrder()
     {
         return Order.Domain.Entities.Order.Place(
