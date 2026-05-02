@@ -128,12 +128,6 @@ public sealed class AuthorizePaymentCommandHandler : IRequestHandler<AuthorizePa
                     gatewayResult.ExternalConversationId,
                     gatewayResult.ExternalPaymentReference,
                     gatewayResult.ProviderRequestReference);
-
-                await _orderPaymentSyncService.MarkAuthorizedAsync(
-                    payment.StoreId,
-                    payment.OrderId,
-                    payment.ExternalPaymentReference,
-                    cancellationToken);
                 break;
 
             case PaymentGatewayOutcome.Captured:
@@ -142,7 +136,35 @@ public sealed class AuthorizePaymentCommandHandler : IRequestHandler<AuthorizePa
                     gatewayResult.ExternalConversationId,
                     gatewayResult.ExternalPaymentReference,
                     gatewayResult.ProviderRequestReference);
+                break;
 
+            case PaymentGatewayOutcome.Failed:
+                payment.MarkFailed(
+                    command.IdempotencyKey,
+                    PaymentOperationType.Authorize,
+                    gatewayResult.FailureCode,
+                    gatewayResult.FailureMessage,
+                    gatewayResult.ProviderRequestReference,
+                    gatewayResult.ExternalPaymentReference);
+                break;
+
+            default:
+                throw new PaymentValidationException("Unsupported authorization result.");
+        }
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        switch (gatewayResult.Outcome)
+        {
+            case PaymentGatewayOutcome.Authorized:
+                await _orderPaymentSyncService.MarkAuthorizedAsync(
+                    payment.StoreId,
+                    payment.OrderId,
+                    payment.ExternalPaymentReference,
+                    cancellationToken);
+                break;
+
+            case PaymentGatewayOutcome.Captured:
                 await _orderPaymentSyncService.MarkCapturedAsync(
                     payment.StoreId,
                     payment.OrderId,
@@ -157,29 +179,21 @@ public sealed class AuthorizePaymentCommandHandler : IRequestHandler<AuthorizePa
                         "Payment captured.",
                         cancellationToken);
                 }
+
+                await _shipmentPaymentService.EnsureShipmentCreatedForCapturedOrderAsync(
+                    payment.StoreId,
+                    payment.OrderId,
+                    cancellationToken);
                 break;
 
             case PaymentGatewayOutcome.Failed:
-                payment.MarkFailed(
-                    command.IdempotencyKey,
-                    PaymentOperationType.Authorize,
-                    gatewayResult.FailureCode,
-                    gatewayResult.FailureMessage,
-                    gatewayResult.ProviderRequestReference,
-                    gatewayResult.ExternalPaymentReference);
-
                 await _orderPaymentSyncService.MarkFailedAsync(
                     payment.StoreId,
                     payment.OrderId,
                     payment.ExternalPaymentReference,
                     cancellationToken);
                 break;
-
-            default:
-                throw new PaymentValidationException("Unsupported authorization result.");
         }
-
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         try
         {
@@ -239,14 +253,6 @@ public sealed class AuthorizePaymentCommandHandler : IRequestHandler<AuthorizePa
                 payment.Id,
                 payment.OrderId,
                 gatewayResult.Outcome);
-        }
-
-        if (gatewayResult.Outcome == PaymentGatewayOutcome.Captured)
-        {
-            await _shipmentPaymentService.EnsureShipmentCreatedForCapturedOrderAsync(
-                payment.StoreId,
-                payment.OrderId,
-                cancellationToken);
         }
 
         _logger.LogInformation(

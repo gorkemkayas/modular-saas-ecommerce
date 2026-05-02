@@ -27,6 +27,40 @@ public sealed class CreateShipmentCommandHandlerTests
             .Setup(x => x.GenerateAsync(storeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync("SHP-TEST-001");
 
+        var savedChanges = false;
+        var orderSynced = false;
+
+        unitOfWork
+            .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .Callback(() => savedChanges = true)
+            .ReturnsAsync(1);
+
+        orderSyncService
+            .Setup(x => x.MarkShipmentCreatedAsync(storeId, orderId, "SHP-TEST-001", It.IsAny<CancellationToken>()))
+            .Callback(() =>
+            {
+                Assert.IsTrue(savedChanges);
+                orderSynced = true;
+            })
+            .Returns(Task.CompletedTask);
+
+        notificationService
+            .Setup(x => x.SendShipmentCreatedAsync(
+                storeId,
+                It.IsAny<Guid>(),
+                orderId,
+                It.IsAny<Guid>(),
+                "ORD-1001",
+                "SHP-TEST-001",
+                "customer@example.com",
+                "Jane Doe",
+                null,
+                null,
+                null,
+                It.IsAny<CancellationToken>()))
+            .Callback(() => Assert.IsTrue(orderSynced))
+            .Returns(Task.CompletedTask);
+
         orderContextService
             .Setup(x => x.GetStoreOrderContextAsync(storeId, orderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new OrderShipmentContext(

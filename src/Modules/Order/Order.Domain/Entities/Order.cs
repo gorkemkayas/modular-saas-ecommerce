@@ -115,6 +115,9 @@ public sealed class Order : IAggregateRoot
         if (Status == OrderStatus.Completed)
             throw new OrderDomainException("Completed order cannot be cancelled.");
 
+        if (PaymentStatus is PaymentStatus.Captured or PaymentStatus.Refunded)
+            throw new OrderDomainException("Captured or refunded order cannot be cancelled.");
+
         if (FulfillmentStatus is FulfillmentStatus.Shipped or FulfillmentStatus.Delivered)
             throw new OrderDomainException("Shipped or delivered order cannot be cancelled.");
 
