@@ -29,6 +29,9 @@ public sealed class OrderPaymentContextService : IOrderPaymentContextService
                 context.StoreId,
                 context.CustomerId,
                 context.OrderNumber,
+                MapOrderStatus(context.Status),
+                MapPaymentStatus(context.PaymentStatus),
+                MapFulfillmentStatus(context.FulfillmentStatus),
                 context.GrandTotalAmount,
                 context.CurrencyCode,
                 context.ReservationReference,
@@ -81,6 +84,9 @@ public sealed class OrderPaymentContextService : IOrderPaymentContextService
                 context.StoreId,
                 context.CustomerId,
                 context.OrderNumber,
+                MapOrderStatus(context.Status),
+                MapPaymentStatus(context.PaymentStatus),
+                MapFulfillmentStatus(context.FulfillmentStatus),
                 context.GrandTotalAmount,
                 context.CurrencyCode,
                 context.ReservationReference,
@@ -115,5 +121,44 @@ public sealed class OrderPaymentContextService : IOrderPaymentContextService
                         item.Quantity,
                         item.LineTotalAmount))
                     .ToArray());
+    }
+
+    private static OrderLifecycleStatus MapOrderStatus(OrderStatusContract status)
+    {
+        return status switch
+        {
+            OrderStatusContract.Pending => OrderLifecycleStatus.Pending,
+            OrderStatusContract.Confirmed => OrderLifecycleStatus.Confirmed,
+            OrderStatusContract.Cancelled => OrderLifecycleStatus.Cancelled,
+            OrderStatusContract.Completed => OrderLifecycleStatus.Completed,
+            _ => throw new InvalidOperationException($"Unsupported order status '{status}'.")
+        };
+    }
+
+    private static OrderPaymentLifecycleStatus MapPaymentStatus(OrderPaymentStatusContract status)
+    {
+        return status switch
+        {
+            OrderPaymentStatusContract.Pending => OrderPaymentLifecycleStatus.Pending,
+            OrderPaymentStatusContract.Authorized => OrderPaymentLifecycleStatus.Authorized,
+            OrderPaymentStatusContract.Captured => OrderPaymentLifecycleStatus.Captured,
+            OrderPaymentStatusContract.Failed => OrderPaymentLifecycleStatus.Failed,
+            OrderPaymentStatusContract.Refunded => OrderPaymentLifecycleStatus.Refunded,
+            _ => throw new InvalidOperationException($"Unsupported order payment status '{status}'.")
+        };
+    }
+
+    private static OrderFulfillmentLifecycleStatus MapFulfillmentStatus(OrderFulfillmentStatusContract status)
+    {
+        return status switch
+        {
+            OrderFulfillmentStatusContract.Unfulfilled => OrderFulfillmentLifecycleStatus.Unfulfilled,
+            OrderFulfillmentStatusContract.PartiallyFulfilled => OrderFulfillmentLifecycleStatus.PartiallyFulfilled,
+            OrderFulfillmentStatusContract.Fulfilled => OrderFulfillmentLifecycleStatus.Fulfilled,
+            OrderFulfillmentStatusContract.Shipped => OrderFulfillmentLifecycleStatus.Shipped,
+            OrderFulfillmentStatusContract.Delivered => OrderFulfillmentLifecycleStatus.Delivered,
+            OrderFulfillmentStatusContract.Returned => OrderFulfillmentLifecycleStatus.Returned,
+            _ => throw new InvalidOperationException($"Unsupported order fulfillment status '{status}'.")
+        };
     }
 }

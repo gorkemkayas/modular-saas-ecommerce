@@ -1,5 +1,3 @@
-using Order.Domain.Enums;
-
 namespace Order.Contracts;
 
 public sealed record OrderShipmentContextResult(
@@ -9,9 +7,9 @@ public sealed record OrderShipmentContextResult(
     string OrderNumber,
     string CustomerEmail,
     string CustomerFullName,
-    OrderStatus Status,
-    PaymentStatus PaymentStatus,
-    FulfillmentStatus FulfillmentStatus,
+    OrderStatusContract Status,
+    OrderPaymentStatusContract PaymentStatus,
+    OrderFulfillmentStatusContract FulfillmentStatus,
     string? ShipmentReference,
     OrderShipmentAddressResult ShippingAddress,
     IReadOnlyCollection<OrderShipmentItemResult> Items);
