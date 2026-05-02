@@ -12,6 +12,7 @@ namespace Catalog.Application.Storefront.DTOs
         string? BrandName,
         ProductType ProductType,
         DateTime? PublishedAtUtc,
+        StorefrontResolvedPriceDto? Price,
         IReadOnlyCollection<StorefrontProductCategoryDto> Categories,
         IReadOnlyCollection<StorefrontProductAttributeDto> Attributes,
         IReadOnlyCollection<StorefrontProductVariantDto> Variants,

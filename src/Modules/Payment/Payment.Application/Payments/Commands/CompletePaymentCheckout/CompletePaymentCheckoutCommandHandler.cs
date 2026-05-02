@@ -73,12 +73,6 @@ public sealed class CompletePaymentCheckoutCommandHandler : IRequestHandler<Comp
                     gatewayResult.ExternalConversationId,
                     gatewayResult.ExternalPaymentReference,
                     gatewayResult.ProviderRequestReference);
-
-                await _orderPaymentSyncService.MarkAuthorizedAsync(
-                    payment.StoreId,
-                    payment.OrderId,
-                    payment.ExternalPaymentReference,
-                    cancellationToken);
                 break;
 
             case PaymentGatewayOutcome.Captured:
@@ -87,26 +81,6 @@ public sealed class CompletePaymentCheckoutCommandHandler : IRequestHandler<Comp
                     gatewayResult.ExternalConversationId,
                     gatewayResult.ExternalPaymentReference,
                     gatewayResult.ProviderRequestReference);
-
-                await _orderPaymentSyncService.MarkCapturedAsync(
-                    payment.StoreId,
-                    payment.OrderId,
-                    payment.ExternalPaymentReference,
-                    cancellationToken);
-
-                var orderContext = await _orderPaymentContextService.GetStoreOrderContextAsync(
-                    payment.StoreId,
-                    payment.OrderId,
-                    cancellationToken);
-
-                if (!string.IsNullOrWhiteSpace(orderContext?.ReservationReference))
-                {
-                    await _inventoryPaymentService.ConfirmDeductionAsync(
-                        payment.StoreId,
-                        orderContext.ReservationReference,
-                        "Payment captured from hosted checkout callback.",
-                        cancellationToken);
-                }
                 break;
 
             case PaymentGatewayOutcome.Failed:
@@ -117,12 +91,6 @@ public sealed class CompletePaymentCheckoutCommandHandler : IRequestHandler<Comp
                     gatewayResult.FailureMessage,
                     gatewayResult.ProviderRequestReference,
                     gatewayResult.ExternalPaymentReference);
-
-                await _orderPaymentSyncService.MarkFailedAsync(
-                    payment.StoreId,
-                    payment.OrderId,
-                    payment.ExternalPaymentReference,
-                    cancellationToken);
                 break;
 
             default:
@@ -130,6 +98,50 @@ public sealed class CompletePaymentCheckoutCommandHandler : IRequestHandler<Comp
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (gatewayResult.Outcome == PaymentGatewayOutcome.Authorized)
+        {
+            await _orderPaymentSyncService.MarkAuthorizedAsync(
+                payment.StoreId,
+                payment.OrderId,
+                payment.ExternalPaymentReference,
+                cancellationToken);
+        }
+        else if (gatewayResult.Outcome == PaymentGatewayOutcome.Captured)
+        {
+            await _orderPaymentSyncService.MarkCapturedAsync(
+                payment.StoreId,
+                payment.OrderId,
+                payment.ExternalPaymentReference,
+                cancellationToken);
+
+            var orderContext = await _orderPaymentContextService.GetStoreOrderContextAsync(
+                payment.StoreId,
+                payment.OrderId,
+                cancellationToken);
+
+            if (!string.IsNullOrWhiteSpace(orderContext?.ReservationReference))
+            {
+                await _inventoryPaymentService.ConfirmDeductionAsync(
+                    payment.StoreId,
+                    orderContext.ReservationReference,
+                    "Payment captured from hosted checkout callback.",
+                    cancellationToken);
+            }
+
+            await _shipmentPaymentService.EnsureShipmentCreatedForCapturedOrderAsync(
+                payment.StoreId,
+                payment.OrderId,
+                cancellationToken);
+        }
+        else if (gatewayResult.Outcome == PaymentGatewayOutcome.Failed)
+        {
+            await _orderPaymentSyncService.MarkFailedAsync(
+                payment.StoreId,
+                payment.OrderId,
+                payment.ExternalPaymentReference,
+                cancellationToken);
+        }
 
         try
         {
@@ -204,14 +216,6 @@ public sealed class CompletePaymentCheckoutCommandHandler : IRequestHandler<Comp
                 payment.Id,
                 payment.OrderId,
                 gatewayResult.Outcome);
-        }
-
-        if (gatewayResult.Outcome == PaymentGatewayOutcome.Captured)
-        {
-            await _shipmentPaymentService.EnsureShipmentCreatedForCapturedOrderAsync(
-                payment.StoreId,
-                payment.OrderId,
-                cancellationToken);
         }
 
         _logger.LogInformation(

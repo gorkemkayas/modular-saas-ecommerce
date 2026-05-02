@@ -83,7 +83,22 @@ public sealed class CapturePaymentCommandHandler : IRequestHandler<CapturePaymen
                 gatewayResult.ExternalConversationId,
                 gatewayResult.ExternalPaymentReference,
                 gatewayResult.ProviderRequestReference);
+        }
+        else
+        {
+            payment.MarkFailed(
+                command.IdempotencyKey,
+                PaymentOperationType.Capture,
+                gatewayResult.FailureCode,
+                gatewayResult.FailureMessage,
+                gatewayResult.ProviderRequestReference,
+                gatewayResult.ExternalPaymentReference);
+        }
 
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (gatewayResult.Outcome == PaymentGatewayOutcome.Captured)
+        {
             await _orderPaymentSyncService.MarkCapturedAsync(
                 payment.StoreId,
                 payment.OrderId,
@@ -98,25 +113,20 @@ public sealed class CapturePaymentCommandHandler : IRequestHandler<CapturePaymen
                     "Payment captured.",
                     cancellationToken);
             }
+
+            await _shipmentPaymentService.EnsureShipmentCreatedForCapturedOrderAsync(
+                payment.StoreId,
+                payment.OrderId,
+                cancellationToken);
         }
         else
         {
-            payment.MarkFailed(
-                command.IdempotencyKey,
-                PaymentOperationType.Capture,
-                gatewayResult.FailureCode,
-                gatewayResult.FailureMessage,
-                gatewayResult.ProviderRequestReference,
-                gatewayResult.ExternalPaymentReference);
-
             await _orderPaymentSyncService.MarkFailedAsync(
                 payment.StoreId,
                 payment.OrderId,
                 payment.ExternalPaymentReference,
                 cancellationToken);
         }
-
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         try
         {
@@ -159,14 +169,6 @@ public sealed class CapturePaymentCommandHandler : IRequestHandler<CapturePaymen
                 payment.Id,
                 payment.OrderId,
                 gatewayResult.Outcome);
-        }
-
-        if (gatewayResult.Outcome == PaymentGatewayOutcome.Captured)
-        {
-            await _shipmentPaymentService.EnsureShipmentCreatedForCapturedOrderAsync(
-                payment.StoreId,
-                payment.OrderId,
-                cancellationToken);
         }
 
         _logger.LogInformation(
