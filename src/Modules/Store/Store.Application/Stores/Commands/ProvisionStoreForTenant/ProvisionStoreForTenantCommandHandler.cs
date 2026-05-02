@@ -28,7 +28,7 @@ namespace Store.Application.Stores.Commands.ProvisionStoreForTenant
             CancellationToken cancellationToken = default)
         {
             if (await _storeRepository.ExistsByTenantIdAsync(command.TenantId, cancellationToken))
-                throw new StoreNotFoundException(command.TenantId);
+                throw new StoreAlreadyExistsForTenantException(command.TenantId);
 
             var slug = Slug.Create(command.Slug);
 

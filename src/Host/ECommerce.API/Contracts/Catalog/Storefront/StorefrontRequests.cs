@@ -4,6 +4,7 @@ namespace ECommerce.API.Contracts.Catalog.Storefront
         string? SearchTerm,
         Guid? CategoryId,
         Guid? BrandId,
+        string CurrencyCode = "TRY",
         int PageNumber = 1,
         int PageSize = 20);
 

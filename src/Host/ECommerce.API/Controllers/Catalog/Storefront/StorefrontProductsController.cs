@@ -32,6 +32,7 @@ public sealed class StorefrontProductsController : ControllerBase
 
         var result = await _sender.Send(new SearchStorefrontProductsQuery(
             storefront.TenantId,
+            request.CurrencyCode,
             request.SearchTerm,
             request.CategoryId,
             request.BrandId,
@@ -47,13 +48,14 @@ public sealed class StorefrontProductsController : ControllerBase
     public async Task<IActionResult> GetProductBySlug(
         [FromRoute] string storeSlug,
         [FromRoute] string productSlug,
-        CancellationToken cancellationToken)
+        [FromQuery] string currencyCode = "TRY",
+        CancellationToken cancellationToken = default)
     {
         var storefront = await _sender.Send(new GetPublishedStoreFrontBySlugQuery(storeSlug), cancellationToken);
         if (storefront is null)
             return NotFound();
 
-        var product = await _sender.Send(new GetStorefrontProductBySlugQuery(storefront.TenantId, productSlug), cancellationToken);
+        var product = await _sender.Send(new GetStorefrontProductBySlugQuery(storefront.TenantId, productSlug, currencyCode), cancellationToken);
         return product is null ? NotFound() : Ok(product);
     }
 }

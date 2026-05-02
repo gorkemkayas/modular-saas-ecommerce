@@ -5,5 +5,6 @@ namespace Catalog.Application.Storefront.Queries.GetStorefrontProductBySlug
 {
     public sealed record GetStorefrontProductBySlugQuery(
         Guid StoreId,
-        string Slug) : IRequest<StorefrontProductDto?>;
+        string Slug,
+        string CurrencyCode = "TRY") : IRequest<StorefrontProductDto?>;
 }

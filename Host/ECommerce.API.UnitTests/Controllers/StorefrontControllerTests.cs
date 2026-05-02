@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-using ECommerce.API.Controllers;
+using ECommerce.API.Controllers.Store;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

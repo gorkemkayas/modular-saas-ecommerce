@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 using BuildingBlocks.Application.Extensions;
 using ECommerce.API.Contracts.Store.ProvisionStoreForTenant;
-using ECommerce.API.Controllers.Admin;
+using ECommerce.API.Controllers.Store.Admin;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -21,7 +21,7 @@ using Store.Application.Stores.Queries.GetStoreByTenantId;
 using Store.Application.Stores.Queries.SuggestAvailableSlug;
 using Store.Domain.Stores;
 
-namespace ECommerce.API.Controllers.Admin.UnitTests;
+namespace ECommerce.API.Controllers.Store.Admin.UnitTests;
 
 
 /// <summary>

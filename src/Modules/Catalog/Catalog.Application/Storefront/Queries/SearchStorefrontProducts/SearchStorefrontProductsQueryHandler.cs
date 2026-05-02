@@ -21,6 +21,7 @@ namespace Catalog.Application.Storefront.Queries.SearchStorefrontProducts
         {
             var criteria = new StorefrontProductSearchCriteria(
                 query.StoreId,
+                query.CurrencyCode,
                 query.SearchTerm,
                 query.CategoryId,
                 query.BrandId,

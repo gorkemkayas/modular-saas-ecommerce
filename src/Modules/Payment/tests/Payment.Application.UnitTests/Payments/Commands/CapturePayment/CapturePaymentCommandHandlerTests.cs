@@ -83,7 +83,7 @@ public sealed class CapturePaymentCommandHandlerTests
         unitOfWork
             .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .Callback(() => savedChanges = true)
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync(1);
 
         orderSyncService
             .Setup(x => x.MarkCapturedAsync(payment.StoreId, payment.OrderId, "pay-ref-2", It.IsAny<CancellationToken>()))
