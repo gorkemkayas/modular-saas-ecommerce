@@ -60,6 +60,8 @@ public sealed class AuthorizePaymentCommandHandler : IRequestHandler<AuthorizePa
         if (orderContext is null)
             throw new UnauthorizedPaymentAccessException();
 
+        PaymentOrderStateGuard.EnsureCanAuthorizePayment(orderContext);
+
         var payment = await _paymentRepository.GetByOrderIdAsync(command.StoreId, command.OrderId, cancellationToken)
             ?? throw new PaymentValidationException("Payment must be created before authorization.");
 
