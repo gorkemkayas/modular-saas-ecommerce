@@ -46,9 +46,9 @@ public sealed class OrderShipmentContextService : IOrderShipmentContextService
             context.OrderNumber,
             context.CustomerEmail,
             context.CustomerFullName,
-            (Shipment.Application.Integrations.OrderShipmentStatus)context.Status,
-            (Shipment.Application.Integrations.OrderShipmentPaymentStatus)context.PaymentStatus,
-            (Shipment.Application.Integrations.OrderShipmentFulfillmentStatus)context.FulfillmentStatus,
+            MapOrderStatus(context.Status),
+            MapPaymentStatus(context.PaymentStatus),
+            MapFulfillmentStatus(context.FulfillmentStatus),
             context.ShipmentReference,
             new OrderShipmentAddress(
                 context.ShippingAddress.ContactName,
@@ -69,5 +69,44 @@ public sealed class OrderShipmentContextService : IOrderShipmentContextService
                     item.Sku,
                     item.Quantity))
                 .ToArray());
+    }
+
+    private static Shipment.Application.Integrations.OrderShipmentStatus MapOrderStatus(OrderStatusContract status)
+    {
+        return status switch
+        {
+            OrderStatusContract.Pending => Shipment.Application.Integrations.OrderShipmentStatus.Pending,
+            OrderStatusContract.Confirmed => Shipment.Application.Integrations.OrderShipmentStatus.Confirmed,
+            OrderStatusContract.Cancelled => Shipment.Application.Integrations.OrderShipmentStatus.Cancelled,
+            OrderStatusContract.Completed => Shipment.Application.Integrations.OrderShipmentStatus.Completed,
+            _ => throw new InvalidOperationException($"Unsupported order status '{status}'.")
+        };
+    }
+
+    private static Shipment.Application.Integrations.OrderShipmentPaymentStatus MapPaymentStatus(OrderPaymentStatusContract status)
+    {
+        return status switch
+        {
+            OrderPaymentStatusContract.Pending => Shipment.Application.Integrations.OrderShipmentPaymentStatus.Pending,
+            OrderPaymentStatusContract.Authorized => Shipment.Application.Integrations.OrderShipmentPaymentStatus.Authorized,
+            OrderPaymentStatusContract.Captured => Shipment.Application.Integrations.OrderShipmentPaymentStatus.Captured,
+            OrderPaymentStatusContract.Failed => Shipment.Application.Integrations.OrderShipmentPaymentStatus.Failed,
+            OrderPaymentStatusContract.Refunded => Shipment.Application.Integrations.OrderShipmentPaymentStatus.Refunded,
+            _ => throw new InvalidOperationException($"Unsupported order payment status '{status}'.")
+        };
+    }
+
+    private static Shipment.Application.Integrations.OrderShipmentFulfillmentStatus MapFulfillmentStatus(OrderFulfillmentStatusContract status)
+    {
+        return status switch
+        {
+            OrderFulfillmentStatusContract.Unfulfilled => Shipment.Application.Integrations.OrderShipmentFulfillmentStatus.Unfulfilled,
+            OrderFulfillmentStatusContract.PartiallyFulfilled => Shipment.Application.Integrations.OrderShipmentFulfillmentStatus.PartiallyFulfilled,
+            OrderFulfillmentStatusContract.Fulfilled => Shipment.Application.Integrations.OrderShipmentFulfillmentStatus.Fulfilled,
+            OrderFulfillmentStatusContract.Shipped => Shipment.Application.Integrations.OrderShipmentFulfillmentStatus.Shipped,
+            OrderFulfillmentStatusContract.Delivered => Shipment.Application.Integrations.OrderShipmentFulfillmentStatus.Delivered,
+            OrderFulfillmentStatusContract.Returned => Shipment.Application.Integrations.OrderShipmentFulfillmentStatus.Returned,
+            _ => throw new InvalidOperationException($"Unsupported order fulfillment status '{status}'.")
+        };
     }
 }

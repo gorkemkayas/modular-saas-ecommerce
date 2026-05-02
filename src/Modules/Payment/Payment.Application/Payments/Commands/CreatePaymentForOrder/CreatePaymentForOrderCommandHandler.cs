@@ -44,6 +44,8 @@ public sealed class CreatePaymentForOrderCommandHandler : IRequestHandler<Create
         if (orderContext is null)
             throw new UnauthorizedPaymentAccessException();
 
+        PaymentOrderStateGuard.EnsureCanCreatePayment(orderContext);
+
         var existingPayment = await _paymentRepository.GetByOrderIdAsync(
             command.StoreId,
             command.OrderId,

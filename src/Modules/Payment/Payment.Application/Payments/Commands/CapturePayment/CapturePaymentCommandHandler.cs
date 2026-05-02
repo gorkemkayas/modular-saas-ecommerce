@@ -62,6 +62,8 @@ public sealed class CapturePaymentCommandHandler : IRequestHandler<CapturePaymen
         if (orderContext is null)
             throw new PaymentValidationException("Order context could not be resolved for payment capture.");
 
+        PaymentOrderStateGuard.EnsureCanCapturePayment(orderContext);
+
         var gatewayResult = await _paymentGateway.CaptureAsync(
             new PaymentGatewayCaptureRequest(
                 payment.Id,

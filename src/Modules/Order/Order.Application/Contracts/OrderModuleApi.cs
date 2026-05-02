@@ -43,47 +43,7 @@ public sealed class OrderModuleApi : IOrderModuleApi
             request.OrderId,
             cancellationToken);
 
-        return order is null
-            ? null
-            : new OrderPaymentContextResult(
-                order.Id,
-                order.StoreId,
-                order.CustomerId,
-                order.OrderNumber,
-                order.Totals.GrandTotalAmount,
-                order.CurrencyCode,
-                order.ReservationReference,
-                new OrderPaymentCustomerResult(
-                    order.Customer.Email,
-                    order.Customer.FullName,
-                    order.Customer.PhoneNumber),
-                new OrderPaymentAddressResult(
-                    order.BillingAddress.ContactName,
-                    order.BillingAddress.PhoneNumber,
-                    order.BillingAddress.Country,
-                    order.BillingAddress.City,
-                    order.BillingAddress.District,
-                    order.BillingAddress.Line1,
-                    order.BillingAddress.Line2,
-                    order.BillingAddress.PostalCode),
-                new OrderPaymentAddressResult(
-                    order.ShippingAddress.ContactName,
-                    order.ShippingAddress.PhoneNumber,
-                    order.ShippingAddress.Country,
-                    order.ShippingAddress.City,
-                    order.ShippingAddress.District,
-                    order.ShippingAddress.Line1,
-                    order.ShippingAddress.Line2,
-                    order.ShippingAddress.PostalCode),
-                order.Items
-                    .Select(item => new OrderPaymentItemResult(
-                        item.ProductId,
-                        item.ProductName,
-                        item.VariantName,
-                        item.Sku,
-                        item.Quantity,
-                        item.LineTotalAmount))
-                    .ToArray());
+        return order is null ? null : MapPaymentContext(order);
     }
 
     public async Task<OrderPaymentContextResult?> GetStoreOrderPaymentContextAsync(
@@ -95,47 +55,7 @@ public sealed class OrderModuleApi : IOrderModuleApi
             request.OrderId,
             cancellationToken);
 
-        return order is null
-            ? null
-            : new OrderPaymentContextResult(
-                order.Id,
-                order.StoreId,
-                order.CustomerId,
-                order.OrderNumber,
-                order.Totals.GrandTotalAmount,
-                order.CurrencyCode,
-                order.ReservationReference,
-                new OrderPaymentCustomerResult(
-                    order.Customer.Email,
-                    order.Customer.FullName,
-                    order.Customer.PhoneNumber),
-                new OrderPaymentAddressResult(
-                    order.BillingAddress.ContactName,
-                    order.BillingAddress.PhoneNumber,
-                    order.BillingAddress.Country,
-                    order.BillingAddress.City,
-                    order.BillingAddress.District,
-                    order.BillingAddress.Line1,
-                    order.BillingAddress.Line2,
-                    order.BillingAddress.PostalCode),
-                new OrderPaymentAddressResult(
-                    order.ShippingAddress.ContactName,
-                    order.ShippingAddress.PhoneNumber,
-                    order.ShippingAddress.Country,
-                    order.ShippingAddress.City,
-                    order.ShippingAddress.District,
-                    order.ShippingAddress.Line1,
-                    order.ShippingAddress.Line2,
-                    order.ShippingAddress.PostalCode),
-                order.Items
-                    .Select(item => new OrderPaymentItemResult(
-                        item.ProductId,
-                        item.ProductName,
-                        item.VariantName,
-                        item.Sku,
-                        item.Quantity,
-                        item.LineTotalAmount))
-                    .ToArray());
+        return order is null ? null : MapPaymentContext(order);
     }
 
     public async Task MarkPaymentAuthorizedAsync(
@@ -259,6 +179,52 @@ public sealed class OrderModuleApi : IOrderModuleApi
             ?? throw new Order.Application.Exceptions.OrderNotFoundException(orderId);
     }
 
+    private static OrderPaymentContextResult MapPaymentContext(Order.Application.Orders.DTOs.OrderDto order)
+    {
+        return new OrderPaymentContextResult(
+            order.Id,
+            order.StoreId,
+            order.CustomerId,
+            order.OrderNumber,
+            MapOrderStatus(order.Status),
+            MapPaymentStatus(order.PaymentStatus),
+            MapFulfillmentStatus(order.FulfillmentStatus),
+            order.Totals.GrandTotalAmount,
+            order.CurrencyCode,
+            order.ReservationReference,
+            new OrderPaymentCustomerResult(
+                order.Customer.Email,
+                order.Customer.FullName,
+                order.Customer.PhoneNumber),
+            new OrderPaymentAddressResult(
+                order.BillingAddress.ContactName,
+                order.BillingAddress.PhoneNumber,
+                order.BillingAddress.Country,
+                order.BillingAddress.City,
+                order.BillingAddress.District,
+                order.BillingAddress.Line1,
+                order.BillingAddress.Line2,
+                order.BillingAddress.PostalCode),
+            new OrderPaymentAddressResult(
+                order.ShippingAddress.ContactName,
+                order.ShippingAddress.PhoneNumber,
+                order.ShippingAddress.Country,
+                order.ShippingAddress.City,
+                order.ShippingAddress.District,
+                order.ShippingAddress.Line1,
+                order.ShippingAddress.Line2,
+                order.ShippingAddress.PostalCode),
+            order.Items
+                .Select(item => new OrderPaymentItemResult(
+                    item.ProductId,
+                    item.ProductName,
+                    item.VariantName,
+                    item.Sku,
+                    item.Quantity,
+                    item.LineTotalAmount))
+                .ToArray());
+    }
+
     private static OrderShipmentContextResult MapShipmentContext(Order.Application.Orders.DTOs.OrderDto order)
     {
         return new OrderShipmentContextResult(
@@ -268,9 +234,9 @@ public sealed class OrderModuleApi : IOrderModuleApi
             order.OrderNumber,
             order.Customer.Email,
             order.Customer.FullName,
-            order.Status,
-            order.PaymentStatus,
-            order.FulfillmentStatus,
+            MapOrderStatus(order.Status),
+            MapPaymentStatus(order.PaymentStatus),
+            MapFulfillmentStatus(order.FulfillmentStatus),
             order.ShipmentReference,
             new OrderShipmentAddressResult(
                 order.ShippingAddress.ContactName,
@@ -291,5 +257,44 @@ public sealed class OrderModuleApi : IOrderModuleApi
                     item.Sku,
                     item.Quantity))
                 .ToArray());
+    }
+
+    private static OrderStatusContract MapOrderStatus(Order.Domain.Enums.OrderStatus status)
+    {
+        return status switch
+        {
+            Order.Domain.Enums.OrderStatus.Pending => OrderStatusContract.Pending,
+            Order.Domain.Enums.OrderStatus.Confirmed => OrderStatusContract.Confirmed,
+            Order.Domain.Enums.OrderStatus.Cancelled => OrderStatusContract.Cancelled,
+            Order.Domain.Enums.OrderStatus.Completed => OrderStatusContract.Completed,
+            _ => throw new InvalidOperationException($"Unsupported order status '{status}'.")
+        };
+    }
+
+    private static OrderPaymentStatusContract MapPaymentStatus(Order.Domain.Enums.PaymentStatus status)
+    {
+        return status switch
+        {
+            Order.Domain.Enums.PaymentStatus.Pending => OrderPaymentStatusContract.Pending,
+            Order.Domain.Enums.PaymentStatus.Authorized => OrderPaymentStatusContract.Authorized,
+            Order.Domain.Enums.PaymentStatus.Captured => OrderPaymentStatusContract.Captured,
+            Order.Domain.Enums.PaymentStatus.Failed => OrderPaymentStatusContract.Failed,
+            Order.Domain.Enums.PaymentStatus.Refunded => OrderPaymentStatusContract.Refunded,
+            _ => throw new InvalidOperationException($"Unsupported order payment status '{status}'.")
+        };
+    }
+
+    private static OrderFulfillmentStatusContract MapFulfillmentStatus(Order.Domain.Enums.FulfillmentStatus status)
+    {
+        return status switch
+        {
+            Order.Domain.Enums.FulfillmentStatus.Unfulfilled => OrderFulfillmentStatusContract.Unfulfilled,
+            Order.Domain.Enums.FulfillmentStatus.PartiallyFulfilled => OrderFulfillmentStatusContract.PartiallyFulfilled,
+            Order.Domain.Enums.FulfillmentStatus.Fulfilled => OrderFulfillmentStatusContract.Fulfilled,
+            Order.Domain.Enums.FulfillmentStatus.Shipped => OrderFulfillmentStatusContract.Shipped,
+            Order.Domain.Enums.FulfillmentStatus.Delivered => OrderFulfillmentStatusContract.Delivered,
+            Order.Domain.Enums.FulfillmentStatus.Returned => OrderFulfillmentStatusContract.Returned,
+            _ => throw new InvalidOperationException($"Unsupported order fulfillment status '{status}'.")
+        };
     }
 }
