@@ -13,6 +13,9 @@ public sealed class PriceListConfiguration : IEntityTypeConfiguration<PriceList>
 
         builder.HasKey(x => x.Id);
 
+        builder.Property(x => x.Id)
+            .ValueGeneratedNever();
+
         builder.Property(x => x.StoreId)
             .IsRequired();
 

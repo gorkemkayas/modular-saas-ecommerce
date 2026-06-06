@@ -59,6 +59,7 @@ public sealed class Payment : IAggregateRoot
     public string CurrencyCode { get; private set; } = default!;
     public PaymentStatus Status { get; private set; }
     public PaymentProvider Provider { get; private set; }
+    public Guid? ProviderAccountId { get; private set; }
     public PaymentMethodType MethodType { get; private set; }
     public string? ExternalPaymentReference { get; private set; }
     public string? ExternalConversationId { get; private set; }
@@ -95,6 +96,18 @@ public sealed class Payment : IAggregateRoot
             currencyCode,
             provider,
             methodType);
+    }
+
+    public void AssignProviderAccount(Guid providerAccountId)
+    {
+        if (providerAccountId == Guid.Empty)
+            throw new PaymentDomainException("Provider account id is required.");
+
+        if (ProviderAccountId.HasValue && ProviderAccountId.Value != providerAccountId)
+            throw new PaymentDomainException("Payment provider account cannot be changed after it is assigned.");
+
+        ProviderAccountId = providerAccountId;
+        Touch();
     }
 
     public void MarkRequiresAction(

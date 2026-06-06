@@ -18,6 +18,7 @@ public sealed class ProcessPaymentWebhookCommandHandler : IRequestHandler<Proces
     private readonly IPaymentNotificationService _paymentNotificationService;
     private readonly IShipmentPaymentService _shipmentPaymentService;
     private readonly IPaymentWebhookParser _paymentWebhookParser;
+    private readonly IPaymentWebhookSignatureValidator _paymentWebhookSignatureValidator;
     private readonly ILogger<ProcessPaymentWebhookCommandHandler> _logger;
 
     public ProcessPaymentWebhookCommandHandler(
@@ -29,6 +30,7 @@ public sealed class ProcessPaymentWebhookCommandHandler : IRequestHandler<Proces
         IPaymentNotificationService paymentNotificationService,
         IShipmentPaymentService shipmentPaymentService,
         IPaymentWebhookParser paymentWebhookParser,
+        IPaymentWebhookSignatureValidator paymentWebhookSignatureValidator,
         ILogger<ProcessPaymentWebhookCommandHandler> logger)
     {
         _paymentRepository = paymentRepository;
@@ -39,6 +41,7 @@ public sealed class ProcessPaymentWebhookCommandHandler : IRequestHandler<Proces
         _paymentNotificationService = paymentNotificationService;
         _shipmentPaymentService = shipmentPaymentService;
         _paymentWebhookParser = paymentWebhookParser;
+        _paymentWebhookSignatureValidator = paymentWebhookSignatureValidator;
         _logger = logger;
     }
 
@@ -57,6 +60,7 @@ public sealed class ProcessPaymentWebhookCommandHandler : IRequestHandler<Proces
             webhook.Provider,
             webhook.ExternalConversationId,
             webhook.ExternalPaymentReference,
+            webhook.IdempotencyKey,
             cancellationToken);
 
         if (payment is null)
@@ -68,6 +72,14 @@ public sealed class ProcessPaymentWebhookCommandHandler : IRequestHandler<Proces
                 webhook.ExternalPaymentReference);
             return;
         }
+
+        await _paymentWebhookSignatureValidator.ValidateAsync(
+            command.Provider,
+            command.Payload,
+            command.Signature,
+            payment.StoreId,
+            payment.ProviderAccountId,
+            cancellationToken);
 
         switch (webhook.Outcome)
         {

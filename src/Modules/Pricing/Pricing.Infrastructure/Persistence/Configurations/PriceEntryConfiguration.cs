@@ -12,6 +12,9 @@ public sealed class PriceEntryConfiguration : IEntityTypeConfiguration<PriceEntr
 
         builder.HasKey(x => x.Id);
 
+        builder.Property(x => x.Id)
+            .ValueGeneratedNever();
+
         builder.Property(x => x.PriceListId)
             .IsRequired();
 

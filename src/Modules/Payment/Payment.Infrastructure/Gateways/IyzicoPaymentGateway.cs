@@ -3,10 +3,10 @@ using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using Microsoft.Extensions.Options;
+using System.Text.Json.Serialization;
+using Payment.Application.Exceptions;
 using Payment.Application.Integrations;
 using Payment.Domain.Enums;
-using Payment.Infrastructure.Options;
 
 namespace Payment.Infrastructure.Gateways;
 
@@ -18,14 +18,14 @@ public sealed class IyzicoPaymentGateway : IPaymentGateway
     };
 
     private readonly HttpClient _httpClient;
-    private readonly IyzicoOptions _options;
+    private readonly IIyzicoPaymentAccountResolver _accountResolver;
 
     public IyzicoPaymentGateway(
         HttpClient httpClient,
-        IOptions<IyzicoOptions> options)
+        IIyzicoPaymentAccountResolver accountResolver)
     {
         _httpClient = httpClient;
-        _options = options.Value;
+        _accountResolver = accountResolver;
     }
 
     public PaymentProvider Provider => PaymentProvider.Iyzico;
@@ -34,18 +34,22 @@ public sealed class IyzicoPaymentGateway : IPaymentGateway
         PaymentGatewayAuthorizeRequest request,
         CancellationToken cancellationToken = default)
     {
+        var account = await _accountResolver.ResolveAsync(
+            request.StoreId,
+            request.ProviderAccountId,
+            cancellationToken);
         var conversationId = request.PaymentId.ToString("N");
-        var buyerIdentityNumber = ResolveBuyerIdentityNumber();
+        var buyerIdentityNumber = ResolveBuyerIdentityNumber(account);
 
         var payload = new CheckoutFormInitializeRequest(
-            _options.Locale,
+            account.Locale,
             conversationId,
             FormatPrice(request.Amount),
             FormatPrice(request.Amount),
             request.CurrencyCode,
             request.OrderId.ToString("N"),
             "PRODUCT",
-            _options.CallbackUrl,
+            account.CallbackUrl,
             new CheckoutFormBuyerRequest(
                 request.CustomerId.ToString("N"),
                 GetFirstName(request.Customer.FullName),
@@ -74,11 +78,12 @@ public sealed class IyzicoPaymentGateway : IPaymentGateway
 
         var response = await SendAsync<CheckoutFormInitializeRequest, CheckoutFormInitializeResponse>(
             HttpMethod.Post,
-            _options.InitializeCheckoutFormPath,
+            account.InitializeCheckoutFormPath,
             payload,
+            account,
             cancellationToken);
 
-        ValidateCheckoutFormInitializeSignature(response);
+        ValidateCheckoutFormInitializeSignature(response, account);
 
         if (!IsSuccess(response.Status))
         {
@@ -89,7 +94,8 @@ public sealed class IyzicoPaymentGateway : IPaymentGateway
                 null,
                 response.ErrorCode,
                 response.ErrorMessage,
-                response.Token);
+                response.Token,
+                ProviderAccountId: account.AccountId);
         }
 
         return new PaymentGatewayOperationResult(
@@ -99,20 +105,27 @@ public sealed class IyzicoPaymentGateway : IPaymentGateway
             response.PaymentPageUrl,
             null,
             null,
-            response.Token);
+            response.Token,
+            ProviderAccountId: account.AccountId);
     }
 
     public async Task<PaymentGatewayOperationResult> CompleteAsync(
         PaymentGatewayCompleteRequest request,
         CancellationToken cancellationToken = default)
     {
-        var response = await SendAsync<CheckoutFormRetrieveRequest, CheckoutFormRetrieveResponse>(
-            HttpMethod.Post,
-            _options.RetrieveCheckoutFormPath,
-            new CheckoutFormRetrieveRequest(_options.Locale, request.Token),
+        var account = await _accountResolver.ResolveAsync(
+            request.StoreId,
+            request.ProviderAccountId,
             cancellationToken);
 
-        ValidateCheckoutFormRetrieveSignature(response);
+        var response = await SendAsync<CheckoutFormRetrieveRequest, CheckoutFormRetrieveResponse>(
+            HttpMethod.Post,
+            account.RetrieveCheckoutFormPath,
+            new CheckoutFormRetrieveRequest(account.Locale, request.Token),
+            account,
+            cancellationToken);
+
+        ValidateCheckoutFormRetrieveSignature(response, account);
 
         if (!IsSuccess(response.Status))
         {
@@ -123,7 +136,8 @@ public sealed class IyzicoPaymentGateway : IPaymentGateway
                 null,
                 response.ErrorCode,
                 response.ErrorMessage,
-                request.Token);
+                request.Token,
+                ProviderAccountId: account.AccountId);
         }
 
         return new PaymentGatewayOperationResult(
@@ -133,7 +147,8 @@ public sealed class IyzicoPaymentGateway : IPaymentGateway
             null,
             response.ErrorCode,
             response.ErrorMessage,
-            request.Token);
+            request.Token,
+            ProviderAccountId: account.AccountId);
     }
 
     public Task<PaymentGatewayOperationResult> CaptureAsync(
@@ -147,14 +162,20 @@ public sealed class IyzicoPaymentGateway : IPaymentGateway
         PaymentGatewayCancelRequest request,
         CancellationToken cancellationToken = default)
     {
+        var account = await _accountResolver.ResolveAsync(
+            request.StoreId,
+            request.ProviderAccountId,
+            cancellationToken);
+
         var response = await SendAsync<CancelPaymentRequest, BasicGatewayResponse>(
             HttpMethod.Post,
-            _options.CancelPath,
+            account.CancelPath,
             new CancelPaymentRequest(
-                _options.Locale,
+                account.Locale,
                 request.ExternalPaymentReference ?? throw new InvalidOperationException("External payment reference is required for cancel."),
                 request.IdempotencyKey,
                 request.ExternalConversationId ?? request.PaymentId.ToString("N")),
+            account,
             cancellationToken);
 
         return new PaymentGatewayOperationResult(
@@ -164,22 +185,29 @@ public sealed class IyzicoPaymentGateway : IPaymentGateway
             null,
             response.ErrorCode,
             response.ErrorMessage,
-            request.IdempotencyKey);
+            request.IdempotencyKey,
+            ProviderAccountId: account.AccountId);
     }
 
     public async Task<PaymentGatewayOperationResult> RefundAsync(
         PaymentGatewayRefundRequest request,
         CancellationToken cancellationToken = default)
     {
+        var account = await _accountResolver.ResolveAsync(
+            request.StoreId,
+            request.ProviderAccountId,
+            cancellationToken);
+
         var response = await SendAsync<RefundPaymentRequest, RefundPaymentResponse>(
             HttpMethod.Post,
-            _options.RefundPath,
+            account.RefundPath,
             new RefundPaymentRequest(
-                _options.Locale,
+                account.Locale,
                 request.ExternalPaymentReference ?? throw new InvalidOperationException("External payment reference is required for refund."),
                 FormatPrice(request.RefundAmount),
                 request.IdempotencyKey,
                 request.ExternalConversationId ?? request.PaymentId.ToString("N")),
+            account,
             cancellationToken);
 
         return new PaymentGatewayOperationResult(
@@ -190,20 +218,22 @@ public sealed class IyzicoPaymentGateway : IPaymentGateway
             response.ErrorCode,
             response.ErrorMessage,
             request.IdempotencyKey,
-            IsSuccess(response.Status) ? request.RefundAmount : null);
+            IsSuccess(response.Status) ? request.RefundAmount : null,
+            account.AccountId);
     }
 
     private async Task<TResponse> SendAsync<TRequest, TResponse>(
         HttpMethod method,
         string path,
         TRequest request,
+        ResolvedIyzicoPaymentAccount account,
         CancellationToken cancellationToken)
     {
         var requestBody = JsonSerializer.Serialize(request, SerializerOptions);
         var randomKey = Guid.NewGuid().ToString("N");
-        var authorization = BuildAuthorizationHeader(path, requestBody, randomKey);
+        var authorization = BuildAuthorizationHeader(account, path, requestBody, randomKey);
 
-        using var message = new HttpRequestMessage(method, path)
+        using var message = new HttpRequestMessage(method, BuildRequestUri(account.BaseUrl, path))
         {
             Content = new StringContent(requestBody, Encoding.UTF8, "application/json")
         };
@@ -215,34 +245,95 @@ public sealed class IyzicoPaymentGateway : IPaymentGateway
 
         var response = await _httpClient.SendAsync(message, cancellationToken);
         var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-        response.EnsureSuccessStatusCode();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new PaymentValidationException(
+                BuildGatewayFailureMessage(response.StatusCode, responseBody));
+        }
 
         return JsonSerializer.Deserialize<TResponse>(responseBody, SerializerOptions)
             ?? throw new InvalidOperationException("Iyzico returned an empty response body.");
     }
 
-    private string BuildAuthorizationHeader(string path, string requestBody, string randomKey)
+    private static string BuildGatewayFailureMessage(System.Net.HttpStatusCode statusCode, string? responseBody)
     {
-        if (string.IsNullOrWhiteSpace(_options.ApiKey) || string.IsNullOrWhiteSpace(_options.SecretKey))
-            throw new InvalidOperationException("Iyzico ApiKey and SecretKey must be configured.");
+        var gatewayMessage = ExtractGatewayMessage(responseBody);
 
+        if (!string.IsNullOrWhiteSpace(gatewayMessage))
+            return $"Iyzico request failed ({(int)statusCode}): {gatewayMessage}";
+
+        return $"Iyzico request failed with status code {(int)statusCode}.";
+    }
+
+    private static string? ExtractGatewayMessage(string? responseBody)
+    {
+        if (string.IsNullOrWhiteSpace(responseBody))
+            return null;
+
+        try
+        {
+            using var document = JsonDocument.Parse(responseBody);
+            var root = document.RootElement;
+
+            if (root.TryGetProperty("errorMessage", out var errorMessage) &&
+                errorMessage.ValueKind == JsonValueKind.String)
+            {
+                return errorMessage.GetString();
+            }
+
+            if (root.TryGetProperty("message", out var message) &&
+                message.ValueKind == JsonValueKind.String)
+            {
+                return message.GetString();
+            }
+
+            if (root.TryGetProperty("errorCode", out var errorCode) &&
+                errorCode.ValueKind == JsonValueKind.String)
+            {
+                return errorCode.GetString();
+            }
+        }
+        catch
+        {
+            return responseBody.Trim();
+        }
+
+        return responseBody.Trim();
+    }
+
+    private static Uri BuildRequestUri(string baseUrl, string path)
+    {
+        var normalizedBaseUrl = baseUrl.TrimEnd('/') + "/";
+        var normalizedPath = path.TrimStart('/');
+        return new Uri(new Uri(normalizedBaseUrl, UriKind.Absolute), normalizedPath);
+    }
+
+    private static string BuildAuthorizationHeader(
+        ResolvedIyzicoPaymentAccount account,
+        string path,
+        string requestBody,
+        string randomKey)
+    {
         var payload = $"{randomKey}{path}{requestBody}";
         var signatureBytes = HMACSHA256.HashData(
-            Encoding.UTF8.GetBytes(_options.SecretKey),
+            Encoding.UTF8.GetBytes(account.SecretKey),
             Encoding.UTF8.GetBytes(payload));
         var signature = Convert.ToHexString(signatureBytes).ToLowerInvariant();
-        var authorizationBody = $"apiKey:{_options.ApiKey}&randomKey:{randomKey}&signature:{signature}";
+        var authorizationBody = $"apiKey:{account.ApiKey}&randomKey:{randomKey}&signature:{signature}";
         var encoded = Convert.ToBase64String(Encoding.UTF8.GetBytes(authorizationBody));
         return $"IYZWSv2 {encoded}";
     }
 
-    private void ValidateCheckoutFormInitializeSignature(CheckoutFormInitializeResponse response)
+    private static void ValidateCheckoutFormInitializeSignature(
+        CheckoutFormInitializeResponse response,
+        ResolvedIyzicoPaymentAccount account)
     {
-        if (string.IsNullOrWhiteSpace(response.Signature) || string.IsNullOrWhiteSpace(_options.SecretKey))
+        if (string.IsNullOrWhiteSpace(response.Signature))
             return;
 
         var expected = ComputeResponseSignature(
-            _options.SecretKey,
+            account.SecretKey,
             response.ConversationId,
             response.Token);
 
@@ -250,13 +341,15 @@ public sealed class IyzicoPaymentGateway : IPaymentGateway
             throw new InvalidOperationException("Iyzico checkout form initialize signature validation failed.");
     }
 
-    private void ValidateCheckoutFormRetrieveSignature(CheckoutFormRetrieveResponse response)
+    private static void ValidateCheckoutFormRetrieveSignature(
+        CheckoutFormRetrieveResponse response,
+        ResolvedIyzicoPaymentAccount account)
     {
-        if (string.IsNullOrWhiteSpace(response.Signature) || string.IsNullOrWhiteSpace(_options.SecretKey))
+        if (string.IsNullOrWhiteSpace(response.Signature))
             return;
 
         var expected = ComputeResponseSignature(
-            _options.SecretKey,
+            account.SecretKey,
             response.PaymentStatus,
             response.PaymentId,
             response.Currency,
@@ -304,12 +397,12 @@ public sealed class IyzicoPaymentGateway : IPaymentGateway
             FormatPrice(item.LineTotalAmount));
     }
 
-    private string ResolveBuyerIdentityNumber()
+    private static string ResolveBuyerIdentityNumber(ResolvedIyzicoPaymentAccount account)
     {
-        if (string.IsNullOrWhiteSpace(_options.DefaultBuyerIdentityNumber))
+        if (string.IsNullOrWhiteSpace(account.DefaultBuyerIdentityNumber))
             throw new InvalidOperationException("Iyzico DefaultBuyerIdentityNumber must be configured for Checkout Form flow.");
 
-        return _options.DefaultBuyerIdentityNumber;
+        return account.DefaultBuyerIdentityNumber;
     }
 
     private static PaymentGatewayOutcome MapCheckoutOutcome(string? paymentStatus, int? fraudStatus)
@@ -381,8 +474,7 @@ public sealed class IyzicoPaymentGateway : IPaymentGateway
         if (!decimal.TryParse(price, NumberStyles.Number, CultureInfo.InvariantCulture, out var parsed))
             return price.Trim();
 
-        return decimal.Round(parsed, 2, MidpointRounding.AwayFromZero)
-            .ToString("0.00", CultureInfo.InvariantCulture);
+        return parsed.ToString("0.############################", CultureInfo.InvariantCulture);
     }
 
     private static bool IsSuccess(string? status)
@@ -452,7 +544,9 @@ public sealed class IyzicoPaymentGateway : IPaymentGateway
         string? Token,
         string? Currency,
         string? BasketId,
+        [property: JsonConverter(typeof(FlexibleStringJsonConverter))]
         string? Price,
+        [property: JsonConverter(typeof(FlexibleStringJsonConverter))]
         string? PaidPrice,
         int? FraudStatus,
         string? ErrorCode,
@@ -481,4 +575,37 @@ public sealed class IyzicoPaymentGateway : IPaymentGateway
         string? Status,
         string? ErrorCode,
         string? ErrorMessage);
+
+    private sealed class FlexibleStringJsonConverter : JsonConverter<string?>
+    {
+        public override string? Read(
+            ref Utf8JsonReader reader,
+            Type typeToConvert,
+            JsonSerializerOptions options)
+        {
+            return reader.TokenType switch
+            {
+                JsonTokenType.Null => null,
+                JsonTokenType.String => reader.GetString(),
+                JsonTokenType.Number => reader.GetDecimal().ToString(CultureInfo.InvariantCulture),
+                JsonTokenType.True => bool.TrueString,
+                JsonTokenType.False => bool.FalseString,
+                _ => JsonDocument.ParseValue(ref reader).RootElement.ToString()
+            };
+        }
+
+        public override void Write(
+            Utf8JsonWriter writer,
+            string? value,
+            JsonSerializerOptions options)
+        {
+            if (value is null)
+            {
+                writer.WriteNullValue();
+                return;
+            }
+
+            writer.WriteStringValue(value);
+        }
+    }
 }

@@ -9,6 +9,7 @@ public sealed record OrderSummaryDto(
     PaymentStatus PaymentStatus,
     FulfillmentStatus FulfillmentStatus,
     string CurrencyCode,
+    string? ShippingCarrierName,
     int ItemCount,
     decimal GrandTotalAmount,
     DateTime PlacedAtUtc);

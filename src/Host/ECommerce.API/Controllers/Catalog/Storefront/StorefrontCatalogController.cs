@@ -4,7 +4,7 @@ using Catalog.Application.Storefront.Queries.SearchStorefrontBrands;
 using ECommerce.API.Contracts.Catalog.Storefront;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Store.Application.Stores.Queries.GetPublishedStorefrontBySlug;
+using Store.Application.Stores.Queries.GetStoreBySlug;
 
 namespace ECommerce.API.Controllers.Catalog.Storefront;
 
@@ -24,11 +24,11 @@ public sealed class StorefrontCatalogController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetCategoryTree([FromRoute] string storeSlug, CancellationToken cancellationToken)
     {
-        var storefront = await _sender.Send(new GetPublishedStoreFrontBySlugQuery(storeSlug), cancellationToken);
-        if (storefront is null)
+        var store = await _sender.Send(new GetStoreBySlugQuery(storeSlug), cancellationToken);
+        if (store is null)
             return NotFound();
 
-        var categories = await _sender.Send(new GetStorefrontCategoryTreeQuery(storefront.TenantId), cancellationToken);
+        var categories = await _sender.Send(new GetStorefrontCategoryTreeQuery(store.TenantId), cancellationToken);
         return Ok(categories);
     }
 
@@ -40,11 +40,11 @@ public sealed class StorefrontCatalogController : ControllerBase
         [FromQuery] StorefrontBrandSearchRequest request,
         CancellationToken cancellationToken)
     {
-        var storefront = await _sender.Send(new GetPublishedStoreFrontBySlugQuery(storeSlug), cancellationToken);
-        if (storefront is null)
+        var store = await _sender.Send(new GetStoreBySlugQuery(storeSlug), cancellationToken);
+        if (store is null)
             return NotFound();
 
-        var brands = await _sender.Send(new SearchStorefrontBrandsQuery(storefront.TenantId, request.SearchTerm), cancellationToken);
+        var brands = await _sender.Send(new SearchStorefrontBrandsQuery(store.TenantId, request.SearchTerm), cancellationToken);
         return Ok(brands);
     }
 
@@ -56,12 +56,12 @@ public sealed class StorefrontCatalogController : ControllerBase
         [FromQuery] StorefrontCatalogFacetsRequest request,
         CancellationToken cancellationToken)
     {
-        var storefront = await _sender.Send(new GetPublishedStoreFrontBySlugQuery(storeSlug), cancellationToken);
-        if (storefront is null)
+        var store = await _sender.Send(new GetStoreBySlugQuery(storeSlug), cancellationToken);
+        if (store is null)
             return NotFound();
 
         var facets = await _sender.Send(new GetStorefrontCatalogFacetsQuery(
-            storefront.TenantId,
+            store.TenantId,
             request.SearchTerm,
             request.CategoryId,
             request.BrandId), cancellationToken);

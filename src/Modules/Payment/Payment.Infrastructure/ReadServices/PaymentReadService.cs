@@ -66,6 +66,7 @@ public sealed class PaymentReadService : IPaymentReadService
                 x.CurrencyCode,
                 x.Status,
                 x.Provider,
+                x.ProviderAccountId,
                 x.MethodType,
                 x.CreatedAtUtc))
             .ToArrayAsync(cancellationToken);
@@ -85,6 +86,7 @@ public sealed class PaymentReadService : IPaymentReadService
             payment.CurrencyCode,
             payment.Status,
             payment.Provider,
+            payment.ProviderAccountId,
             payment.MethodType,
             payment.ExternalPaymentReference,
             payment.ExternalConversationId,

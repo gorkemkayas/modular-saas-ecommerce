@@ -16,7 +16,8 @@ public sealed record PaymentGatewayAuthorizeRequest(
     PaymentGatewayCustomer Customer,
     PaymentGatewayAddress BillingAddress,
     PaymentGatewayAddress ShippingAddress,
-    IReadOnlyCollection<PaymentGatewayBasketItem> Items);
+    IReadOnlyCollection<PaymentGatewayBasketItem> Items,
+    Guid? ProviderAccountId = null);
 
 public sealed record PaymentGatewayCustomer(
     string Email,

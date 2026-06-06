@@ -52,4 +52,35 @@ public sealed class PriceResolutionReadServiceIntegrationTests
 
         Assert.IsNull(resolved);
     }
+
+    [TestMethod]
+    public async Task GetResolvedPriceAsync_WhenRequestedCurrencyHasNoDefaultList_FallsBackToAnotherActiveDefaultList()
+    {
+        var (connection, context) = await InfrastructureTestContextFactory.CreateAsync();
+        await using var _ = connection;
+        await using var __ = context;
+
+        var storeId = Guid.NewGuid();
+        var productId = Guid.NewGuid();
+
+        var usdPriceList = PriceList.Create(
+            storeId,
+            "Default USD",
+            Currency.Create("USD"),
+            priority: 10,
+            isDefault: true);
+        usdPriceList.SetProductPrice(productId, Money.Create(25m, "USD"));
+        usdPriceList.Activate();
+
+        await context.PriceLists.AddAsync(usdPriceList);
+        await context.SaveChangesAsync();
+
+        var readService = new PriceResolutionReadService(context);
+        var resolved = await readService.GetResolvedPriceAsync(storeId, productId, null, "TRY");
+
+        Assert.IsNotNull(resolved);
+        Assert.AreEqual(25m, resolved.Amount);
+        Assert.AreEqual("USD", resolved.CurrencyCode);
+        Assert.AreEqual(usdPriceList.Id, resolved.PriceListId);
+    }
 }

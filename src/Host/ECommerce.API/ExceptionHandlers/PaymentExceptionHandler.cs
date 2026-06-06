@@ -43,6 +43,7 @@ public sealed class PaymentExceptionHandler : IExceptionHandler
             Payment.Application.Exceptions.PaymentValidationException => (StatusCodes.Status400BadRequest, "Payment Validation Error"),
             Payment.Application.Exceptions.UnauthorizedPaymentAccessException => (StatusCodes.Status403Forbidden, "Unauthorized Payment Access"),
             Payment.Application.Exceptions.PaymentWebhookValidationException => (StatusCodes.Status400BadRequest, "Payment Webhook Validation Error"),
+            Payment.Application.Exceptions.PaymentProviderAccountNotConfiguredException => (StatusCodes.Status400BadRequest, "Payment Provider Account Not Configured"),
             PaymentDomainException => (StatusCodes.Status400BadRequest, "Payment Domain Rule Violation"),
             ApplicationException => (StatusCodes.Status400BadRequest, "Payment Application Error"),
             _ => (StatusCodes.Status500InternalServerError, "Internal Server Error")

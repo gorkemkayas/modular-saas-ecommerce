@@ -57,8 +57,11 @@ namespace Catalog.Infrastructure.ReadServices
                     x.ProductType,
                     x.PublishedAtUtc,
                     x.MediaItems
-                        .Where(media => !media.ProductVariantId.HasValue)
-                        .OrderByDescending(media => media.IsMain)
+                        .Where(media =>
+                            !media.ProductVariantId.HasValue ||
+                            x.Variants.Any(variant => variant.IsActive && variant.Id == media.ProductVariantId))
+                        .OrderBy(media => media.ProductVariantId.HasValue)
+                        .ThenByDescending(media => media.IsMain)
                         .ThenBy(media => media.SortOrder)
                         .Select(media => media.Url)
                         .FirstOrDefault()));
@@ -279,6 +282,7 @@ namespace Catalog.Infrastructure.ReadServices
                     x.Name,
                     x.Slug.Value,
                     x.Description,
+                    x.ImageUrl,
                     x.ParentCategoryId,
                     x.SortOrder))
                 .ToListAsync(cancellationToken);
@@ -674,17 +678,19 @@ namespace Catalog.Infrastructure.ReadServices
             if (activeVariantIds.Count == 0)
                 return new Dictionary<Guid, StorefrontResolvedPriceDto?>();
 
-            var tasks = activeVariantIds.Select(async variantId => new
+            var results = new Dictionary<Guid, StorefrontResolvedPriceDto?>(activeVariantIds.Count);
+
+            foreach (var variantId in activeVariantIds)
             {
-                VariantId = variantId,
-                Price = await ResolvePriceAsync(storeId, productId, variantId, currencyCode, cancellationToken)
-            });
+                results[variantId] = await ResolvePriceAsync(
+                    storeId,
+                    productId,
+                    variantId,
+                    currencyCode,
+                    cancellationToken);
+            }
 
-            var results = await Task.WhenAll(tasks);
-
-            return results.ToDictionary(
-                x => x.VariantId,
-                x => x.Price);
+            return results;
         }
 
         private async Task<StorefrontResolvedPriceDto?> ResolvePriceAsync(
@@ -772,6 +778,7 @@ namespace Catalog.Infrastructure.ReadServices
                 string name,
                 string slug,
                 string? description,
+                string? imageUrl,
                 Guid? parentCategoryId,
                 int sortOrder)
             {
@@ -779,6 +786,7 @@ namespace Catalog.Infrastructure.ReadServices
                 Name = name;
                 Slug = slug;
                 Description = description;
+                ImageUrl = imageUrl;
                 ParentCategoryId = parentCategoryId;
                 SortOrder = sortOrder;
             }
@@ -787,6 +795,7 @@ namespace Catalog.Infrastructure.ReadServices
             public string Name { get; }
             public string Slug { get; }
             public string? Description { get; }
+            public string? ImageUrl { get; }
             public Guid? ParentCategoryId { get; }
             public int SortOrder { get; }
             public List<StorefrontCategoryNodeBuilder> Children { get; } = new();
@@ -798,6 +807,7 @@ namespace Catalog.Infrastructure.ReadServices
                     Name,
                     Slug,
                     Description,
+                    ImageUrl,
                     ParentCategoryId,
                     SortOrder,
                     Children

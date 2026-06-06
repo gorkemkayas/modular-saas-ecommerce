@@ -47,6 +47,7 @@ public sealed class OrdersController : ControllerBase
             externalUserId,
             request.ShippingAddressId,
             request.BillingAddressId,
+            request.ShippingCarrierId,
             request.CurrencyCode,
             request.Items
                 .Select(x => new PlaceOrderItemInput(x.ProductId, x.ProductVariantId, x.Quantity))

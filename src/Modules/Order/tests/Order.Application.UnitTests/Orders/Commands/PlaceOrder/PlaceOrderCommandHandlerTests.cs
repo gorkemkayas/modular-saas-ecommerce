@@ -20,7 +20,15 @@ public sealed class PlaceOrderCommandHandlerTests
         var catalogProductService = new Mock<IOrderCatalogProductService>();
         var pricingService = new Mock<IOrderPricingService>();
         var inventoryService = new Mock<IOrderInventoryService>();
+        var shippingCarrierService = new Mock<IOrderShippingCarrierService>();
         var notificationService = new Mock<IOrderNotificationService>();
+        var shippingCarrierId = Guid.NewGuid();
+        Order.Domain.Entities.Order? placedOrder = null;
+
+        orderRepository
+            .Setup(x => x.AddAsync(It.IsAny<Order.Domain.Entities.Order>(), It.IsAny<CancellationToken>()))
+            .Callback<Order.Domain.Entities.Order, CancellationToken>((order, _) => placedOrder = order)
+            .Returns(Task.CompletedTask);
 
         orderNumberGenerator
             .Setup(x => x.GenerateAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
@@ -59,6 +67,10 @@ public sealed class PlaceOrderCommandHandlerTests
                 It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
+        shippingCarrierService
+            .Setup(x => x.GetActiveCarrierAsync(It.IsAny<Guid>(), shippingCarrierId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new OrderShippingCarrier(shippingCarrierId, "yurtici", "Yurtici Kargo", null, null, null));
+
         var handler = new PlaceOrderCommandHandler(
             orderRepository.Object,
             unitOfWork.Object,
@@ -67,6 +79,7 @@ public sealed class PlaceOrderCommandHandlerTests
             catalogProductService.Object,
             pricingService.Object,
             inventoryService.Object,
+            shippingCarrierService.Object,
             notificationService.Object,
             NullLogger<PlaceOrderCommandHandler>.Instance);
 
@@ -75,6 +88,7 @@ public sealed class PlaceOrderCommandHandlerTests
             Guid.NewGuid(),
             Guid.NewGuid(),
             null,
+            shippingCarrierId,
             "TRY",
             new[]
             {
@@ -84,6 +98,9 @@ public sealed class PlaceOrderCommandHandlerTests
         var orderId = await handler.Handle(command, CancellationToken.None);
 
         Assert.AreNotEqual(Guid.Empty, orderId);
+        Assert.IsNotNull(placedOrder?.ShippingCarrierSnapshot);
+        Assert.AreEqual(shippingCarrierId, placedOrder.ShippingCarrierSnapshot.CarrierId);
+        Assert.AreEqual("Yurtici Kargo", placedOrder.ShippingCarrierSnapshot.Name);
         orderRepository.Verify(x => x.AddAsync(It.IsAny<Order.Domain.Entities.Order>(), It.IsAny<CancellationToken>()), Times.Once);
         unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         inventoryService.Verify(x => x.EnsureAvailabilityAsync(It.IsAny<Guid>(), It.IsAny<IReadOnlyCollection<OrderInventoryItemRequest>>(), It.IsAny<CancellationToken>()), Times.Once);

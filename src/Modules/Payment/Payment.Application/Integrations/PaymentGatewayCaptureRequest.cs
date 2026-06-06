@@ -8,4 +8,5 @@ public sealed record PaymentGatewayCaptureRequest(
     string CurrencyCode,
     string? ExternalPaymentReference,
     string? ExternalConversationId,
-    string IdempotencyKey);
+    string IdempotencyKey,
+    Guid? ProviderAccountId = null);

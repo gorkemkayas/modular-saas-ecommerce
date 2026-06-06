@@ -3,7 +3,7 @@ using Catalog.Application.Storefront.Queries.SearchStorefrontProducts;
 using ECommerce.API.Contracts.Catalog.Storefront;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Store.Application.Stores.Queries.GetPublishedStorefrontBySlug;
+using Store.Application.Stores.Queries.GetStoreBySlug;
 
 namespace ECommerce.API.Controllers.Catalog.Storefront;
 
@@ -26,12 +26,12 @@ public sealed class StorefrontProductsController : ControllerBase
         [FromQuery] StorefrontProductSearchRequest request,
         CancellationToken cancellationToken)
     {
-        var storefront = await _sender.Send(new GetPublishedStoreFrontBySlugQuery(storeSlug), cancellationToken);
-        if (storefront is null)
+        var store = await _sender.Send(new GetStoreBySlugQuery(storeSlug), cancellationToken);
+        if (store is null)
             return NotFound();
 
         var result = await _sender.Send(new SearchStorefrontProductsQuery(
-            storefront.TenantId,
+            store.TenantId,
             request.CurrencyCode,
             request.SearchTerm,
             request.CategoryId,
@@ -51,11 +51,11 @@ public sealed class StorefrontProductsController : ControllerBase
         [FromQuery] string currencyCode = "TRY",
         CancellationToken cancellationToken = default)
     {
-        var storefront = await _sender.Send(new GetPublishedStoreFrontBySlugQuery(storeSlug), cancellationToken);
-        if (storefront is null)
+        var store = await _sender.Send(new GetStoreBySlugQuery(storeSlug), cancellationToken);
+        if (store is null)
             return NotFound();
 
-        var product = await _sender.Send(new GetStorefrontProductBySlugQuery(storefront.TenantId, productSlug, currencyCode), cancellationToken);
+        var product = await _sender.Send(new GetStorefrontProductBySlugQuery(store.TenantId, productSlug, currencyCode), cancellationToken);
         return product is null ? NotFound() : Ok(product);
     }
 }

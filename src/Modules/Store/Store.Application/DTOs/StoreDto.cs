@@ -10,5 +10,14 @@ namespace Store.Application.DTOs
     string? Description,
     string? LogoUrl,
     StoreStatus Status,
-    bool IsPublished);
+    bool IsPublished,
+    string? HeroImageUrl = null,
+    StorefrontHeroMediaType? HeroMediaType = null,
+    string? HeroEyebrowText = null,
+    string? HeroTitle = null,
+    string? HeroAccentTitle = null,
+    string? HeroDescription = null,
+    string? HeroPrimaryButtonText = null,
+    string? LoginPageImageUrl = null,
+    string? RegisterPageImageUrl = null);
 }

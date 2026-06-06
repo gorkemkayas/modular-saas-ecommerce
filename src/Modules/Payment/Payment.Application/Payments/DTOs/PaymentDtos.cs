@@ -4,6 +4,8 @@ namespace Payment.Application.Payments.DTOs;
 
 public sealed record PaymentActionResultDto(
     Guid PaymentId,
+    Guid StoreId,
+    Guid OrderId,
     PaymentStatus Status,
     string? ExternalPaymentReference,
     string? ExternalConversationId,
@@ -40,6 +42,7 @@ public sealed record PaymentDto(
     string CurrencyCode,
     PaymentStatus Status,
     PaymentProvider Provider,
+    Guid? ProviderAccountId,
     PaymentMethodType MethodType,
     string? ExternalPaymentReference,
     string? ExternalConversationId,
@@ -63,5 +66,6 @@ public sealed record PaymentSummaryDto(
     string CurrencyCode,
     PaymentStatus Status,
     PaymentProvider Provider,
+    Guid? ProviderAccountId,
     PaymentMethodType MethodType,
     DateTime CreatedAtUtc);

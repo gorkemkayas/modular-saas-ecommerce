@@ -25,7 +25,6 @@ namespace Payment.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Payment.Domain.Entities.Payment", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("Amount")
@@ -85,6 +84,9 @@ namespace Payment.Infrastructure.Persistence.Migrations
                     b.Property<int>("Provider")
                         .HasColumnType("integer");
 
+                    b.Property<Guid?>("ProviderAccountId")
+                        .HasColumnType("uuid");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
@@ -100,6 +102,8 @@ namespace Payment.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("ExternalPaymentReference");
 
+                    b.HasIndex("ProviderAccountId");
+
                     b.HasIndex("StoreId", "OrderId")
                         .IsUnique();
 
@@ -111,7 +115,6 @@ namespace Payment.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Payment.Domain.Entities.PaymentAttempt", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<int>("AttemptNumber")
@@ -160,10 +163,57 @@ namespace Payment.Infrastructure.Persistence.Migrations
                     b.ToTable("PaymentAttempts", (string)null);
                 });
 
+            modelBuilder.Entity("Payment.Domain.Entities.PaymentProviderAccount", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ApiKeyCipherText")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<string>("ApiKeyLastFour")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Provider")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SecretKeyCipherText")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("StoreId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StoreId", "Provider")
+                        .IsUnique();
+
+                    b.HasIndex("StoreId", "Status");
+
+                    b.ToTable("PaymentProviderAccounts", (string)null);
+                });
+
             modelBuilder.Entity("Payment.Domain.Entities.PaymentRefund", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("Amount")
@@ -190,6 +240,14 @@ namespace Payment.Infrastructure.Persistence.Migrations
                     b.HasIndex("PaymentId");
 
                     b.ToTable("PaymentRefunds", (string)null);
+                });
+
+            modelBuilder.Entity("Payment.Domain.Entities.Payment", b =>
+                {
+                    b.HasOne("Payment.Domain.Entities.PaymentProviderAccount", null)
+                        .WithMany()
+                        .HasForeignKey("ProviderAccountId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("Payment.Domain.Entities.PaymentAttempt", b =>

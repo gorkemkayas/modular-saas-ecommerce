@@ -4,6 +4,23 @@ namespace ECommerce.API.Contracts.Shipment;
 
 public sealed record CreateShipmentRequest(string? InternalNote);
 
+public sealed record CreateShippingCarrierRequest(
+    string Code,
+    string Name,
+    string? ServiceCode,
+    string? ServiceName,
+    string? TrackingUrl,
+    int SortOrder = 0);
+
+public sealed record UpdateShippingCarrierRequest(
+    string Code,
+    string Name,
+    string? ServiceCode,
+    string? ServiceName,
+    string? TrackingUrl,
+    bool IsActive,
+    int SortOrder);
+
 public sealed record AddShipmentPackageRequest(
     string? TrackingNumber,
     decimal? Weight,

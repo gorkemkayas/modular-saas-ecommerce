@@ -19,6 +19,7 @@ public sealed class PlaceOrderCommandHandler : IRequestHandler<PlaceOrderCommand
     private readonly IOrderCatalogProductService _catalogProductService;
     private readonly IOrderPricingService _pricingService;
     private readonly IOrderInventoryService _inventoryService;
+    private readonly IOrderShippingCarrierService _shippingCarrierService;
     private readonly IOrderNotificationService _notificationService;
     private readonly ILogger<PlaceOrderCommandHandler> _logger;
 
@@ -30,6 +31,7 @@ public sealed class PlaceOrderCommandHandler : IRequestHandler<PlaceOrderCommand
         IOrderCatalogProductService catalogProductService,
         IOrderPricingService pricingService,
         IOrderInventoryService inventoryService,
+        IOrderShippingCarrierService shippingCarrierService,
         IOrderNotificationService notificationService,
         ILogger<PlaceOrderCommandHandler> logger)
     {
@@ -40,6 +42,7 @@ public sealed class PlaceOrderCommandHandler : IRequestHandler<PlaceOrderCommand
         _catalogProductService = catalogProductService;
         _pricingService = pricingService;
         _inventoryService = inventoryService;
+        _shippingCarrierService = shippingCarrierService;
         _notificationService = notificationService;
         _logger = logger;
     }
@@ -55,6 +58,9 @@ public sealed class PlaceOrderCommandHandler : IRequestHandler<PlaceOrderCommand
         if (command.ShippingAddressId == Guid.Empty)
             throw new OrderValidationException("ShippingAddressId is required.");
 
+        if (command.ShippingCarrierId == Guid.Empty)
+            throw new OrderValidationException("ShippingCarrierId is required.");
+
         if (string.IsNullOrWhiteSpace(command.CurrencyCode))
             throw new OrderValidationException("CurrencyCode is required.");
 
@@ -63,6 +69,14 @@ public sealed class PlaceOrderCommandHandler : IRequestHandler<PlaceOrderCommand
 
         if (command.Items.Any(x => x.ProductId == Guid.Empty || x.Quantity <= 0))
             throw new OrderValidationException("Each order item must have a valid product and quantity.");
+
+        var shippingCarrier = await _shippingCarrierService.GetActiveCarrierAsync(
+            command.StoreId,
+            command.ShippingCarrierId,
+            cancellationToken);
+
+        if (shippingCarrier is null)
+            throw new OrderValidationException("Selected shipping carrier is not available for this store.");
 
         var customerContext = await _customerContextService.GetCustomerContextAsync(
             command.StoreId,
@@ -150,7 +164,14 @@ public sealed class PlaceOrderCommandHandler : IRequestHandler<PlaceOrderCommand
                 customerContext.ShippingAddress.Line2,
                 customerContext.ShippingAddress.PostalCode),
             currencyCode,
-            itemDrafts);
+            itemDrafts,
+            ShippingCarrierSnapshot.Create(
+                shippingCarrier.Id,
+                shippingCarrier.Code,
+                shippingCarrier.Name,
+                shippingCarrier.ServiceCode,
+                shippingCarrier.ServiceName,
+                shippingCarrier.TrackingUrl));
 
         var reservationReference = $"ord-{order.Id:N}";
 

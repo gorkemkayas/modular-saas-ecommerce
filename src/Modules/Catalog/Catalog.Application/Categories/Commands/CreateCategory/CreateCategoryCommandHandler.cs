@@ -45,6 +45,7 @@ namespace Catalog.Application.Categories.Commands.CreateCategory
                 command.Name,
                 slug,
                 command.Description,
+                command.ImageUrl,
                 command.ParentCategoryId,
                 command.SortOrder);
 

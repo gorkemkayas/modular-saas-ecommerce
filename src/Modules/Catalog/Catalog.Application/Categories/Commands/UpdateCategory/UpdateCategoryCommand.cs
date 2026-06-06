@@ -8,5 +8,6 @@ namespace Catalog.Application.Categories.Commands.UpdateCategory
         string Name,
         string Slug,
         string? Description,
+        string? ImageUrl,
         int SortOrder) : IRequest;
 }

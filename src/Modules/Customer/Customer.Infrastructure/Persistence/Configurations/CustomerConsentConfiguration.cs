@@ -12,6 +12,9 @@ public sealed class CustomerConsentConfiguration : IEntityTypeConfiguration<Cust
 
         builder.HasKey(x => x.Id);
 
+        builder.Property(x => x.Id)
+            .ValueGeneratedNever();
+
         builder.Property(x => x.CustomerId)
             .IsRequired();
 

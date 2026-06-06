@@ -107,8 +107,12 @@ public sealed class AuthorizePaymentCommandHandler : IRequestHandler<AuthorizePa
                         item.Sku,
                         item.Quantity,
                         item.LineTotalAmount))
-                    .ToArray()),
+                    .ToArray(),
+                payment.ProviderAccountId),
             cancellationToken);
+
+        if (gatewayResult.ProviderAccountId.HasValue)
+            payment.AssignProviderAccount(gatewayResult.ProviderAccountId.Value);
 
         switch (gatewayResult.Outcome)
         {
@@ -263,6 +267,8 @@ public sealed class AuthorizePaymentCommandHandler : IRequestHandler<AuthorizePa
 
         return new PaymentActionResultDto(
             payment.Id,
+            payment.StoreId,
+            payment.OrderId,
             payment.Status,
             payment.ExternalPaymentReference,
             payment.ExternalConversationId,
