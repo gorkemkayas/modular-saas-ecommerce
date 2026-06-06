@@ -11,6 +11,7 @@ public sealed class ShipmentLineConfiguration : IEntityTypeConfiguration<Shipmen
         builder.ToTable("ShipmentLines");
 
         builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).ValueGeneratedNever();
 
         builder.Property(x => x.ProductName).HasMaxLength(200).IsRequired();
         builder.Property(x => x.VariantName).HasMaxLength(200);

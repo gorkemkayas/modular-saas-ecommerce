@@ -13,6 +13,9 @@ namespace Catalog.Infrastructure.Persistence.Configurations
 
             builder.HasKey(x => x.Id);
 
+            builder.Property(x => x.Id)
+                .ValueGeneratedNever();
+
             builder.Property(x => x.StoreId)
                 .IsRequired();
 
@@ -29,6 +32,9 @@ namespace Catalog.Infrastructure.Persistence.Configurations
 
             builder.Property(x => x.Description)
                 .HasMaxLength(1000);
+
+            builder.Property(x => x.ImageUrl)
+                .HasMaxLength(2048);
 
             builder.Property(x => x.IsActive)
                 .IsRequired();

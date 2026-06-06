@@ -373,6 +373,48 @@ namespace Order.Infrastructure.Persistence.Migrations
                                 .HasForeignKey("OrderId");
                         });
 
+                    b.OwnsOne("Order.Domain.ValueObjects.ShippingCarrierSnapshot", "ShippingCarrierSnapshot", b1 =>
+                        {
+                            b1.Property<Guid>("OrderId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<Guid?>("CarrierId")
+                                .HasColumnType("uuid")
+                                .HasColumnName("ShippingCarrierId");
+
+                            b1.Property<string>("Code")
+                                .HasMaxLength(50)
+                                .HasColumnType("character varying(50)")
+                                .HasColumnName("ShippingCarrierCode");
+
+                            b1.Property<string>("Name")
+                                .HasMaxLength(200)
+                                .HasColumnType("character varying(200)")
+                                .HasColumnName("ShippingCarrierName");
+
+                            b1.Property<string>("ServiceCode")
+                                .HasMaxLength(50)
+                                .HasColumnType("character varying(50)")
+                                .HasColumnName("ShippingCarrierServiceCode");
+
+                            b1.Property<string>("ServiceName")
+                                .HasMaxLength(200)
+                                .HasColumnType("character varying(200)")
+                                .HasColumnName("ShippingCarrierServiceName");
+
+                            b1.Property<string>("TrackingUrl")
+                                .HasMaxLength(500)
+                                .HasColumnType("character varying(500)")
+                                .HasColumnName("ShippingCarrierTrackingUrl");
+
+                            b1.HasKey("OrderId");
+
+                            b1.ToTable("Orders");
+
+                            b1.WithOwner()
+                                .HasForeignKey("OrderId");
+                        });
+
                     b.OwnsOne("Order.Domain.ValueObjects.OrderTotals", "Totals", b1 =>
                         {
                             b1.Property<Guid>("OrderId")
@@ -424,6 +466,8 @@ namespace Order.Infrastructure.Persistence.Migrations
 
                     b.Navigation("ShippingAddressSnapshot")
                         .IsRequired();
+
+                    b.Navigation("ShippingCarrierSnapshot");
 
                     b.Navigation("Totals")
                         .IsRequired();

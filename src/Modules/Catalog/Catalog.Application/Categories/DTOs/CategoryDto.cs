@@ -6,6 +6,7 @@ namespace Catalog.Application.Categories.DTOs
         string Name,
         string Slug,
         string? Description,
+        string? ImageUrl,
         Guid? ParentCategoryId,
         bool IsActive,
         int SortOrder,

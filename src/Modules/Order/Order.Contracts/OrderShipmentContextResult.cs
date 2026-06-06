@@ -12,6 +12,7 @@ public sealed record OrderShipmentContextResult(
     OrderFulfillmentStatusContract FulfillmentStatus,
     string? ShipmentReference,
     OrderShipmentAddressResult ShippingAddress,
+    OrderShipmentCarrierResult? ShippingCarrier,
     IReadOnlyCollection<OrderShipmentItemResult> Items);
 
 public sealed record OrderShipmentAddressResult(
@@ -32,3 +33,11 @@ public sealed record OrderShipmentItemResult(
     string? VariantName,
     string? Sku,
     int Quantity);
+
+public sealed record OrderShipmentCarrierResult(
+    Guid CarrierId,
+    string Code,
+    string Name,
+    string? ServiceCode,
+    string? ServiceName,
+    string? TrackingUrl);

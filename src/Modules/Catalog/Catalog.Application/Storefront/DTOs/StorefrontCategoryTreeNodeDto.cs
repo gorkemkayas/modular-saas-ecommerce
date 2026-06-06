@@ -5,6 +5,7 @@ namespace Catalog.Application.Storefront.DTOs
         string Name,
         string Slug,
         string? Description,
+        string? ImageUrl,
         Guid? ParentCategoryId,
         int SortOrder,
         IReadOnlyCollection<StorefrontCategoryTreeNodeDto> Children);

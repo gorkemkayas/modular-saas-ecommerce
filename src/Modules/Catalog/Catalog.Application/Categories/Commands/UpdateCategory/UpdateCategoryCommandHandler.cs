@@ -37,6 +37,7 @@ namespace Catalog.Application.Categories.Commands.UpdateCategory
             category.Rename(command.Name);
             category.ChangeSlug(slug);
             category.ChangeDescription(command.Description);
+            category.ChangeImageUrl(command.ImageUrl);
             category.SetSortOrder(command.SortOrder);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);

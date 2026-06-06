@@ -48,6 +48,25 @@ public sealed class PaymentTests
             payment.Refund("refund-1", 120m, "Customer requested refund.", "refund-ref-1"));
     }
 
+    [TestMethod]
+    public void AssignProviderAccount_WhenDifferentAccountAlreadyAssigned_ThrowsPaymentDomainException()
+    {
+        var payment = Payment.Domain.Entities.Payment.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            "ORD-1003",
+            Guid.NewGuid(),
+            100m,
+            "TRY",
+            PaymentProvider.Iyzico,
+            PaymentMethodType.Card);
+
+        payment.AssignProviderAccount(Guid.NewGuid());
+
+        Assert.ThrowsExactly<PaymentDomainException>(() =>
+            payment.AssignProviderAccount(Guid.NewGuid()));
+    }
+
     private static Payment.Domain.Entities.Payment CreateCapturedPayment()
     {
         var payment = Payment.Domain.Entities.Payment.Create(

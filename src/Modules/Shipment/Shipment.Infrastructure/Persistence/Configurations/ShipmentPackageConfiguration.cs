@@ -11,6 +11,7 @@ public sealed class ShipmentPackageConfiguration : IEntityTypeConfiguration<Ship
         builder.ToTable("ShipmentPackages");
 
         builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).ValueGeneratedNever();
 
         builder.Property(x => x.PackageNumber).HasMaxLength(50).IsRequired();
         builder.Property(x => x.TrackingNumber).HasMaxLength(120);

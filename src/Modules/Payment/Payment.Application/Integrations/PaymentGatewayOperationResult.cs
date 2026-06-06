@@ -8,4 +8,5 @@ public sealed record PaymentGatewayOperationResult(
     string? FailureCode,
     string? FailureMessage,
     string? ProviderRequestReference,
-    decimal? RefundedAmount = null);
+    decimal? RefundedAmount = null,
+    Guid? ProviderAccountId = null);

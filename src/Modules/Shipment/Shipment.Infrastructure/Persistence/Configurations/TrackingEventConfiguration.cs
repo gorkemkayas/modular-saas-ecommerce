@@ -11,6 +11,7 @@ public sealed class TrackingEventConfiguration : IEntityTypeConfiguration<Tracki
         builder.ToTable("TrackingEvents");
 
         builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).ValueGeneratedNever();
 
         builder.Property(x => x.Location).HasMaxLength(200);
         builder.Property(x => x.Description).HasMaxLength(500).IsRequired();

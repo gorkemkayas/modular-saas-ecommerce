@@ -40,7 +40,9 @@ public sealed class ShipmentExceptionHandler : IExceptionHandler
         var (statusCode, title) = exception switch
         {
             Shipment.Application.Exceptions.ShipmentNotFoundException => (StatusCodes.Status404NotFound, "Shipment Not Found"),
+            Shipment.Application.Exceptions.ShippingCarrierNotFoundException => (StatusCodes.Status404NotFound, "Shipping Carrier Not Found"),
             Shipment.Application.Exceptions.ShipmentAlreadyExistsForOrderException => (StatusCodes.Status409Conflict, "Shipment Already Exists"),
+            Shipment.Application.Exceptions.DuplicateShippingCarrierCodeException => (StatusCodes.Status409Conflict, "Shipping Carrier Already Exists"),
             Shipment.Application.Exceptions.ShipmentCreationNotAllowedException => (StatusCodes.Status400BadRequest, "Shipment Creation Not Allowed"),
             Shipment.Application.Exceptions.ShipmentDispatchNotAllowedException => (StatusCodes.Status400BadRequest, "Shipment Dispatch Not Allowed"),
             Shipment.Application.Exceptions.ShipmentCancellationNotAllowedException => (StatusCodes.Status400BadRequest, "Shipment Cancellation Not Allowed"),

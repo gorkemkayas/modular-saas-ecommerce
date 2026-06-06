@@ -121,6 +121,9 @@ public sealed class Shipment : IAggregateRoot
     {
         EnsureNotTerminal();
 
+        if (!string.IsNullOrWhiteSpace(CarrierCode) || !string.IsNullOrWhiteSpace(CarrierName))
+            throw new ShipmentDomainException("Carrier has already been assigned for this shipment.");
+
         CarrierCode = NormalizeRequired(carrierCode, "Carrier code", 50);
         CarrierName = NormalizeRequired(carrierName, "Carrier name", 200);
         ServiceCode = NormalizeOptional(serviceCode, 50);
@@ -214,7 +217,7 @@ public sealed class Shipment : IAggregateRoot
         string? rawStatusCode,
         string? rawStatusText)
     {
-        EnsureNotCancelled();
+        EnsureNotTerminal();
 
         var package = FindPackage(packageId);
         package.AddTrackingEvent(

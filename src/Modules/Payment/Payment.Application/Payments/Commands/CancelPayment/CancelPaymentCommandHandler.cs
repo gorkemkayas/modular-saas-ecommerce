@@ -60,11 +60,15 @@ public sealed class CancelPaymentCommandHandler : IRequestHandler<CancelPaymentC
                 payment.CurrencyCode,
                 payment.ExternalPaymentReference,
                 payment.ExternalConversationId,
-                command.IdempotencyKey),
+                command.IdempotencyKey,
+                payment.ProviderAccountId),
             cancellationToken);
 
         if (gatewayResult.Outcome != PaymentGatewayOutcome.Cancelled)
             throw new PaymentValidationException(gatewayResult.FailureMessage ?? "Payment could not be cancelled.");
+
+        if (gatewayResult.ProviderAccountId.HasValue)
+            payment.AssignProviderAccount(gatewayResult.ProviderAccountId.Value);
 
         payment.Cancel(
             command.IdempotencyKey,

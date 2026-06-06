@@ -9,6 +9,7 @@ using Catalog.Application.Categories.DTOs;
 using Catalog.Application.Categories.Queries.GetCategoryById;
 using Catalog.Application.Categories.Queries.GetCategoryTree;
 using ECommerce.API.Contracts.Catalog.Categories;
+using ECommerce.API.Integrations.Media;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -22,11 +23,16 @@ public sealed class StoreCategoriesController : ControllerBase
 {
     private readonly ISender _sender;
     private readonly ITenantContext _tenantContext;
+    private readonly IProductMediaStorageService _productMediaStorageService;
 
-    public StoreCategoriesController(ISender sender, ITenantContext tenantContext)
+    public StoreCategoriesController(
+        ISender sender,
+        ITenantContext tenantContext,
+        IProductMediaStorageService productMediaStorageService)
     {
         _sender = sender;
         _tenantContext = tenantContext;
+        _productMediaStorageService = productMediaStorageService;
     }
 
     [HttpGet("tree")]
@@ -55,6 +61,7 @@ public sealed class StoreCategoriesController : ControllerBase
             request.Name,
             request.Slug,
             request.Description,
+            request.ImageUrl,
             request.ParentCategoryId,
             request.SortOrder), cancellationToken);
 
@@ -74,6 +81,7 @@ public sealed class StoreCategoriesController : ControllerBase
             request.Name,
             request.Slug,
             request.Description,
+            request.ImageUrl,
             request.SortOrder), cancellationToken);
 
         return NoContent();
@@ -104,6 +112,53 @@ public sealed class StoreCategoriesController : ControllerBase
     {
         await _sender.Send(new DeactivateCategoryCommand(GetStoreId(), categoryId), cancellationToken);
         return NoContent();
+    }
+
+    [HttpPost("image/upload")]
+    [ProducesResponseType(typeof(UploadCategoryImageFileResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> UploadCategoryImageFile(
+        [FromForm] UploadCategoryImageFileRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (request.File is null)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Category image is required.",
+                Detail = "Select an image file before uploading."
+            });
+        }
+
+        try
+        {
+            var uploadedFile = await _productMediaStorageService.UploadAsync(
+                GetStoreId(),
+                request.File,
+                cancellationToken);
+
+            if (!uploadedFile.IsImage)
+            {
+                return BadRequest(new ProblemDetails
+                {
+                    Title = "Only image uploads are supported.",
+                    Detail = "Category images must be uploaded as image files."
+                });
+            }
+
+            return Ok(new UploadCategoryImageFileResponse(
+                uploadedFile.Url,
+                uploadedFile.OriginalFileName));
+        }
+        catch (InvalidOperationException exception)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new ProblemDetails
+            {
+                Title = "Category image upload failed.",
+                Detail = exception.Message
+            });
+        }
     }
 
     private Guid GetStoreId() => _tenantContext.TenantIdAsGuid!.Value;

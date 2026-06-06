@@ -7,6 +7,7 @@ namespace Catalog.Application.Categories.Commands.CreateCategory
         string Name,
         string Slug,
         string? Description,
+        string? ImageUrl,
         Guid? ParentCategoryId,
         int SortOrder) : IRequest<Guid>;
 }

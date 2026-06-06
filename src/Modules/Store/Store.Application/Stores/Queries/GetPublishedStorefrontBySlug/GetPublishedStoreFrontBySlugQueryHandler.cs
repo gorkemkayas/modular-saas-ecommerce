@@ -28,7 +28,16 @@ namespace Store.Application.Stores.Queries.GetPublishedStorefrontBySlug
                 store.Name,
                 store.Slug.Value,
                 store.Description,
-                store.LogoUrl
+                store.LogoUrl,
+                store.HeroImageUrl,
+                store.HeroMediaType,
+                store.HeroEyebrowText,
+                store.HeroTitle,
+                store.HeroAccentTitle,
+                store.HeroDescription,
+                store.HeroPrimaryButtonText,
+                store.LoginPageImageUrl,
+                store.RegisterPageImageUrl
             );
         }
     }

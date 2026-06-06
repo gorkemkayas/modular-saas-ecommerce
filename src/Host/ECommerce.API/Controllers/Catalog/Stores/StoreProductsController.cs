@@ -18,6 +18,7 @@ using Catalog.Application.Products.Queries.GetProductById;
 using Catalog.Application.Products.Queries.GetProductBySlug;
 using Catalog.Application.Products.Queries.SearchProducts;
 using ECommerce.API.Contracts.Catalog.Products;
+using ECommerce.API.Integrations.Media;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -31,11 +32,16 @@ public sealed class StoreProductsController : ControllerBase
 {
     private readonly ISender _sender;
     private readonly ITenantContext _tenantContext;
+    private readonly IProductMediaStorageService _productMediaStorageService;
 
-    public StoreProductsController(ISender sender, ITenantContext tenantContext)
+    public StoreProductsController(
+        ISender sender,
+        ITenantContext tenantContext,
+        IProductMediaStorageService productMediaStorageService)
     {
         _sender = sender;
         _tenantContext = tenantContext;
+        _productMediaStorageService = productMediaStorageService;
     }
 
     [HttpGet]
@@ -200,6 +206,40 @@ public sealed class StoreProductsController : ControllerBase
             request.ProductVariantId), cancellationToken);
 
         return NoContent();
+    }
+
+    [HttpPost("media/upload")]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(UploadProductMediaFileResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> UploadProductMediaFile(
+        [FromForm] UploadProductMediaFileRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (request.File is null || request.File.Length <= 0)
+            return BadRequest(new ProblemDetails { Detail = "A product media file is required." });
+
+        try
+        {
+            var storedMedia = await _productMediaStorageService.UploadAsync(
+                GetStoreId(),
+                request.File,
+                cancellationToken);
+
+            return Ok(new UploadProductMediaFileResponse(
+                storedMedia.Url,
+                storedMedia.MediaType,
+                storedMedia.OriginalFileName));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return StatusCode(
+                StatusCodes.Status503ServiceUnavailable,
+                new ProblemDetails
+                {
+                    Title = "Product media upload is unavailable.",
+                    Detail = ex.Message
+                });
+        }
     }
 
     [HttpPost("{productId:guid}/activate")]

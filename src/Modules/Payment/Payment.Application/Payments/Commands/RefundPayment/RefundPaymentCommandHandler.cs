@@ -62,8 +62,12 @@ public sealed class RefundPaymentCommandHandler : IRequestHandler<RefundPaymentC
                 command.Reason,
                 payment.ExternalPaymentReference,
                 payment.ExternalConversationId,
-                command.IdempotencyKey),
+                command.IdempotencyKey,
+                payment.ProviderAccountId),
             cancellationToken);
+
+        if (gatewayResult.ProviderAccountId.HasValue)
+            payment.AssignProviderAccount(gatewayResult.ProviderAccountId.Value);
 
         if (gatewayResult.Outcome != PaymentGatewayOutcome.Refunded)
         {

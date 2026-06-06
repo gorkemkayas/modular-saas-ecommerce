@@ -54,7 +54,7 @@ public sealed class CreateShipmentCommandHandlerTests
                 "SHP-TEST-001",
                 "customer@example.com",
                 "Jane Doe",
-                null,
+                "Yurtici Kargo",
                 null,
                 null,
                 It.IsAny<CancellationToken>()))
@@ -83,6 +83,13 @@ public sealed class CreateShipmentCommandHandlerTests
                     "Street 1",
                     null,
                     "34000"),
+                new OrderShipmentCarrier(
+                    Guid.NewGuid(),
+                    "yurtici",
+                    "Yurtici Kargo",
+                    null,
+                    null,
+                    null),
                 new[]
                 {
                     new OrderShipmentItem(Guid.NewGuid(), Guid.NewGuid(), null, "Phone", null, "SKU-1", 1)

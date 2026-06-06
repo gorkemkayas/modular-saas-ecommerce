@@ -247,6 +247,15 @@ public sealed class OrderModuleApi : IOrderModuleApi
                 order.ShippingAddress.Line1,
                 order.ShippingAddress.Line2,
                 order.ShippingAddress.PostalCode),
+            order.ShippingCarrier is null
+                ? null
+                : new OrderShipmentCarrierResult(
+                    order.ShippingCarrier.CarrierId,
+                    order.ShippingCarrier.Code,
+                    order.ShippingCarrier.Name,
+                    order.ShippingCarrier.ServiceCode,
+                    order.ShippingCarrier.ServiceName,
+                    order.ShippingCarrier.TrackingUrl),
             order.Items
                 .Select(item => new OrderShipmentItemResult(
                     item.Id,

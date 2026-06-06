@@ -51,18 +51,22 @@ public sealed class CompletePaymentCheckoutCommandHandler : IRequestHandler<Comp
         if (_paymentGateway.Provider != command.Provider)
             throw new PaymentValidationException("Configured payment gateway does not match callback provider.");
 
-        var gatewayResult = await _paymentGateway.CompleteAsync(
-            new PaymentGatewayCompleteRequest(command.Token),
-            cancellationToken);
-
         var payment = await _paymentRepository.GetByProviderReferenceAsync(
             command.Provider,
-            gatewayResult.ExternalConversationId,
-            gatewayResult.ExternalPaymentReference,
+            null,
+            null,
+            command.Token,
             cancellationToken);
 
         if (payment is null)
             throw new PaymentValidationException("Payment could not be matched from checkout callback.");
+
+        var gatewayResult = await _paymentGateway.CompleteAsync(
+            new PaymentGatewayCompleteRequest(command.Token, payment.StoreId, payment.ProviderAccountId),
+            cancellationToken);
+
+        if (gatewayResult.ProviderAccountId.HasValue)
+            payment.AssignProviderAccount(gatewayResult.ProviderAccountId.Value);
 
         switch (gatewayResult.Outcome)
         {
@@ -226,6 +230,8 @@ public sealed class CompletePaymentCheckoutCommandHandler : IRequestHandler<Comp
 
         return new PaymentActionResultDto(
             payment.Id,
+            payment.StoreId,
+            payment.OrderId,
             payment.Status,
             payment.ExternalPaymentReference,
             payment.ExternalConversationId,

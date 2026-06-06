@@ -93,6 +93,16 @@ public sealed class CreateShipmentCommandHandler : IRequestHandler<CreateShipmen
                 .ToArray(),
             command.InternalNote);
 
+        if (orderContext.ShippingCarrier is not null)
+        {
+            shipment.AssignCarrier(
+                orderContext.ShippingCarrier.Code,
+                orderContext.ShippingCarrier.Name,
+                orderContext.ShippingCarrier.ServiceCode,
+                orderContext.ShippingCarrier.ServiceName,
+                orderContext.ShippingCarrier.TrackingUrl);
+        }
+
         await _shipmentRepository.AddAsync(shipment, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

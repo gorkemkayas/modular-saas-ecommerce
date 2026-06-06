@@ -10,6 +10,7 @@ public sealed class StockMovementConfiguration : IEntityTypeConfiguration<StockM
     {
         builder.ToTable("StockMovements");
         builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).ValueGeneratedNever();
 
         builder.Property(x => x.Reason).HasMaxLength(250).IsRequired();
         builder.Property(x => x.Reference).HasMaxLength(100);

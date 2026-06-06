@@ -39,6 +39,7 @@ public sealed class OrderReadService : IOrderReadService
                 x.PaymentStatus,
                 x.FulfillmentStatus,
                 x.CurrencyCode,
+                x.ShippingCarrierSnapshot != null ? x.ShippingCarrierSnapshot.Name : null,
                 x.Items.Count,
                 x.Totals.GrandTotalAmount,
                 x.PlacedAtUtc))
@@ -112,6 +113,15 @@ public sealed class OrderReadService : IOrderReadService
                 order.ShippingAddressSnapshot.Line1,
                 order.ShippingAddressSnapshot.Line2,
                 order.ShippingAddressSnapshot.PostalCode),
+            order.ShippingCarrierSnapshot is null
+                ? null
+                : new OrderShippingCarrierSnapshotDto(
+                    order.ShippingCarrierSnapshot.CarrierId,
+                    order.ShippingCarrierSnapshot.Code,
+                    order.ShippingCarrierSnapshot.Name,
+                    order.ShippingCarrierSnapshot.ServiceCode,
+                    order.ShippingCarrierSnapshot.ServiceName,
+                    order.ShippingCarrierSnapshot.TrackingUrl),
             new OrderTotalsDto(
                 order.Totals.SubtotalAmount,
                 order.Totals.DiscountAmount,

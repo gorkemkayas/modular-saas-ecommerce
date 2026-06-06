@@ -32,6 +32,32 @@ namespace Store.Infrastructure.Persistance.Configurations
             builder.Property(x => x.LogoUrl)
                 .HasMaxLength(500);
 
+            builder.Property(x => x.HeroImageUrl)
+                .HasMaxLength(500);
+
+            builder.Property(x => x.HeroMediaType);
+
+            builder.Property(x => x.HeroEyebrowText)
+                .HasMaxLength(120);
+
+            builder.Property(x => x.HeroTitle)
+                .HasMaxLength(120);
+
+            builder.Property(x => x.HeroAccentTitle)
+                .HasMaxLength(120);
+
+            builder.Property(x => x.HeroDescription)
+                .HasMaxLength(1000);
+
+            builder.Property(x => x.HeroPrimaryButtonText)
+                .HasMaxLength(80);
+
+            builder.Property(x => x.LoginPageImageUrl)
+                .HasMaxLength(500);
+
+            builder.Property(x => x.RegisterPageImageUrl)
+                .HasMaxLength(500);
+
             builder.Property(x => x.Status)
                 .IsRequired();
 

@@ -39,6 +39,7 @@ namespace Store.Application.Stores.Commands.ProvisionStoreForTenant
                 command.TenantId,
                 command.Name,
                 slug);
+            store.Publish();
 
             await _storeRepository.AddAsync(store, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);

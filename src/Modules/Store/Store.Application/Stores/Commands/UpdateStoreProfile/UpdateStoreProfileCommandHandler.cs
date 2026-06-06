@@ -24,7 +24,19 @@ namespace Store.Application.Stores.Commands.UpdateStoreProfile
                 throw new StoreNotFoundException(command.TenantId);
             }
 
-            store.UpdateProfile(command.Name, command.Description, command.LogoUrl);
+            store.UpdateProfile(
+                command.Name,
+                command.Description,
+                command.LogoUrl,
+                command.HeroImageUrl,
+                command.HeroMediaType,
+                command.HeroEyebrowText,
+                command.HeroTitle,
+                command.HeroAccentTitle,
+                command.HeroDescription,
+                command.HeroPrimaryButtonText,
+                command.LoginPageImageUrl,
+                command.RegisterPageImageUrl);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
     }
