@@ -291,14 +291,14 @@ export default async function RootPage() {
         style={{ backgroundImage: `url('${heroImageUrl}')` }}
       >
         <div className="absolute inset-0 bg-black/45" />
-        <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
+        <header className="relative z-10 mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <Link
             href="/"
-            className="font-serif text-2xl font-light tracking-[0.3em] text-white"
+            className="font-serif text-xl font-light tracking-[0.22em] text-white sm:text-2xl sm:tracking-[0.3em]"
           >
             KAYAS
           </Link>
-          <nav className="flex items-center gap-5 text-sm text-white/75">
+          <nav className="flex w-full flex-wrap items-center gap-3 text-sm text-white/75 sm:w-auto sm:gap-5">
             <a
               href="#platform"
               className="hidden transition-colors hover:text-white sm:inline"
@@ -313,20 +313,20 @@ export default async function RootPage() {
             </a>
             <Link
               href="/store-register"
-              className="border border-white/40 px-4 py-2 text-white transition-colors hover:bg-white hover:text-foreground"
+              className="inline-flex min-h-11 items-center border border-white/40 px-4 py-2 text-white transition-colors hover:bg-white hover:text-foreground"
             >
               Create Store
             </Link>
           </nav>
         </header>
 
-        <div className="relative z-10 mx-auto grid max-w-7xl gap-12 px-6 pb-14 pt-16 lg:grid-cols-[1fr_420px] lg:px-8 lg:pt-24">
+        <div className="relative z-10 mx-auto grid max-w-7xl gap-10 px-4 pb-14 pt-10 sm:px-6 sm:pt-16 lg:grid-cols-[1fr_420px] lg:gap-12 lg:px-8 lg:pt-24">
           <div className="max-w-3xl text-white">
             <p className="flex items-center gap-2 text-xs uppercase tracking-[0.28em] text-white/70">
               <Store className="h-4 w-4" strokeWidth={1.5} />
               Commerce Platform for Growing Stores
             </p>
-            <h1 className="mt-6 font-serif text-5xl font-light tracking-wide sm:text-6xl lg:text-7xl">
+            <h1 className="mt-6 font-serif text-4xl font-light tracking-wide sm:text-5xl lg:text-7xl">
               Launch a store that can grow with your business.
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-relaxed text-white/78">
@@ -351,7 +351,7 @@ export default async function RootPage() {
             </div>
           </div>
 
-          <aside className="border border-white/22 bg-black/22 p-5 text-white backdrop-blur-sm">
+          <aside className="border border-white/22 bg-black/22 p-4 text-white backdrop-blur-sm sm:p-5">
             <p className="text-xs uppercase tracking-[0.28em] text-white/58">
               Store Growth Snapshot
             </p>
@@ -536,9 +536,9 @@ export default async function RootPage() {
 
 function LandingFooter() {
   return (
-    <footer className="border-t border-border bg-foreground px-6 py-12 text-background lg:px-8">
+    <footer className="border-t border-border bg-foreground px-4 py-12 text-background sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
-        <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr_0.9fr_0.9fr]">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.1fr_0.9fr_0.9fr_0.9fr]">
           <div>
             <Link
               href="/"

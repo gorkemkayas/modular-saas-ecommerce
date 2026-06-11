@@ -85,8 +85,8 @@ export function RegisterPageContent({
   }
 
   return (
-    <main className="min-h-screen bg-background flex">
-      <div className="hidden lg:block flex-1 relative">
+    <main className="flex min-h-screen bg-background">
+      <div className="relative hidden flex-1 lg:block">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
@@ -97,12 +97,12 @@ export function RegisterPageContent({
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center px-6 py-12">
+      <div className="flex flex-1 items-center justify-center px-4 py-10 sm:px-6 sm:py-12">
         <div className="w-full max-w-md">
-          <div className="mb-12">
+          <div className="mb-10 sm:mb-12">
             <Link
               href={homeHref}
-              className="font-serif text-2xl tracking-[0.3em] font-light"
+              className="block break-words font-serif text-xl font-light tracking-[0.22em] sm:text-2xl sm:tracking-[0.3em]"
             >
               {displayName}
             </Link>
@@ -130,7 +130,7 @@ export function RegisterPageContent({
               </Alert>
             ) : null}
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label className="block text-xs tracking-[0.2em] uppercase mb-3">
                   First Name

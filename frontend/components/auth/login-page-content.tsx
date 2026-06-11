@@ -80,13 +80,13 @@ export function LoginPageContent({
   }
 
   return (
-    <main className="min-h-screen bg-background flex">
-      <div className="flex-1 flex items-center justify-center px-6 py-12">
+    <main className="flex min-h-screen bg-background">
+      <div className="flex flex-1 items-center justify-center px-4 py-10 sm:px-6 sm:py-12">
         <div className="w-full max-w-md">
-          <div className="mb-12">
+          <div className="mb-10 sm:mb-12">
             <Link
               href={homeHref}
-              className="font-serif text-2xl tracking-[0.3em] font-light"
+              className="block break-words font-serif text-xl font-light tracking-[0.22em] sm:text-2xl sm:tracking-[0.3em]"
             >
               {displayName}
             </Link>
@@ -147,7 +147,7 @@ export function LoginPageContent({
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"
@@ -243,7 +243,7 @@ export function LoginPageContent({
         </div>
       </div>
 
-      <div className="hidden lg:block flex-1 relative">
+      <div className="relative hidden flex-1 lg:block">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{

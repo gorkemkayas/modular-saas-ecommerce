@@ -46,8 +46,8 @@ export function CartContent({ storeSlug }: CartContentProps) {
 
   return (
     <div className="mx-auto max-w-7xl px-6 lg:px-8">
-      <div className="flex items-baseline justify-between">
-        <h1 className="font-serif text-4xl font-light tracking-tight text-foreground lg:text-5xl">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-baseline sm:justify-between">
+        <h1 className="font-serif text-3xl font-light tracking-tight text-foreground sm:text-4xl lg:text-5xl">
           Cart
         </h1>
         <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
@@ -61,7 +61,7 @@ export function CartContent({ storeSlug }: CartContentProps) {
             {cart.map((item) => (
               <div
                 key={`${item.productId}-${item.variantId ?? "base"}`}
-                className="flex gap-6 py-10"
+                className="flex flex-col gap-5 py-8 sm:flex-row sm:gap-6 sm:py-10"
               >
                 <Link
                   href={storefrontPath(storeSlug, `/products/${item.productSlug}`)}
@@ -79,8 +79,8 @@ export function CartContent({ storeSlug }: CartContentProps) {
 
                 <div className="flex flex-1 flex-col justify-between">
                   <div>
-                    <div className="flex items-start justify-between">
-                      <div>
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0">
                         <p className="text-[9px] font-normal uppercase tracking-[0.3em] text-muted-foreground">
                           {item.categoryName || item.brandName || "Storefront"}
                         </p>
@@ -101,13 +101,13 @@ export function CartContent({ storeSlug }: CartContentProps) {
                         ) : null}
                       </div>
 
-                      <p className="text-sm tracking-wide text-foreground">
+                      <p className="text-sm tracking-wide text-foreground sm:text-right">
                         {formatMoney(item.priceAmount * item.quantity, item.currencyCode)}
                       </p>
                     </div>
                   </div>
 
-                  <div className="mt-6 flex items-center justify-between">
+                  <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center border border-border">
                       <button
                         onClick={() =>
@@ -144,7 +144,7 @@ export function CartContent({ storeSlug }: CartContentProps) {
         </div>
 
         <div className="lg:col-span-1">
-          <div className="sticky top-32 border border-border bg-card p-10">
+          <div className="sticky top-32 border border-border bg-card p-6 sm:p-8 lg:p-10">
             <h2 className="text-[11px] font-normal uppercase tracking-[0.25em] text-foreground">
               Order Summary
             </h2>

@@ -580,20 +580,20 @@ export function ProductDetail({ product, storeSlug }: ProductDetailProps) {
             </div>
           ) : null}
 
-          <div className="mt-12 flex flex-wrap items-center gap-4">
-            <div className="flex items-center border border-border">
+          <div className="mt-12 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center">
+            <div className="flex w-full items-center border border-border sm:w-auto">
               <button
                 onClick={decrementQuantity}
-                className="flex h-14 w-14 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+                className="flex h-14 flex-1 items-center justify-center text-muted-foreground transition-colors hover:text-foreground sm:w-14 sm:flex-none"
               >
                 <Minus className="h-4 w-4" strokeWidth={1} />
               </button>
-              <span className="flex h-14 w-16 items-center justify-center text-sm font-light text-foreground">
+              <span className="flex h-14 min-w-0 flex-1 items-center justify-center text-sm font-light text-foreground sm:w-16 sm:flex-none">
                 {quantity}
               </span>
               <button
                 onClick={incrementQuantity}
-                className="flex h-14 w-14 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+                className="flex h-14 flex-1 items-center justify-center text-muted-foreground transition-colors hover:text-foreground sm:w-14 sm:flex-none"
               >
                 <Plus className="h-4 w-4" strokeWidth={1} />
               </button>
@@ -602,7 +602,7 @@ export function ProductDetail({ product, storeSlug }: ProductDetailProps) {
             <Button
               onClick={handleAddToCart}
               size="lg"
-              className="h-14 flex-1 text-[11px] uppercase tracking-[0.2em]"
+              className="h-14 w-full flex-1 text-[11px] uppercase tracking-[0.2em] sm:w-auto"
               disabled={!cartProduct}
             >
               <ShoppingBag className="mr-3 h-4 w-4" strokeWidth={1} />
@@ -612,7 +612,7 @@ export function ProductDetail({ product, storeSlug }: ProductDetailProps) {
             <Button
               variant="outline"
               size="icon"
-              className="h-14 w-14 border-border hover:border-foreground hover:bg-transparent"
+              className="h-14 w-full border-border hover:border-foreground hover:bg-transparent sm:w-14"
             >
               <Heart className="h-5 w-5" strokeWidth={1} />
               <span className="sr-only">Wishlist</span>

@@ -162,8 +162,8 @@ export function StoreOwnerRegisterPageContent({
       : withQuery("/auth/login", { next: "/admin" })
 
     return (
-      <main className="min-h-screen bg-background flex">
-        <div className="hidden lg:block flex-1 relative">
+      <main className="flex min-h-screen bg-background">
+        <div className="relative hidden flex-1 lg:block">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{ backgroundImage: `url('${STORE_REGISTER_IMAGE_URL}')` }}
@@ -172,12 +172,12 @@ export function StoreOwnerRegisterPageContent({
           </div>
         </div>
 
-        <div className="flex-1 flex items-center justify-center px-6 py-12">
+        <div className="flex flex-1 items-center justify-center px-4 py-10 sm:px-6 sm:py-12">
           <div className="w-full max-w-md">
-            <div className="mb-12">
+            <div className="mb-10 sm:mb-12">
               <Link
                 href="/"
-                className="font-serif text-2xl tracking-[0.3em] font-light"
+                className="font-serif text-xl font-light tracking-[0.22em] sm:text-2xl sm:tracking-[0.3em]"
               >
                 KAYAS
               </Link>
@@ -224,8 +224,8 @@ export function StoreOwnerRegisterPageContent({
   }
 
   return (
-    <main className="min-h-screen bg-background flex">
-      <div className="hidden lg:block flex-1 relative">
+    <main className="flex min-h-screen bg-background">
+      <div className="relative hidden flex-1 lg:block">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url('${STORE_REGISTER_IMAGE_URL}')` }}
@@ -242,12 +242,12 @@ export function StoreOwnerRegisterPageContent({
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center px-6 py-10">
+      <div className="flex flex-1 items-center justify-center px-4 py-8 sm:px-6 sm:py-10">
         <div className="w-full max-w-2xl">
-          <div className="mb-8 flex items-center justify-between gap-6">
+          <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
             <Link
               href="/"
-              className="font-serif text-2xl tracking-[0.3em] font-light"
+              className="font-serif text-xl font-light tracking-[0.22em] sm:text-2xl sm:tracking-[0.3em]"
             >
               KAYAS
             </Link>
@@ -259,7 +259,7 @@ export function StoreOwnerRegisterPageContent({
             </Link>
           </div>
 
-          <div className="mb-7 flex items-center gap-3">
+          <div className="mb-7 flex items-center gap-2 sm:gap-3">
             {stepOrder.map((item, index) => {
               const isCurrent = item === step
               const isCompleted = index < currentStepIndex
@@ -293,8 +293,8 @@ export function StoreOwnerRegisterPageContent({
           <div
             className="overflow-hidden"
             style={{
-              height: "min(720px, calc(100vh - 10rem))",
-              minHeight: "590px",
+              height: "min(720px, calc(100svh - 9rem))",
+              minHeight: "520px",
             }}
           >
             <div
@@ -390,7 +390,7 @@ export function StoreOwnerRegisterPageContent({
                 aria-hidden={step !== "planDetails"}
               >
                 <div className="mb-7">
-                  <div className="flex items-center justify-between gap-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <p className="flex items-center gap-2 text-xs uppercase tracking-[0.28em] text-muted-foreground">
                       <Sparkles className="h-4 w-4" strokeWidth={1.5} />
                       Package Details
@@ -506,7 +506,7 @@ export function StoreOwnerRegisterPageContent({
                 aria-hidden={step !== "storeDetails"}
               >
                 <div className="mb-7">
-                  <div className="flex items-center justify-between gap-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <p className="flex items-center gap-2 text-xs uppercase tracking-[0.28em] text-muted-foreground">
                       <Store className="h-4 w-4" strokeWidth={1.5} />
                       Store Details
@@ -528,7 +528,7 @@ export function StoreOwnerRegisterPageContent({
                 </div>
 
                 {selectedPlan ? (
-                  <div className="mb-5 flex items-center justify-between gap-4 border border-border bg-secondary px-4 py-3">
+                  <div className="mb-5 flex flex-col gap-3 border border-border bg-secondary px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
                         Selected Package
@@ -564,7 +564,7 @@ export function StoreOwnerRegisterPageContent({
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                       <label className="block text-xs tracking-[0.2em] uppercase mb-3">
                         First Name
