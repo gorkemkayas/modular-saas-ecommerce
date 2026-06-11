@@ -79,6 +79,8 @@ services:
       - ecommerce_api_logs:/app/Logs
     expose:
       - "8080"
+    ports:
+      - "${API_HOST_PORT:-8080}:8080"
 
   ecommerce-frontend:
     build:
@@ -109,10 +111,14 @@ services:
       HOSTNAME: 0.0.0.0
     expose:
       - "3000"
+    ports:
+      - "${FRONTEND_HOST_PORT:-3000}:3000"
 
   nginx:
     image: nginx:1.27-alpine
     container_name: ecommerce-nginx
+    profiles:
+      - edge
     restart: unless-stopped
     depends_on:
       - ecommerce-api
