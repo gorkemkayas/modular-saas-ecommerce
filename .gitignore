@@ -178,6 +178,8 @@ DocProject/Help/html
 
 # Click-Once directory
 publish/
+!frontend/app/admin/publish/
+!frontend/app/admin/publish/page.tsx
 
 # Publish Web Output
 *.[Pp]ublish.xml
