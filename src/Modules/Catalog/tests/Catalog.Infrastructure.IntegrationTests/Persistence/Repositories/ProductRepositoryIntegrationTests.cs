@@ -103,6 +103,35 @@ namespace Catalog.Infrastructure.IntegrationTests.Persistence.Repositories
         }
 
         [TestMethod]
+        public async Task CountNonArchivedByStoreIdAsync_ExcludesArchivedProducts()
+        {
+            using var connection = new SqliteConnection("Data Source=:memory:");
+            await connection.OpenAsync();
+
+            await using var context = CreateContext(connection);
+            var repository = new ProductRepository(context);
+
+            var storeId = Guid.NewGuid();
+            var otherStoreId = Guid.NewGuid();
+
+            var draft = Product.CreateSimple(storeId, "Draft Product", Slug.Create("draft-product"), Sku.Create("DRAFT-001"));
+            var active = Product.CreateSimple(storeId, "Active Product", Slug.Create("active-product"), Sku.Create("ACTIVE-001"));
+            active.Activate();
+
+            var archived = Product.CreateSimple(storeId, "Archived Product", Slug.Create("archived-product"), Sku.Create("ARCHIVED-001"));
+            archived.Archive();
+
+            var otherStoreProduct = Product.CreateSimple(otherStoreId, "Other Product", Slug.Create("other-product"), Sku.Create("OTHER-001"));
+
+            await context.Products.AddRangeAsync(draft, active, archived, otherStoreProduct);
+            await context.SaveChangesAsync();
+
+            var count = await repository.CountNonArchivedByStoreIdAsync(storeId);
+
+            Assert.AreEqual(2, count);
+        }
+
+        [TestMethod]
         public async Task SearchAsync_FiltersProductsByCategoryAndPaging()
         {
             using var connection = new SqliteConnection("Data Source=:memory:");

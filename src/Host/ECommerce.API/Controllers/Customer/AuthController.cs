@@ -59,8 +59,8 @@ public sealed class AuthController : ControllerBase
                 return NotFound(new ProblemDetails
                 {
                     Status = StatusCodes.Status404NotFound,
-                    Title = "Store not found",
-                    Detail = "No published store was found for the provided store slug."
+                    Title = "Store unavailable",
+                    Detail = "This store is not available right now."
                 });
             }
 
@@ -95,8 +95,8 @@ public sealed class AuthController : ControllerBase
 
                 return Problem(
                     statusCode: statusCode,
-                    title: "Registration failed",
-                    detail: result.ErrorMessage ?? "Registration could not be completed.");
+                    title: "We couldn't create your account",
+                    detail: result.ErrorMessage ?? "Please check your details and try again.");
             }
 
             Guid customerId;
@@ -123,8 +123,8 @@ public sealed class AuthController : ControllerBase
 
                 return Problem(
                     statusCode: StatusCodes.Status502BadGateway,
-                    title: "Customer sync failed",
-                    detail: "The account was created in the authentication service, but customer provisioning failed in e-commerce.");
+                    title: "Your account setup is not complete yet",
+                    detail: "Your account was created, but we couldn't finish setting it up. Please try signing in again in a moment.");
             }
 
             return Ok(new RegisterCustomerResponse(
@@ -176,10 +176,8 @@ public sealed class AuthController : ControllerBase
                 return NotFound(new ProblemDetails
                 {
                     Status = StatusCodes.Status404NotFound,
-                    Title = "Store not found",
-                    Detail = request.AllowInactiveStore
-                        ? "No store was found for the provided store slug."
-                        : "No published store was found for the provided store slug."
+                    Title = "Store unavailable",
+                    Detail = "This store is not available right now."
                 });
             }
 
@@ -216,8 +214,8 @@ public sealed class AuthController : ControllerBase
 
                 return Problem(
                     statusCode: statusCode,
-                    title: "Login failed",
-                    detail: result.ErrorMessage ?? "Login could not be completed.");
+                    title: "We couldn't sign you in",
+                    detail: result.ErrorMessage ?? "Please check your email and password and try again.");
             }
 
             var actualTenantId = TryReadTenantIdFromToken(result.Token!);
@@ -225,8 +223,8 @@ public sealed class AuthController : ControllerBase
             {
                 return Problem(
                     statusCode: StatusCodes.Status502BadGateway,
-                    title: "Invalid token response",
-                    detail: "Auth service returned a token without a tenant id claim.");
+                    title: "We couldn't start your session",
+                    detail: "Please try signing in again.");
             }
 
             if (actualTenantId.Value != expectedTenantId)
@@ -239,8 +237,8 @@ public sealed class AuthController : ControllerBase
 
                 return Problem(
                     statusCode: StatusCodes.Status403Forbidden,
-                    title: "Tenant mismatch",
-                    detail: "The authenticated user does not belong to the selected storefront.");
+                    title: "This account can't sign in here",
+                    detail: "This account does not belong to the selected store.");
             }
 
             if (request.AllowInactiveStore && inactiveStore && !HasAdminAccess(result.Token!))
@@ -248,15 +246,15 @@ public sealed class AuthController : ControllerBase
                 return Problem(
                     statusCode: StatusCodes.Status403Forbidden,
                     title: "Admin access required",
-                    detail: "Only store administrators can sign in while the storefront is inactive.");
+                    detail: "Only store administrators can sign in while the storefront is unavailable.");
             }
 
             if (!TryReadIdentityFromToken(result.Token!, out var externalUserId, out var email, out var firstName, out var lastName))
             {
                 return Problem(
                     statusCode: StatusCodes.Status502BadGateway,
-                    title: "Invalid token response",
-                    detail: "Auth service returned a token without the identity claims required for customer sync.");
+                    title: "We couldn't start your session",
+                    detail: "Please try signing in again.");
             }
 
             try
@@ -281,8 +279,8 @@ public sealed class AuthController : ControllerBase
 
                 return Problem(
                     statusCode: StatusCodes.Status502BadGateway,
-                    title: "Customer sync failed",
-                    detail: "The user was authenticated, but the customer profile could not be provisioned in e-commerce.");
+                    title: "We couldn't finish signing you in",
+                    detail: "Your account was verified, but we couldn't finish loading your profile. Please try again.");
             }
 
             SetAuthCookies(result.Token!, result.RefreshToken, request.IsPersistent);
@@ -303,6 +301,50 @@ public sealed class AuthController : ControllerBase
     public IActionResult Logout()
     {
         ClearAuthCookies();
+        return NoContent();
+    }
+
+    [HttpPost("refresh")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status502BadGateway)]
+    public async Task<IActionResult> Refresh(CancellationToken cancellationToken)
+    {
+        if (!Request.Cookies.TryGetValue(AuthCookieNames.RefreshToken, out var refreshToken) ||
+            string.IsNullOrWhiteSpace(refreshToken))
+        {
+            ClearAuthCookies();
+
+            return Problem(
+                statusCode: StatusCodes.Status401Unauthorized,
+                title: "Refresh token missing",
+                detail: "The current session cannot be refreshed.");
+        }
+
+        var result = await _authServiceClient.RefreshAsync(
+            new AuthServiceRefreshCommand(refreshToken),
+            cancellationToken);
+
+        if (!result.IsSuccess || string.IsNullOrWhiteSpace(result.Token))
+        {
+            ClearAuthCookies();
+
+            var statusCode = result.StatusCode is >= 400 and < 500
+                ? StatusCodes.Status401Unauthorized
+                : StatusCodes.Status502BadGateway;
+
+            return Problem(
+                statusCode: statusCode,
+                title: "Session refresh failed",
+                detail: result.ErrorMessage ?? "A new session token could not be issued.");
+        }
+
+        SetAuthCookies(
+            result.Token,
+            result.RefreshToken,
+            IsPersistentSession());
+
         return NoContent();
     }
 
@@ -362,19 +404,19 @@ public sealed class AuthController : ControllerBase
         var errors = new Dictionary<string, string[]>();
 
         if (string.IsNullOrWhiteSpace(request.StoreSlug))
-            errors["storeSlug"] = ["Store slug is required."];
+            errors["storeSlug"] = ["Please choose a store before creating an account."];
 
         if (string.IsNullOrWhiteSpace(request.Email))
-            errors["email"] = ["Email is required."];
+            errors["email"] = ["Please enter your email address."];
 
         if (string.IsNullOrWhiteSpace(request.Password))
-            errors["password"] = ["Password is required."];
+            errors["password"] = ["Please enter a password."];
 
         if (string.IsNullOrWhiteSpace(request.FirstName))
-            errors["firstName"] = ["First name is required."];
+            errors["firstName"] = ["Please enter your first name."];
 
         if (string.IsNullOrWhiteSpace(request.LastName))
-            errors["lastName"] = ["Last name is required."];
+            errors["lastName"] = ["Please enter your last name."];
 
         return errors;
     }
@@ -384,13 +426,13 @@ public sealed class AuthController : ControllerBase
         var errors = new Dictionary<string, string[]>();
 
         if (string.IsNullOrWhiteSpace(request.StoreSlug))
-            errors["storeSlug"] = ["Store slug is required."];
+            errors["storeSlug"] = ["Please choose a store before signing in."];
 
         if (string.IsNullOrWhiteSpace(request.Email))
-            errors["email"] = ["Email is required."];
+            errors["email"] = ["Please enter your email address."];
 
         if (string.IsNullOrWhiteSpace(request.Password))
-            errors["password"] = ["Password is required."];
+            errors["password"] = ["Please enter your password."];
 
         return errors;
     }
@@ -523,6 +565,11 @@ public sealed class AuthController : ControllerBase
             var refreshCookieOptions = CreateCookieOptions(isPersistent);
             Response.Cookies.Append(AuthCookieNames.RefreshToken, refreshToken, refreshCookieOptions);
         }
+
+        Response.Cookies.Append(
+            AuthCookieNames.SessionPersistence,
+            isPersistent ? "true" : "false",
+            CreateCookieOptions(isPersistent));
     }
 
     private void ClearAuthCookies()
@@ -537,6 +584,14 @@ public sealed class AuthController : ControllerBase
 
         Response.Cookies.Delete(AuthCookieNames.AccessToken, options);
         Response.Cookies.Delete(AuthCookieNames.RefreshToken, options);
+        Response.Cookies.Delete(AuthCookieNames.SessionPersistence, options);
+    }
+
+    private bool IsPersistentSession()
+    {
+        return Request.Cookies.TryGetValue(AuthCookieNames.SessionPersistence, out var value) &&
+            bool.TryParse(value, out var isPersistent) &&
+            isPersistent;
     }
 
     private static CookieOptions CreateCookieOptions(bool isPersistent)

@@ -11,6 +11,10 @@ public interface IShippingCarrierRepository
         Guid carrierId,
         CancellationToken cancellationToken = default);
 
+    Task<int> CountActiveByStoreIdAsync(
+        Guid storeId,
+        CancellationToken cancellationToken = default);
+
     Task<bool> ExistsByCodeAsync(
         Guid storeId,
         string code,

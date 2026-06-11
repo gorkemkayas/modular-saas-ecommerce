@@ -3,6 +3,7 @@ import { AdminCategoryManager } from "@/components/admin/admin-category-manager"
 import { AdminCategoryCreateForm } from "@/components/admin/admin-create-forms"
 import { getCategoryTree } from "@/lib/api/admin"
 import { getApiErrorMessage } from "@/lib/api/error-message"
+import { getCurrentSubscriptionOrNull } from "@/lib/api/subscription"
 
 type Props = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
@@ -55,8 +56,13 @@ export default async function CategoriesPage({ searchParams }: Props) {
   const query = getValue(resolvedSearchParams, "q").trim().toLowerCase()
 
   try {
-    const tree = await getCategoryTree()
-    const rows = flattenCategories(tree).filter((category) =>
+    const [tree, subscription] = await Promise.all([
+      getCategoryTree(),
+      getCurrentSubscriptionOrNull(),
+    ])
+    const allRows = flattenCategories(tree)
+    const activeCategoryCount = allRows.filter((category) => category.isActive).length
+    const rows = allRows.filter((category) =>
       query
         ? category.name.toLowerCase().includes(query) ||
           category.slug.toLowerCase().includes(query)
@@ -73,11 +79,13 @@ export default async function CategoriesPage({ searchParams }: Props) {
         </div>
 
         <AdminCategoryCreateForm
-          categories={flattenCategories(tree).map((category) => ({
+          categories={allRows.map((category) => ({
             id: category.id,
             name: category.name,
             depth: category.depth,
           }))}
+          subscription={subscription}
+          currentCategoryCount={activeCategoryCount}
         />
 
         <form className="max-w-md">
@@ -92,7 +100,7 @@ export default async function CategoriesPage({ searchParams }: Props) {
 
         <AdminCategoryManager
           rows={rows}
-          categoryOptions={flattenCategories(tree).map((category) => ({
+          categoryOptions={allRows.map((category) => ({
             id: category.id,
             name: category.name,
             depth: category.depth,

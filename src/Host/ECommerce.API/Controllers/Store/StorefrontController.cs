@@ -4,6 +4,7 @@ using Shipment.Application.ShippingCarriers.DTOs;
 using Shipment.Application.ShippingCarriers.Queries.ListShippingCarriers;
 using Store.Application.DTOs;
 using Store.Application.Stores.Queries.GetStoreBySlug;
+using Store.Application.Stores.Queries.ListPublishedStorefrontStores;
 
 namespace ECommerce.API.Controllers.Store;
 
@@ -16,6 +17,19 @@ public sealed class StorefrontController : ControllerBase
     public StorefrontController(ISender sender)
     {
         _sender = sender;
+    }
+
+    [HttpGet("stores")]
+    [ProducesResponseType(typeof(IReadOnlyCollection<StorefrontStoreSummaryDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ListPublishedStores(
+        [FromQuery] int limit = 16,
+        CancellationToken cancellationToken = default)
+    {
+        var stores = await _sender.Send(
+            new ListPublishedStorefrontStoresQuery(limit),
+            cancellationToken);
+
+        return Ok(stores);
     }
 
     [HttpGet("status/{slug}")]

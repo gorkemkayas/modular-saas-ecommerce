@@ -26,8 +26,6 @@ interface ProductDetailProps {
   storeSlug: string
 }
 
-const MEDIA_AUTOPLAY_DELAY_MS = 4500
-
 type StorefrontVariant = StorefrontProductDto["variants"][number]
 type VariantAttributeDefinition = {
   attributeDefinitionId: string
@@ -207,36 +205,6 @@ export function ProductDetail({ product, storeSlug }: ProductDetailProps) {
     setImageZoomOrigin({ x: 50, y: 50 })
   }, [resolvedMediaIndex])
 
-  useEffect(() => {
-    if (mediaItems.length <= 1 || !mainMediaItem) {
-      return
-    }
-
-    if (mainMediaItem.mediaType === "Video") {
-      return
-    }
-
-    if (
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ) {
-      return
-    }
-
-    const intervalId = window.setInterval(() => {
-      setSelectedMediaIndex((currentIndex) => {
-        const fallbackIndex =
-          currentIndex >= 0 && currentIndex < mediaItems.length
-            ? currentIndex
-            : defaultMediaIndex
-
-        return (fallbackIndex + 1) % mediaItems.length
-      })
-    }, MEDIA_AUTOPLAY_DELAY_MS)
-
-    return () => window.clearInterval(intervalId)
-  }, [defaultMediaIndex, mainMediaItem?.mediaType, mediaItems.length])
-
   function handleVariantOptionChange(attributeDefinitionId: string, nextValue: string) {
     const targetSelections = new Map(selectedAttributeValues)
     targetSelections.set(attributeDefinitionId, nextValue)
@@ -330,7 +298,7 @@ export function ProductDetail({ product, storeSlug }: ProductDetailProps) {
 
   return (
     <div className="mx-auto max-w-7xl px-6 lg:px-8">
-      <nav className="mb-16">
+      <nav className="mb-8 lg:mb-10">
         <Link
           href={storefrontPath(storeSlug)}
           className="premium-link inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.25em] text-muted-foreground transition-colors hover:text-foreground"

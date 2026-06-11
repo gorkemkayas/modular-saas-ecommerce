@@ -13,6 +13,9 @@ using Store.Application.Stores.Queries.GetStoreBySlug;
 using Store.Application.Stores.Queries.GetStoreByTenantId;
 using Store.Application.DTOs;
 using Store.Application.Stores.Queries.SuggestAvailableSlug;
+using Subscription.Application.Commands.ProvisionTenantSubscription;
+using Subscription.Application.Queries.GetPublicPlans;
+using Subscription.Contracts;
 
 namespace ECommerce.API.Controllers.Store.Admin;
 
@@ -93,7 +96,7 @@ public sealed class AdminStoresController : ControllerBase
     }
 
     [HttpPost("{tenantId:int}/provision")]
-    [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProvisionStoreForTenantResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     [AllowAnonymous] // mvp için hızlı bir yol, mvp den sonra OAuth2 Credentials Flow ile güncellenecek.
@@ -103,8 +106,29 @@ public sealed class AdminStoresController : ControllerBase
         if (token != _serviceToken)
             return Unauthorized();
 
-        var suggestion = _sender.Send(new SuggestAvailableSlugQuery(request.Name), cancellationToken).Result;
-        var storeId = await _sender.Send(new ProvisionStoreForTenantCommand(TenantIdConverter.ToGuid(tenantId), request.Name, suggestion.Slug), cancellationToken);
-        return CreatedAtAction(nameof(GetStoreById), new { storeId = storeId }, null);
+        var tenantGuid = TenantIdConverter.ToGuid(tenantId);
+        var planCode = string.IsNullOrWhiteSpace(request.PlanCode)
+            ? SubscriptionPlanCodes.Starter
+            : request.PlanCode.Trim().ToLowerInvariant();
+
+        var publicPlans = await _sender.Send(new GetPublicPlansQuery(), cancellationToken);
+        if (!publicPlans.Any(plan => string.Equals(plan.Code, planCode, StringComparison.OrdinalIgnoreCase)))
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Invalid subscription plan.",
+                Detail = $"Subscription plan '{planCode}' is not available."
+            });
+        }
+
+        var suggestion = await _sender.Send(new SuggestAvailableSlugQuery(request.Name), cancellationToken);
+        var storeId = await _sender.Send(new ProvisionStoreForTenantCommand(tenantGuid, request.Name, suggestion.Slug), cancellationToken);
+
+        await _sender.Send(new ProvisionTenantSubscriptionCommand(tenantGuid, planCode), cancellationToken);
+
+        return CreatedAtAction(
+            nameof(GetStoreById),
+            new { storeId },
+            new ProvisionStoreForTenantResponse(storeId.ToString(), suggestion.Slug));
     }
 }

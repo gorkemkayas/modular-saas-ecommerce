@@ -9,4 +9,8 @@ public interface IAuthServiceClient
     Task<AuthServiceLoginOutcome> LoginAsync(
         AuthServiceLoginCommand command,
         CancellationToken cancellationToken = default);
+
+    Task<AuthServiceRefreshOutcome> RefreshAsync(
+        AuthServiceRefreshCommand command,
+        CancellationToken cancellationToken = default);
 }

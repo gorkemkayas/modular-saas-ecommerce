@@ -1,6 +1,9 @@
 import { apiBaseUrl } from "@/lib/config"
 
 const accessTokenCookieName = "ecommerce_access_token"
+const refreshEndpointPath = "/api/auth/refresh"
+
+let refreshPromise: Promise<boolean> | null = null
 
 export class ApiError extends Error {
   status: number
@@ -22,7 +25,12 @@ function buildUrl(path: string): string {
 }
 
 async function buildRequestUrl(path: string): Promise<string> {
-  if (path === "/api/auth" || path.startsWith("/api/auth/")) {
+  if (
+    path === "/api/auth" ||
+    path.startsWith("/api/auth/") ||
+    path === "/api/store-owner" ||
+    path.startsWith("/api/store-owner/")
+  ) {
     if (typeof window !== "undefined") {
       return path
     }
@@ -64,51 +72,55 @@ async function tryGetServerAccessToken(): Promise<string | null> {
   }
 }
 
-export async function fetchJson<T>(
-  path: string,
-  init?: RequestInit,
-): Promise<T> {
-  const accessToken = await tryGetServerAccessToken()
-  const requestUrl = await buildRequestUrl(path)
+function canAttemptClientRefresh(path: string): boolean {
+  return (
+    typeof window !== "undefined" &&
+    !path.startsWith("/api/auth/")
+  )
+}
 
-  const response = await fetch(requestUrl, {
-    ...init,
-    credentials: init?.credentials ?? "include",
-    headers: {
-      Accept: "application/json",
-      ...(accessToken
-        ? { Authorization: `Bearer ${accessToken}` }
-        : {}),
-      ...(init?.headers ?? {}),
-    },
-    cache: init?.cache ?? "no-store",
-  })
-
-  if (!response.ok) {
-    let payload: unknown = null
-    const errorText = await response.text()
-
-    if (errorText) {
-      const contentType = response.headers.get("content-type") ?? ""
-
-      if (contentType.includes("application/json")) {
-        try {
-          payload = JSON.parse(errorText)
-        } catch {
-          payload = errorText
-        }
-      } else {
-        payload = errorText
-      }
-    }
-
-    throw new ApiError(
-      `API request failed with status ${response.status}`,
-      response.status,
-      payload,
-    )
+async function refreshClientSession(): Promise<boolean> {
+  if (!refreshPromise) {
+    refreshPromise = fetch(refreshEndpointPath, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        Accept: "application/json",
+      },
+      cache: "no-store",
+    })
+      .then((response) => response.ok)
+      .catch(() => false)
+      .finally(() => {
+        refreshPromise = null
+      })
   }
 
+  return refreshPromise
+}
+
+async function parseErrorPayload(response: Response): Promise<unknown> {
+  let payload: unknown = null
+  const errorText = await response.text()
+
+  if (!errorText) {
+    return payload
+  }
+
+  const contentType = response.headers.get("content-type") ?? ""
+
+  if (contentType.includes("application/json")) {
+    try {
+      return JSON.parse(errorText)
+    } catch {
+      return errorText
+    }
+  }
+
+  return errorText
+}
+
+async function parseSuccessPayload<T>(response: Response): Promise<T> {
   if (response.status === 204) {
     return undefined as T
   }
@@ -126,6 +138,50 @@ export async function fetchJson<T>(
   }
 
   return responseText as T
+}
+
+export async function fetchJson<T>(
+  path: string,
+  init?: RequestInit,
+): Promise<T> {
+  const accessToken = await tryGetServerAccessToken()
+  const requestUrl = await buildRequestUrl(path)
+
+  const execute = () =>
+    fetch(requestUrl, {
+      ...init,
+      credentials: init?.credentials ?? "include",
+      headers: {
+        Accept: "application/json",
+        ...(accessToken
+          ? { Authorization: `Bearer ${accessToken}` }
+          : {}),
+        ...(init?.headers ?? {}),
+      },
+      cache: init?.cache ?? "no-store",
+    })
+
+  let response = await execute()
+
+  if (response.status === 401 && canAttemptClientRefresh(path)) {
+    const refreshSucceeded = await refreshClientSession()
+
+    if (refreshSucceeded) {
+      response = await execute()
+    }
+  }
+
+  if (!response.ok) {
+    const payload = await parseErrorPayload(response)
+
+    throw new ApiError(
+      `API request failed with status ${response.status}`,
+      response.status,
+      payload,
+    )
+  }
+
+  return parseSuccessPayload<T>(response)
 }
 
 export async function postJson<TResponse, TRequest>(

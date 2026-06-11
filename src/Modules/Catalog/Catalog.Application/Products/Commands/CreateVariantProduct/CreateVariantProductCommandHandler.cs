@@ -1,10 +1,12 @@
 using Catalog.Application.Abstractions;
 using Catalog.Application.Exceptions;
+using Catalog.Application.Products;
 using Catalog.Domain.Entities;
 using Catalog.Domain.Repositories;
 using Catalog.Domain.ValueObjects;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Subscription.Contracts;
 
 namespace Catalog.Application.Products.Commands.CreateVariantProduct
 {
@@ -13,6 +15,7 @@ namespace Catalog.Application.Products.Commands.CreateVariantProduct
         private readonly IProductRepository _productRepository;
         private readonly IBrandRepository _brandRepository;
         private readonly ICategoryRepository _categoryRepository;
+        private readonly ISubscriptionModuleApi _subscriptionModuleApi;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<CreateVariantProductCommandHandler> _logger;
 
@@ -20,12 +23,14 @@ namespace Catalog.Application.Products.Commands.CreateVariantProduct
             IProductRepository productRepository,
             IBrandRepository brandRepository,
             ICategoryRepository categoryRepository,
+            ISubscriptionModuleApi subscriptionModuleApi,
             IUnitOfWork unitOfWork,
             ILogger<CreateVariantProductCommandHandler> logger)
         {
             _productRepository = productRepository;
             _brandRepository = brandRepository;
             _categoryRepository = categoryRepository;
+            _subscriptionModuleApi = subscriptionModuleApi;
             _unitOfWork = unitOfWork;
             _logger = logger;
         }
@@ -34,6 +39,11 @@ namespace Catalog.Application.Products.Commands.CreateVariantProduct
         {
             if (command.StoreId == Guid.Empty)
                 throw new CatalogValidationException("StoreId is required.");
+
+            await CatalogSubscriptionGuard.EnsureCanCreateVariantProductAsync(
+                command.StoreId,
+                _subscriptionModuleApi,
+                cancellationToken);
 
             var slug = Slug.Create(command.Slug);
 
@@ -56,6 +66,12 @@ namespace Catalog.Application.Products.Commands.CreateVariantProduct
                 if (!await _categoryRepository.ExistsByIdAsync(command.StoreId, categoryId, cancellationToken))
                     throw new CategoryNotFoundException(categoryId);
             }
+
+            await CatalogSubscriptionGuard.EnsureCanCreateProductAsync(
+                command.StoreId,
+                _productRepository,
+                _subscriptionModuleApi,
+                cancellationToken);
 
             var product = Product.CreateVariant(
                 command.StoreId,

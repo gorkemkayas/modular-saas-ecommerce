@@ -1,10 +1,13 @@
 using System;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace Notification.Infrastructure.Persistence.Migrations
 {
+    [DbContext(typeof(NotificationDbContext))]
+    [Migration("20260501170000_InitialNotificationSchema")]
     public partial class InitialNotificationSchema : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)

@@ -18,6 +18,12 @@ import {
   searchStoreShipments,
 } from "@/lib/api/admin"
 import { getApiErrorMessage } from "@/lib/api/error-message"
+import {
+  formatSubscriptionLimit,
+  getCurrentSubscriptionOrNull,
+  getSubscriptionQuotaLimit,
+  subscriptionQuotaKeys,
+} from "@/lib/api/subscription"
 import { formatDateTime, formatEnumLabel, formatMoney } from "@/lib/admin-format"
 
 const statCards = [
@@ -79,17 +85,35 @@ function getShipmentStatusClasses(status: string): string {
 
 export default async function AdminDashboard() {
   try {
-    const [store, products, customers, payments, lowStock, shipments] = await Promise.all([
+    const [
+      store,
+      products,
+      customers,
+      payments,
+      lowStock,
+      shipments,
+      subscription,
+      draftProducts,
+      activeProducts,
+    ] = await Promise.all([
       getStoreSettings(),
       searchProducts({ pageNumber: 1, pageSize: 5 }),
       searchCustomers({ pageNumber: 1, pageSize: 5 }),
       searchStorePayments({ pageNumber: 1, pageSize: 5 }),
       searchInventoryItems({ pageNumber: 1, pageSize: 5, onlyLowStock: true }),
       searchStoreShipments({ pageNumber: 1, pageSize: 5 }),
+      getCurrentSubscriptionOrNull(),
+      searchProducts({ status: "Draft", pageNumber: 1, pageSize: 1 }),
+      searchProducts({ status: "Active", pageNumber: 1, pageSize: 1 }),
     ])
+    const currentProductCount = draftProducts.totalCount + activeProducts.totalCount
+    const productLimit = getSubscriptionQuotaLimit(
+      subscription,
+      subscriptionQuotaKeys.catalogProducts,
+    )
 
     const statValues = {
-      products: products.totalCount,
+      products: currentProductCount,
       customers: customers.totalCount,
       payments: payments.totalCount,
       lowStock: lowStock.totalCount,
@@ -103,6 +127,31 @@ export default async function AdminDashboard() {
             Live tenant overview for {store.name}, based on current backend admin endpoints.
           </p>
         </div>
+
+        {subscription ? (
+          <div className="flex flex-col gap-4 border border-border bg-secondary/30 p-5 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
+                Current Plan
+              </p>
+              <p className="mt-1 text-lg font-light">{subscription.planName}</p>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              Product usage:{" "}
+              <span className="text-foreground">{currentProductCount}</span>
+              {" / "}
+              <span className="text-foreground">
+                {formatSubscriptionLimit(productLimit)}
+              </span>
+            </div>
+            <Link
+              href="/admin/subscription"
+              className="w-fit border border-border bg-background px-4 py-2 text-sm transition-colors hover:bg-secondary"
+            >
+              View Subscription
+            </Link>
+          </div>
+        ) : null}
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {statCards.map((stat) => {

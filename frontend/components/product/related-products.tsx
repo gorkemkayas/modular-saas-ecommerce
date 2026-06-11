@@ -15,7 +15,7 @@ export function RelatedProducts({
   }
 
   return (
-    <section className="mt-24 border-t border-border pt-24 lg:mt-32 lg:pt-32">
+    <section className="mt-10 border-t border-border pb-10 pt-10 lg:mt-10 lg:pb-10 lg:pt-10">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="flex flex-col items-center text-center">
           <p className="text-xs font-medium uppercase tracking-[0.3em] text-muted-foreground">
@@ -25,7 +25,7 @@ export function RelatedProducts({
             Similar Products
           </h2>
         </div>
-        <div className="mt-16 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-12 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
           {products.map((product) => (
             <ProductCard
               key={product.id}

@@ -11,6 +11,7 @@ public sealed class NotificationDbContext : DbContext, IUnitOfWork
     {
     }
 
+    public DbSet<ContactFeedback> ContactFeedbacks => Set<ContactFeedback>();
     public DbSet<NotificationTemplate> NotificationTemplates => Set<NotificationTemplate>();
     public DbSet<NotificationDispatch> NotificationDispatches => Set<NotificationDispatch>();
     public DbSet<NotificationAttempt> NotificationAttempts => Set<NotificationAttempt>();

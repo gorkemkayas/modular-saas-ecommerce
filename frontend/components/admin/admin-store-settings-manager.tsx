@@ -16,6 +16,11 @@ import {
 } from "@/lib/api/admin"
 import { storefrontPath } from "@/lib/config"
 import { getApiErrorMessage } from "@/lib/api/error-message"
+import {
+  hasSubscriptionFeature,
+  subscriptionFeatureKeys,
+  type TenantSubscriptionDto,
+} from "@/lib/api/subscription"
 import { AdminShippingCarriersManager } from "@/components/admin/admin-shipping-carriers-manager"
 
 const sections = [
@@ -52,9 +57,11 @@ function SectionNotice({
 export function AdminStoreSettingsManager({
   initialStore,
   initialSection = "general",
+  subscription,
 }: {
   initialStore: StoreDto
   initialSection?: SectionId
+  subscription?: TenantSubscriptionDto | null
 }) {
   const router = useRouter()
   const [activeSection, setActiveSection] = useState<SectionId>(initialSection)
@@ -110,6 +117,9 @@ export function AdminStoreSettingsManager({
   const [isProfilePending, startProfileTransition] = useTransition()
   const [isSlugPending, startSlugTransition] = useTransition()
   const [isPublishPending, startPublishTransition] = useTransition()
+  const canUseVideoHero =
+    !subscription ||
+    hasSubscriptionFeature(subscription, subscriptionFeatureKeys.storefrontVideoHero)
 
   const storefrontPreviewPath = useMemo(
     () => storefrontPath(currentSlug),
@@ -173,11 +183,17 @@ export function AdminStoreSettingsManager({
       return
     }
 
-    const isSupported =
-      file.type.startsWith("image/") || file.type.startsWith("video/")
+    const isVideo = file.type.startsWith("video/")
+    const isSupported = file.type.startsWith("image/") || isVideo
 
     if (!isSupported) {
       setError("Only image and video files are supported for the storefront hero.")
+      event.target.value = ""
+      return
+    }
+
+    if (isVideo && !canUseVideoHero) {
+      setError("Storefront video hero is not available in your current plan.")
       event.target.value = ""
       return
     }
@@ -509,9 +525,13 @@ export function AdminStoreSettingsManager({
                       <div className="grid gap-4">
                         <label className="flex cursor-pointer items-center justify-between border border-dashed border-border px-4 py-4 text-sm transition-colors hover:bg-secondary/40">
                           <div>
-                            <p className="font-medium">Upload image or video</p>
+                            <p className="font-medium">
+                              {canUseVideoHero ? "Upload image or video" : "Upload image"}
+                            </p>
                             <p className="mt-1 text-xs text-muted-foreground">
-                              Stored through the same upload flow used for product media.
+                              {canUseVideoHero
+                                ? "Stored through the same upload flow used for product media."
+                                : "Video hero requires a higher subscription plan."}
                             </p>
                           </div>
                           <span className="border border-border px-3 py-2 text-xs uppercase tracking-[0.2em]">
@@ -519,7 +539,7 @@ export function AdminStoreSettingsManager({
                           </span>
                           <input
                             type="file"
-                            accept="image/*,video/*"
+                            accept={canUseVideoHero ? "image/*,video/*" : "image/*"}
                             className="hidden"
                             onChange={handleHeroMediaChange}
                           />
@@ -759,7 +779,9 @@ export function AdminStoreSettingsManager({
             </div>
           ) : null}
 
-          {activeSection === "shipping" ? <AdminShippingCarriersManager /> : null}
+          {activeSection === "shipping" ? (
+            <AdminShippingCarriersManager subscription={subscription} />
+          ) : null}
 
           {activeSection === "general" || activeSection === "branding" ? (
             <div className="mt-6 flex justify-end border-t border-border pt-6">

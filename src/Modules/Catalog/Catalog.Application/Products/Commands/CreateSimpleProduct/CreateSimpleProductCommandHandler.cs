@@ -1,10 +1,12 @@
 using Catalog.Application.Abstractions;
 using Catalog.Application.Exceptions;
+using Catalog.Application.Products;
 using Catalog.Domain.Entities;
 using Catalog.Domain.Repositories;
 using Catalog.Domain.ValueObjects;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Subscription.Contracts;
 
 namespace Catalog.Application.Products.Commands.CreateSimpleProduct
 {
@@ -13,6 +15,7 @@ namespace Catalog.Application.Products.Commands.CreateSimpleProduct
         private readonly IProductRepository _productRepository;
         private readonly IBrandRepository _brandRepository;
         private readonly ICategoryRepository _categoryRepository;
+        private readonly ISubscriptionModuleApi _subscriptionModuleApi;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<CreateSimpleProductCommandHandler> _logger;
 
@@ -20,12 +23,14 @@ namespace Catalog.Application.Products.Commands.CreateSimpleProduct
             IProductRepository productRepository,
             IBrandRepository brandRepository,
             ICategoryRepository categoryRepository,
+            ISubscriptionModuleApi subscriptionModuleApi,
             IUnitOfWork unitOfWork,
             ILogger<CreateSimpleProductCommandHandler> logger)
         {
             _productRepository = productRepository;
             _brandRepository = brandRepository;
             _categoryRepository = categoryRepository;
+            _subscriptionModuleApi = subscriptionModuleApi;
             _unitOfWork = unitOfWork;
             _logger = logger;
         }
@@ -51,6 +56,11 @@ namespace Catalog.Application.Products.Commands.CreateSimpleProduct
 
             var categoryIds = NormalizeIds(command.CategoryIds);
             await EnsureCategoriesExistAsync(command.StoreId, categoryIds, cancellationToken);
+            await CatalogSubscriptionGuard.EnsureCanCreateProductAsync(
+                command.StoreId,
+                _productRepository,
+                _subscriptionModuleApi,
+                cancellationToken);
 
             var product = Product.CreateSimple(
                 command.StoreId,

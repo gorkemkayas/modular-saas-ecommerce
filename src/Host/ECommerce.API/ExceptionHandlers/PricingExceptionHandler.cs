@@ -44,6 +44,7 @@ public sealed class PricingExceptionHandler : IExceptionHandler
             Pricing.Application.Exceptions.DuplicateDefaultPriceListException => (StatusCodes.Status409Conflict, "Duplicate Default Price List"),
             Pricing.Application.Exceptions.InvalidPriceTargetException => (StatusCodes.Status400BadRequest, "Invalid Price Target"),
             Pricing.Application.Exceptions.PricingValidationException => (StatusCodes.Status400BadRequest, "Pricing Validation Error"),
+            Pricing.Application.Exceptions.PriceListQuotaExceededException => (StatusCodes.Status403Forbidden, "Price List Quota Exceeded"),
             PricingDomainException => (StatusCodes.Status400BadRequest, "Pricing Domain Rule Violation"),
             ApplicationException => (StatusCodes.Status400BadRequest, "Pricing Application Error"),
             _ => (StatusCodes.Status500InternalServerError, "Internal Server Error")
@@ -79,6 +80,13 @@ public sealed class PricingExceptionHandler : IExceptionHandler
             case Pricing.Application.Exceptions.DuplicateDefaultPriceListException duplicate:
                 problemDetails.Extensions["storeId"] = duplicate.StoreId;
                 problemDetails.Extensions["currencyCode"] = duplicate.CurrencyCode;
+                break;
+
+            case Pricing.Application.Exceptions.PriceListQuotaExceededException quotaExceeded:
+                problemDetails.Extensions["storeId"] = quotaExceeded.StoreId;
+                problemDetails.Extensions["quotaKey"] = quotaExceeded.QuotaKey;
+                problemDetails.Extensions["currentCount"] = quotaExceeded.CurrentCount;
+                problemDetails.Extensions["limit"] = quotaExceeded.Limit;
                 break;
         }
 

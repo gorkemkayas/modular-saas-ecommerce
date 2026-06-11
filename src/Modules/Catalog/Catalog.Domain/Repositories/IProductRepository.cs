@@ -8,6 +8,7 @@ namespace Catalog.Domain.Repositories
         Task AddAsync(Product product, CancellationToken cancellationToken = default);
         Task<Product?> GetByIdAsync(Guid storeId, Guid productId, CancellationToken cancellationToken = default);
         Task<Product?> GetBySlugAsync(Guid storeId, Slug slug, CancellationToken cancellationToken = default);
+        Task<int> CountNonArchivedByStoreIdAsync(Guid storeId, CancellationToken cancellationToken = default);
         Task<bool> ExistsBySlugAsync(Guid storeId, Slug slug, Guid? excludedProductId = null, CancellationToken cancellationToken = default);
         Task<bool> ExistsBySkuAsync(
             Guid storeId,

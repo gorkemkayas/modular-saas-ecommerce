@@ -2,12 +2,13 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Eye, EyeOff } from "lucide-react"
+import { CircleAlert, Eye, EyeOff } from "lucide-react"
 
 import { ApiError } from "@/lib/api/client"
 import { loginCustomer } from "@/lib/api/auth"
 import { defaultStoreSlug, storefrontPath } from "@/lib/config"
 import { getStoreDisplayName } from "@/lib/store-branding"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
@@ -20,7 +21,7 @@ interface LoginPageContentProps {
 }
 
 const DEFAULT_LOGIN_PAGE_IMAGE_URL =
-  "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1200&h=1600&fit=crop"
+  "/images/platform/store-setup-login.png"
 
 export function LoginPageContent({
   storeSlug,
@@ -72,18 +73,7 @@ export function LoginPageContent({
 
       window.location.assign(nextPath)
     } catch (error) {
-      if (error instanceof ApiError) {
-        const detail =
-          typeof error.payload === "object" &&
-          error.payload !== null &&
-          "detail" in error.payload
-            ? String(error.payload.detail)
-            : error.message
-
-        setErrorMessage(detail)
-      } else {
-        setErrorMessage("Login could not be completed.")
-      }
+      setErrorMessage(getLoginErrorMessage(error))
     } finally {
       setIsLoading(false)
     }
@@ -178,7 +168,15 @@ export function LoginPageContent({
             </div>
 
             {errorMessage ? (
-              <p className="text-sm text-red-600">{errorMessage}</p>
+              <Alert className="border-red-200/70 bg-red-50/70 text-red-950 shadow-sm [&>svg]:text-red-700">
+                <CircleAlert />
+                <AlertTitle className="text-sm font-medium tracking-[0.08em] uppercase">
+                  Sign-in Unsuccessful
+                </AlertTitle>
+                <AlertDescription className="text-sm leading-relaxed text-red-900/85">
+                  <p>{errorMessage}</p>
+                </AlertDescription>
+              </Alert>
             ) : null}
 
             <Button
@@ -198,6 +196,15 @@ export function LoginPageContent({
                 className="text-foreground underline underline-offset-4"
               >
                 Create one
+              </Link>
+            </p>
+            <p className="mt-3 text-sm text-muted-foreground">
+              Opening your own store?{" "}
+              <Link
+                href="/store-register"
+                className="text-foreground underline underline-offset-4"
+              >
+                Create a store
               </Link>
             </p>
           </div>
@@ -248,4 +255,83 @@ export function LoginPageContent({
       </div>
     </main>
   )
+}
+
+function getLoginErrorMessage(error: unknown): string {
+  if (!(error instanceof ApiError)) {
+    return "We couldn't sign you in right now. Please try again."
+  }
+
+  if (typeof error.payload === "string" && error.payload.trim()) {
+    const parsedPayload = tryParseProblemPayload(error.payload)
+
+    if (parsedPayload) {
+      return readProblemMessage(parsedPayload) ?? error.payload
+    }
+
+    return error.payload
+  }
+
+  if (error.payload && typeof error.payload === "object") {
+    const message = readProblemMessage(error.payload as Record<string, unknown>)
+
+    if (message) {
+      return message
+    }
+  }
+
+  if (error.status === 401) {
+    return "We couldn't sign you in with those details. Please check your email and password."
+  }
+
+  if (error.status === 403) {
+    return "This account can't sign in to this store."
+  }
+
+  if (error.status === 404) {
+    return "This store is not available right now."
+  }
+
+  return "We couldn't sign you in right now. Please try again."
+}
+
+function readValidationMessage(errors: unknown): string | null {
+  if (!errors || typeof errors !== "object") {
+    return null
+  }
+
+  const messages = Object.values(errors as Record<string, unknown>)
+    .flatMap((value) => (Array.isArray(value) ? value : []))
+    .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+
+  return messages.length > 0 ? messages.join(" ") : null
+}
+
+function readProblemMessage(payload: Record<string, unknown>): string | null {
+  const validationMessage = readValidationMessage(payload.errors)
+
+  if (validationMessage) {
+    return validationMessage
+  }
+
+  if (typeof payload.detail === "string" && payload.detail.trim()) {
+    return payload.detail
+  }
+
+  if (typeof payload.title === "string" && payload.title.trim()) {
+    return payload.title
+  }
+
+  return null
+}
+
+function tryParseProblemPayload(value: string): Record<string, unknown> | null {
+  try {
+    const parsed = JSON.parse(value)
+    return parsed && typeof parsed === "object"
+      ? (parsed as Record<string, unknown>)
+      : null
+  } catch {
+    return null
+  }
 }

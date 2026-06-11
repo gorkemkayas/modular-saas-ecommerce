@@ -13,6 +13,12 @@ import {
   uploadCategoryImageFile,
 } from "@/lib/api/admin"
 import { getApiErrorMessage } from "@/lib/api/error-message"
+import {
+  formatSubscriptionLimit,
+  getSubscriptionQuotaLimit,
+  subscriptionQuotaKeys,
+  type TenantSubscriptionDto,
+} from "@/lib/api/subscription"
 
 type CategoryOption = {
   id: string
@@ -113,7 +119,15 @@ export function AdminBrandCreateForm() {
   )
 }
 
-export function AdminCategoryCreateForm({ categories }: { categories: CategoryOption[] }) {
+export function AdminCategoryCreateForm({
+  categories,
+  subscription,
+  currentCategoryCount,
+}: {
+  categories: CategoryOption[]
+  subscription?: TenantSubscriptionDto | null
+  currentCategoryCount?: number
+}) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [name, setName] = useState("")
@@ -127,6 +141,14 @@ export function AdminCategoryCreateForm({ categories }: { categories: CategoryOp
   const [isImageUploading, setIsImageUploading] = useState(false)
   const [imageUploadProgress, setImageUploadProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
+  const categoryLimit = getSubscriptionQuotaLimit(
+    subscription,
+    subscriptionQuotaKeys.catalogCategories,
+  )
+  const isCategoryLimitReached =
+    typeof categoryLimit === "number" &&
+    typeof currentCategoryCount === "number" &&
+    currentCategoryCount >= categoryLimit
 
   useEffect(() => {
     return () => {
@@ -178,6 +200,13 @@ export function AdminCategoryCreateForm({ categories }: { categories: CategoryOp
     event.preventDefault()
     setError(null)
 
+    if (isCategoryLimitReached) {
+      setError(
+        `Category limit reached for your current plan (${currentCategoryCount}/${categoryLimit}).`,
+      )
+      return
+    }
+
     startTransition(async () => {
       try {
         await createCategory({
@@ -210,6 +239,12 @@ export function AdminCategoryCreateForm({ categories }: { categories: CategoryOp
   return (
     <form onSubmit={handleSubmit} className="space-y-4 border border-border p-4">
       <h2 className="text-sm uppercase tracking-[0.2em] text-muted-foreground">Create Category</h2>
+      {typeof categoryLimit === "number" ? (
+        <p className="text-xs text-muted-foreground">
+          Current plan allows {formatSubscriptionLimit(categoryLimit)} categories.
+          This store currently has {currentCategoryCount ?? 0}.
+        </p>
+      ) : null}
       <div className="grid gap-4 md:grid-cols-2">
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" className="bg-secondary px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-foreground" />
         <input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="slug" className="bg-secondary px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-foreground" />
@@ -258,8 +293,12 @@ export function AdminCategoryCreateForm({ categories }: { categories: CategoryOp
           ) : null}
         </label>
       </div>
-      <button disabled={isPending || isImageUploading} className="bg-primary px-4 py-3 text-sm text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60">
-        {isPending ? "Creating..." : "Create Category"}
+      <button disabled={isPending || isImageUploading || isCategoryLimitReached} className="bg-primary px-4 py-3 text-sm text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60">
+        {isPending
+          ? "Creating..."
+          : isCategoryLimitReached
+            ? "Category Limit Reached"
+            : "Create Category"}
       </button>
       <FormError error={error} />
     </form>
@@ -330,7 +369,13 @@ export function AdminAttributeCreateForm() {
   )
 }
 
-export function AdminPriceListCreateForm() {
+export function AdminPriceListCreateForm({
+  subscription,
+  currentPriceListCount,
+}: {
+  subscription?: TenantSubscriptionDto | null
+  currentPriceListCount?: number
+}) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [name, setName] = useState("")
@@ -339,6 +384,14 @@ export function AdminPriceListCreateForm() {
   const [priority, setPriority] = useState("")
   const [isDefault, setIsDefault] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const priceListLimit = getSubscriptionQuotaLimit(
+    subscription,
+    subscriptionQuotaKeys.pricingPriceLists,
+  )
+  const isPriceListLimitReached =
+    typeof priceListLimit === "number" &&
+    typeof currentPriceListCount === "number" &&
+    currentPriceListCount >= priceListLimit
   const selectedCurrency =
     priceListCurrencies.find((currency) => currency.code === currencyCode) ??
     priceListCurrencies[0]
@@ -346,6 +399,13 @@ export function AdminPriceListCreateForm() {
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
     setError(null)
+
+    if (isPriceListLimitReached) {
+      setError(
+        `Price list limit reached for your current plan (${currentPriceListCount}/${priceListLimit}).`,
+      )
+      return
+    }
 
     startTransition(async () => {
       try {
@@ -370,6 +430,12 @@ export function AdminPriceListCreateForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4 border border-border p-4">
       <h2 className="text-sm uppercase tracking-[0.2em] text-muted-foreground">Create Price List</h2>
+      {typeof priceListLimit === "number" ? (
+        <p className="text-xs text-muted-foreground">
+          Current plan allows {formatSubscriptionLimit(priceListLimit)} price lists.
+          This store currently has {currentPriceListCount ?? 0}.
+        </p>
+      ) : null}
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
@@ -485,8 +551,12 @@ export function AdminPriceListCreateForm() {
           </span>
         </button>
       </div>
-      <button disabled={isPending} className="bg-primary px-4 py-3 text-sm text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60">
-        {isPending ? "Creating..." : "Create Price List"}
+      <button disabled={isPending || isPriceListLimitReached} className="bg-primary px-4 py-3 text-sm text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60">
+        {isPending
+          ? "Creating..."
+          : isPriceListLimitReached
+            ? "Price List Limit Reached"
+            : "Create Price List"}
       </button>
       <FormError error={error} />
     </form>

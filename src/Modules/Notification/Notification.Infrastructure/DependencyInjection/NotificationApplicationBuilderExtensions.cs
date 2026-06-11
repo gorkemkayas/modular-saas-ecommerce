@@ -1,6 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 using Notification.Infrastructure.Seeding;
+using Notification.Infrastructure.Persistence;
 
 namespace Notification.Infrastructure.DependencyInjection;
 
@@ -16,6 +18,9 @@ public static class NotificationApplicationBuilderExtensions
 
         try
         {
+            var dbContext = scope.ServiceProvider.GetRequiredService<NotificationDbContext>();
+            await dbContext.Database.MigrateAsync(cancellationToken);
+
             var seeder = scope.ServiceProvider.GetRequiredService<NotificationTemplateSeeder>();
             await seeder.SeedAsync(cancellationToken);
         }

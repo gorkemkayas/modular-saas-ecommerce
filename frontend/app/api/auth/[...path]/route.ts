@@ -35,12 +35,17 @@ async function proxyAuthRequest(
 
   const headers = new Headers()
   const contentType = request.headers.get("content-type")
+  const cookieHeader = request.headers.get("cookie")
 
   if (contentType) {
     headers.set("content-type", contentType)
   }
 
   headers.set("accept", "application/json")
+
+  if (cookieHeader) {
+    headers.set("cookie", cookieHeader)
+  }
 
   if (requestAuthorization) {
     headers.set("authorization", requestAuthorization)

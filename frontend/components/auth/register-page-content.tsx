@@ -3,12 +3,13 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Check, Eye, EyeOff } from "lucide-react"
+import { Check, CircleAlert, Eye, EyeOff } from "lucide-react"
 
 import { ApiError } from "@/lib/api/client"
 import { registerCustomer } from "@/lib/api/auth"
 import { defaultStoreSlug, storefrontPath } from "@/lib/config"
 import { getStoreDisplayName } from "@/lib/store-branding"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
@@ -20,7 +21,7 @@ interface RegisterPageContentProps {
 }
 
 const DEFAULT_REGISTER_PAGE_IMAGE_URL =
-  "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&h=1600&fit=crop"
+  "/images/platform/store-setup-register.png"
 
 export function RegisterPageContent({
   storeSlug,
@@ -118,9 +119,15 @@ export function RegisterPageContent({
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {errorMessage ? (
-              <div className="border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {errorMessage}
-              </div>
+              <Alert className="border-red-200/70 bg-red-50/70 text-red-950 shadow-sm [&>svg]:text-red-700">
+                <CircleAlert />
+                <AlertTitle className="text-sm font-medium tracking-[0.08em] uppercase">
+                  Account Not Created
+                </AlertTitle>
+                <AlertDescription className="text-sm leading-relaxed text-red-900/85">
+                  <p>{errorMessage}</p>
+                </AlertDescription>
+              </Alert>
             ) : null}
 
             <div className="grid grid-cols-2 gap-4">
@@ -292,23 +299,76 @@ export function RegisterPageContent({
 }
 
 function getRegisterErrorMessage(error: unknown): string {
-  if (error instanceof ApiError) {
-    if (typeof error.payload === "string" && error.payload.trim()) {
-      return error.payload
+  if (!(error instanceof ApiError)) {
+    return "We couldn't create your account right now. Please try again."
+  }
+
+  if (typeof error.payload === "string" && error.payload.trim()) {
+    const parsedPayload = tryParseProblemPayload(error.payload)
+
+    if (parsedPayload) {
+      return readProblemMessage(parsedPayload) ?? error.payload
     }
 
-    if (error.payload && typeof error.payload === "object") {
-      const payload = error.payload as Record<string, unknown>
+    return error.payload
+  }
 
-      if (typeof payload.detail === "string" && payload.detail.trim()) {
-        return payload.detail
-      }
+  if (error.payload && typeof error.payload === "object") {
+    const message = readProblemMessage(error.payload as Record<string, unknown>)
 
-      if (typeof payload.title === "string" && payload.title.trim()) {
-        return payload.title
-      }
+    if (message) {
+      return message
     }
   }
 
+  if (error.status === 409) {
+    return "An account with this email address already exists."
+  }
+
+  if (error.status === 404) {
+    return "This store is not available right now."
+  }
+
   return "We couldn't create your account right now. Please try again."
+}
+
+function readValidationMessage(errors: unknown): string | null {
+  if (!errors || typeof errors !== "object") {
+    return null
+  }
+
+  const messages = Object.values(errors as Record<string, unknown>)
+    .flatMap((value) => (Array.isArray(value) ? value : []))
+    .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+
+  return messages.length > 0 ? messages.join(" ") : null
+}
+
+function readProblemMessage(payload: Record<string, unknown>): string | null {
+  const validationMessage = readValidationMessage(payload.errors)
+
+  if (validationMessage) {
+    return validationMessage
+  }
+
+  if (typeof payload.detail === "string" && payload.detail.trim()) {
+    return payload.detail
+  }
+
+  if (typeof payload.title === "string" && payload.title.trim()) {
+    return payload.title
+  }
+
+  return null
+}
+
+function tryParseProblemPayload(value: string): Record<string, unknown> | null {
+  try {
+    const parsed = JSON.parse(value)
+    return parsed && typeof parsed === "object"
+      ? (parsed as Record<string, unknown>)
+      : null
+  } catch {
+    return null
+  }
 }

@@ -29,3 +29,10 @@ public sealed record SearchNotificationDispatchesRequest(
     Guid? BusinessEntityId,
     int PageNumber = 1,
     int PageSize = 20);
+
+public sealed record SubmitContactFeedbackRequest(
+    string FullName,
+    string Email,
+    string Subject,
+    string Message,
+    string? Source);

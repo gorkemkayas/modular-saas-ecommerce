@@ -1,4 +1,8 @@
 import { ApiError } from "@/lib/api/client"
+import {
+  getSubscriptionFeatureLabel,
+  getSubscriptionQuotaLabel,
+} from "@/lib/api/subscription"
 
 type ProblemLikePayload = {
   detail?: unknown
@@ -26,6 +30,38 @@ function extractValidationMessage(errors: unknown): string | null {
   return messages.join(" ")
 }
 
+function extractString(payload: Record<string, unknown>, key: string): string | null {
+  const value = payload[key]
+  return typeof value === "string" && value.trim() ? value : null
+}
+
+function extractNumber(payload: Record<string, unknown>, key: string): number | null {
+  const value = payload[key]
+  return typeof value === "number" && Number.isFinite(value) ? value : null
+}
+
+function extractSubscriptionMessage(payload: Record<string, unknown>): string | null {
+  const quotaKey = extractString(payload, "quotaKey")
+  if (quotaKey) {
+    const currentCount = extractNumber(payload, "currentCount")
+    const limit = extractNumber(payload, "limit")
+    const quotaLabel = getSubscriptionQuotaLabel(quotaKey)
+
+    if (currentCount !== null && limit !== null) {
+      return `${quotaLabel} limit reached for your current plan (${currentCount}/${limit}). Upgrade the plan or reduce usage before trying again.`
+    }
+
+    return `${quotaLabel} is limited by your current plan. Upgrade the plan or reduce usage before trying again.`
+  }
+
+  const featureKey = extractString(payload, "featureKey")
+  if (featureKey) {
+    return `${getSubscriptionFeatureLabel(featureKey)} is not available in your current plan. Upgrade the plan to use this feature.`
+  }
+
+  return null
+}
+
 export function getApiErrorMessage(error: unknown, fallback: string): string {
   if (!(error instanceof ApiError)) {
     return fallback
@@ -33,10 +69,6 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
 
   if (error.status === 401) {
     return "Your session has expired. Please sign in again."
-  }
-
-  if (error.status === 403) {
-    return "You do not have permission to perform this action."
   }
 
   if (typeof error.payload === "string" && error.payload.trim()) {
@@ -48,6 +80,16 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
   }
 
   const payload = error.payload as ProblemLikePayload
+  const subscriptionMessage = extractSubscriptionMessage(error.payload)
+
+  if (subscriptionMessage) {
+    return subscriptionMessage
+  }
+
+  if (error.status === 403) {
+    return "You do not have permission to perform this action."
+  }
+
   const validationMessage = extractValidationMessage(payload.errors)
 
   if (validationMessage) {
