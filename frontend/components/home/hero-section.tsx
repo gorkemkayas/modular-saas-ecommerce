@@ -54,7 +54,7 @@ export function HeroSection({
     : "Store setup workspace"
 
   return (
-    <section className="relative h-screen overflow-hidden bg-background">
+    <section className="relative min-h-[100svh] overflow-hidden bg-background">
       <div className="absolute inset-0">
         {isVideoHero ? (
           <video
@@ -78,9 +78,9 @@ export function HeroSection({
         <div className="absolute inset-0 bg-black/30" />
       </div>
 
-      <div className="relative z-10 flex h-full flex-col justify-between px-6 py-32 lg:px-16">
+      <div className="relative z-10 flex min-h-[100svh] flex-col justify-between px-4 py-24 sm:px-6 sm:py-28 lg:px-16 lg:py-32">
         <div className="animate-fade-up opacity-0">
-          <p className="text-[10px] font-normal uppercase tracking-[0.4em] text-white/70">
+          <p className="text-[10px] font-normal uppercase tracking-[0.28em] text-white/70 sm:tracking-[0.4em]">
             {resolvedEyebrowText}
           </p>
         </div>
@@ -91,14 +91,14 @@ export function HeroSection({
             <br />
             <span className="italic">{resolvedAccentTitle}</span>
           </h1>
-          <p className="mt-8 max-w-lg animate-fade-up opacity-0 animation-delay-400 text-sm font-light leading-relaxed tracking-wide text-white/80 lg:text-base">
+          <p className="mt-6 max-w-lg animate-fade-up opacity-0 text-sm font-light leading-relaxed tracking-wide text-white/80 animation-delay-400 lg:mt-8 lg:text-base">
             {resolvedDescription}
           </p>
           <div className="mt-10 animate-fade-up opacity-0 animation-delay-600">
             <Button
               asChild
               size="lg"
-              className="group h-14 border border-white/30 bg-white/10 px-10 text-[11px] uppercase tracking-[0.3em] text-white backdrop-blur-sm transition-all duration-500 hover:bg-white hover:text-black"
+              className="group h-14 w-full border border-white/30 bg-white/10 px-6 text-[11px] uppercase tracking-[0.22em] text-white backdrop-blur-sm transition-all duration-500 hover:bg-white hover:text-black sm:w-auto sm:px-10 sm:tracking-[0.3em]"
             >
               <Link href={storefrontPath(storeSlug, "/products")}>
                 {resolvedPrimaryButtonText}
@@ -108,14 +108,14 @@ export function HeroSection({
           </div>
         </div>
 
-        <div className="flex items-end justify-between">
+        <div className="flex items-end justify-between gap-6">
           <div className="animate-fade-in opacity-0 animation-delay-600">
             <span className="text-[10px] uppercase tracking-[0.4em] text-white/50">
               Premium Quality
             </span>
           </div>
 
-          <div className="flex flex-col items-center gap-3 animate-fade-in opacity-0 animation-delay-600">
+          <div className="hidden flex-col items-center gap-3 animate-fade-in opacity-0 animation-delay-600 sm:flex">
             <span className="text-[9px] uppercase tracking-[0.4em] text-white/50 [writing-mode:vertical-rl]">
               Scroll Down
             </span>

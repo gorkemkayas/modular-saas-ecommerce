@@ -214,8 +214,8 @@ export function CheckoutContent({ storeSlug }: CheckoutContentProps) {
         </Link>
       </nav>
 
-      <div className="mb-20">
-        <div className="flex items-center justify-center">
+      <div className="mb-16 sm:mb-20">
+        <div className="flex items-center justify-center overflow-x-auto">
           {[
             { id: "addresses", name: "Addresses", icon: Truck },
             { id: "payment", name: "Payment", icon: CreditCard },
@@ -226,14 +226,14 @@ export function CheckoutContent({ storeSlug }: CheckoutContentProps) {
             return (
               <div key={step.id} className="flex items-center">
                 <div
-                  className={`flex items-center gap-3 px-8 py-4 text-[10px] uppercase tracking-[0.2em] ${
+                  className={`flex items-center gap-2 px-4 py-3 text-[10px] uppercase tracking-[0.2em] sm:gap-3 sm:px-8 sm:py-4 ${
                     isActive || isDone
                       ? "bg-foreground text-background"
                       : "bg-secondary text-muted-foreground"
                   }`}
                 >
                   <step.icon className="h-4 w-4" strokeWidth={1} />
-                  <span className="hidden sm:inline">{step.name}</span>
+                  <span>{step.name}</span>
                 </div>
                 {index < 1 ? (
                   <div className={`h-px w-12 sm:w-20 ${isDone ? "bg-foreground" : "bg-border"}`} />
@@ -385,7 +385,7 @@ export function CheckoutContent({ storeSlug }: CheckoutContentProps) {
                   <div className="mt-12 flex justify-end">
                     <Button
                       type="button"
-                      className="h-14 px-12 text-[11px] uppercase tracking-[0.2em]"
+                      className="h-14 w-full px-8 text-[11px] uppercase tracking-[0.2em] sm:w-auto sm:px-12"
                       disabled={!addresses.length || !shippingCarrierId}
                       onClick={() => setCurrentStep("payment")}
                     >
@@ -473,18 +473,18 @@ export function CheckoutContent({ storeSlug }: CheckoutContentProps) {
                     </div>
                   ) : null}
 
-                  <div className="mt-12 flex items-center justify-between gap-4">
+                  <div className="mt-12 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <Button
                       type="button"
                       variant="outline"
-                      className="h-14 px-10 text-[11px] uppercase tracking-[0.2em] border-border hover:border-foreground hover:bg-transparent"
+                      className="h-14 w-full border-border px-8 text-[11px] uppercase tracking-[0.2em] hover:border-foreground hover:bg-transparent sm:w-auto sm:px-10"
                       onClick={() => setCurrentStep("addresses")}
                     >
                       Back
                     </Button>
                     <Button
                       type="button"
-                      className="h-14 px-12 text-[11px] uppercase tracking-[0.2em]"
+                      className="h-14 w-full px-8 text-[11px] uppercase tracking-[0.2em] sm:w-auto sm:px-12"
                       disabled={isSubmitting}
                       onClick={() => void handlePlaceOrder()}
                     >
@@ -500,7 +500,7 @@ export function CheckoutContent({ storeSlug }: CheckoutContentProps) {
         </div>
 
         <div className="lg:col-span-1">
-          <div className="sticky top-32 border border-border bg-card p-10">
+          <div className="sticky top-32 border border-border bg-card p-6 sm:p-8 lg:p-10">
             <h2 className="text-[11px] font-normal uppercase tracking-[0.25em] text-foreground">
               Order Summary
             </h2>

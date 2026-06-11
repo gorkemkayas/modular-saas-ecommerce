@@ -80,11 +80,11 @@ export function AdminLayoutShell({
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-primary text-primary-foreground z-50 flex items-center justify-between px-4">
+      <div className="fixed left-0 right-0 top-0 z-50 flex h-16 items-center justify-between bg-primary px-4 text-primary-foreground lg:hidden">
         <button onClick={() => setMobileOpen(true)}>
           <Menu className="h-6 w-6" strokeWidth={1.5} />
         </button>
-        <Link href={basePath} className="text-lg tracking-[0.3em] font-light">
+        <Link href={basePath} className="mx-4 truncate text-center text-sm font-light tracking-[0.22em] sm:text-lg sm:tracking-[0.3em]">
           {displayName}
         </Link>
         <div className="w-6" />
@@ -99,12 +99,12 @@ export function AdminLayoutShell({
 
       <aside
         className={cn(
-          "fixed top-0 left-0 h-full bg-primary text-primary-foreground z-50 transition-all duration-300 flex flex-col",
+          "fixed top-0 left-0 z-50 flex h-full max-w-[85vw] flex-col bg-primary text-primary-foreground transition-all duration-300",
           collapsed ? "w-20" : "w-64",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
       >
-        <div className="h-16 flex items-center justify-between px-6 border-b border-primary-foreground/10">
+        <div className="flex h-16 items-center justify-between border-b border-primary-foreground/10 px-4 sm:px-6">
           {!collapsed && (
             <Link href={basePath} className="text-lg tracking-[0.3em] font-light">
               {displayName}
@@ -187,11 +187,11 @@ export function AdminLayoutShell({
 
       <main
         className={cn(
-          "min-h-screen transition-all duration-300 pt-16 lg:pt-0",
+          "min-h-screen overflow-x-hidden pt-16 transition-all duration-300 lg:pt-0",
           collapsed ? "lg:pl-20" : "lg:pl-64",
         )}
       >
-        <div className="p-6 lg:p-8">{children}</div>
+        <div className="p-4 sm:p-6 lg:p-8">{children}</div>
       </main>
     </div>
   )

@@ -60,20 +60,20 @@ export function AccountLayoutShell({
   return (
     <main className="min-h-screen bg-background">
       <section className="border-b border-border">
-        <div className="mx-auto max-w-7xl px-6 py-16 lg:py-20">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:py-20">
           <p className="text-xs tracking-[0.3em] text-muted-foreground uppercase mb-4">
             Customer Account
           </p>
-          <h1 className="font-serif text-4xl lg:text-5xl font-light tracking-wide">
+          <h1 className="font-serif text-3xl font-light tracking-wide sm:text-4xl lg:text-5xl">
             Manage Profile, Orders, and Delivery
           </h1>
         </div>
       </section>
 
-      <div className="mx-auto max-w-7xl px-6 py-12">
-        <div className="flex flex-col lg:flex-row gap-12">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
+        <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
           <aside className="lg:w-64 flex-shrink-0">
-            <nav className="sticky top-24 space-y-1">
+            <nav className="no-scrollbar flex gap-2 overflow-x-auto pb-2 lg:sticky lg:top-24 lg:block lg:space-y-1 lg:overflow-visible lg:pb-0">
               {accountLinks.map((link) => {
                 const Icon = link.icon
                 const href = `${basePath}${link.path}`
@@ -85,7 +85,7 @@ export function AccountLayoutShell({
                   <Link
                     key={href}
                     href={href}
-                    className={`flex items-center gap-4 px-4 py-3 text-sm tracking-wide transition-colors ${
+                    className={`flex min-w-max items-center gap-3 px-4 py-3 text-sm tracking-wide transition-colors lg:min-w-0 ${
                       isActive
                         ? "bg-secondary text-foreground"
                         : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
@@ -96,12 +96,12 @@ export function AccountLayoutShell({
                   </Link>
                 )
               })}
-              <div className="pt-4 mt-4 border-t border-border">
+              <div className="mt-0 border-l border-border pl-2 lg:mt-4 lg:border-l-0 lg:border-t lg:pl-0 lg:pt-4">
                 <button
                   type="button"
                   onClick={() => void handleSignOut()}
                   disabled={isSigningOut}
-                  className="flex items-center gap-4 px-4 py-3 text-sm tracking-wide text-muted-foreground hover:text-foreground transition-colors w-full disabled:opacity-60"
+                  className="flex min-w-max items-center gap-3 px-4 py-3 text-sm tracking-wide text-muted-foreground transition-colors hover:text-foreground disabled:opacity-60 lg:w-full"
                 >
                   <LogOut className="h-4 w-4" strokeWidth={1} />
                   {isSigningOut ? "Signing Out..." : "Sign Out"}

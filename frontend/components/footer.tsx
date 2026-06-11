@@ -36,11 +36,11 @@ export function Footer({ storeSlug, storeName }: FooterProps) {
 
   return (
     <footer className="border-t border-border bg-foreground text-background">
-      <div className="mx-auto max-w-7xl px-6 py-24 lg:px-8 lg:py-32">
+      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-32">
         <div className="grid grid-cols-1 gap-16 lg:grid-cols-12 lg:gap-8">
           <div className="lg:col-span-5">
             <Link href={homeHref} className="inline-block">
-              <span className="font-serif text-3xl font-light tracking-[0.4em] text-background">
+              <span className="block max-w-full break-words font-serif text-2xl font-light tracking-[0.28em] text-background sm:text-3xl sm:tracking-[0.4em]">
                 {displayName}
               </span>
             </Link>
@@ -56,7 +56,7 @@ export function Footer({ storeSlug, storeName }: FooterProps) {
               <p className="mt-3 text-sm text-background/50">
                 Subscription consent should be handled through the account preference flows.
               </p>
-              <form className="mt-6 flex">
+              <form className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <Input
                   type="email"
                   placeholder="Your email address"
@@ -64,8 +64,7 @@ export function Footer({ storeSlug, storeName }: FooterProps) {
                 />
                 <Button
                   type="submit"
-                  size="icon"
-                  className="h-14 w-14 bg-background text-foreground hover:bg-background/90"
+                  className="h-14 w-full bg-background text-foreground hover:bg-background/90 sm:w-14 sm:px-0"
                 >
                   <ArrowRight className="h-5 w-5" strokeWidth={1} />
                   <span className="sr-only">Subscribe</span>
@@ -74,7 +73,7 @@ export function Footer({ storeSlug, storeName }: FooterProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-8 lg:col-span-7">
+          <div className="grid grid-cols-1 gap-10 sm:grid-cols-3 lg:col-span-7 lg:gap-8">
             {Object.entries(footerLinks).map(([section, links]) => (
               <div key={section}>
                 <h3 className="text-[10px] font-normal uppercase tracking-[0.3em] text-background/80">
@@ -97,11 +96,11 @@ export function Footer({ storeSlug, storeName }: FooterProps) {
           </div>
         </div>
 
-        <div className="mt-20 flex flex-col items-center justify-between gap-6 border-t border-background/10 pt-10 md:flex-row">
-          <p className="text-xs text-background/40">
+        <div className="mt-16 flex flex-col items-start justify-between gap-6 border-t border-background/10 pt-10 md:flex-row md:items-center">
+          <p className="text-xs leading-relaxed text-background/40">
             {new Date().getFullYear()} {displayName}. All rights reserved.
           </p>
-          <div className="flex gap-10">
+          <div className="flex flex-wrap gap-x-6 gap-y-3 sm:gap-10">
             <Link
               href="/privacy-policy"
               className="text-xs text-background/40 transition-colors hover:text-background"
