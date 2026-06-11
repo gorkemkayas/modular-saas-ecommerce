@@ -153,6 +153,76 @@ public sealed class AuthServiceClient : IAuthServiceClient
             errorMessage);
     }
 
+    public async Task<AuthServiceRefreshOutcome> RefreshAsync(
+        AuthServiceRefreshCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(command.RefreshToken))
+        {
+            return new AuthServiceRefreshOutcome(
+                false,
+                null,
+                null,
+                StatusCodes.Status400BadRequest,
+                "Refresh token is required.");
+        }
+
+        using var httpRequest = new HttpRequestMessage(
+            HttpMethod.Post,
+            NormalizeRelativePath(_options.RefreshPath, "api/v1/auth/refresh"));
+
+        ApplyAuthorizationHeader(httpRequest);
+
+        httpRequest.Content = JsonContent.Create(
+            new AuthServiceRefreshRequest(command.RefreshToken),
+            options: JsonOptions);
+
+        using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var payload = TryExtractLoginResponse(responseContent);
+            var refreshToken = payload?.RefreshToken ?? TryExtractRefreshTokenFromSetCookie(response);
+
+            if (payload is null || string.IsNullOrWhiteSpace(payload.Token))
+            {
+                _logger.LogError(
+                    "Auth service returned an invalid refresh response. Response: {ResponseContent}",
+                    string.IsNullOrWhiteSpace(responseContent) ? "<empty>" : responseContent);
+
+                return new AuthServiceRefreshOutcome(
+                    false,
+                    null,
+                    null,
+                    StatusCodes.Status502BadGateway,
+                    "Auth service returned an invalid refresh response.");
+            }
+
+            return new AuthServiceRefreshOutcome(
+                true,
+                payload.Token,
+                refreshToken,
+                (int)response.StatusCode,
+                null);
+        }
+
+        var errorMessage = TryExtractErrorMessage(responseContent)
+            ?? "Auth service refresh failed.";
+
+        _logger.LogWarning(
+            "Auth service refresh failed | StatusCode: {StatusCode} | Error: {Error}",
+            (int)response.StatusCode,
+            errorMessage);
+
+        return new AuthServiceRefreshOutcome(
+            false,
+            null,
+            null,
+            (int)response.StatusCode,
+            errorMessage);
+    }
+
     private void ApplyAuthorizationHeader(HttpRequestMessage httpRequest)
     {
         if (!string.IsNullOrWhiteSpace(_options.ApiKey))
@@ -383,6 +453,9 @@ public sealed class AuthServiceClient : IAuthServiceClient
         string Password,
         int TenantId,
         bool IsPersistent);
+
+    private sealed record AuthServiceRefreshRequest(
+        string RefreshToken);
 
     private sealed record AuthServiceRegisterResponse(
         Guid TenantUserId,

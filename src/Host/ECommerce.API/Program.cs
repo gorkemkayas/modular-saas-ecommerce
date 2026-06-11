@@ -8,6 +8,7 @@ using Notification.Infrastructure.DependencyInjection;
 using Order.Infrastructure.Persistence;
 using Scalar.AspNetCore;
 using Serilog;
+using Subscription.Infrastructure.DependencyInjection;
 using System.Text.Json.Serialization;
 using System.Data;
 using Microsoft.OpenApi;
@@ -80,6 +81,7 @@ try
 
     // Add services to the container.
     builder.Services.Configure<FrontendOptions>(builder.Configuration.GetSection("Frontend"));
+    builder.Services.AddConfiguredDataProtection(builder.Configuration);
     builder.Services.AddJwtAuthentication(builder.Configuration);
     builder.Services.AddRequestContexts();
     builder.Services.AddAuthServiceIntegration(builder.Configuration);
@@ -93,6 +95,7 @@ try
     builder.Services.AddPricingModule(builder.Configuration);
     builder.Services.AddShipmentModule(builder.Configuration);
     builder.Services.AddStoreModule(builder.Configuration);
+    builder.Services.AddSubscriptionModule(builder.Configuration);
     builder.Services.AddMediatR(cfg =>
     {
         cfg.RegisterServicesFromAssembly(typeof(Catalog.Application.AssemblyReference).Assembly);
@@ -104,6 +107,7 @@ try
         cfg.RegisterServicesFromAssembly(typeof(Pricing.Application.AssemblyReference).Assembly);
         cfg.RegisterServicesFromAssembly(typeof(Shipment.Application.AssemblyReference).Assembly);
         cfg.RegisterServicesFromAssembly(typeof(Store.Application.AssemblyReference).Assembly);
+        cfg.RegisterServicesFromAssembly(typeof(Subscription.Application.AssemblyReference).Assembly);
         cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
     });
 
@@ -148,6 +152,7 @@ try
     builder.Services.AddExceptionHandler<PricingExceptionHandler>();
     builder.Services.AddExceptionHandler<ShipmentExceptionHandler>();
     builder.Services.AddExceptionHandler<StoreExceptionHandler>();
+    builder.Services.AddExceptionHandler<SubscriptionExceptionHandler>();
     builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
     builder.Services.AddProblemDetails();
 
@@ -159,6 +164,7 @@ try
     }
 
     await app.Services.SeedNotificationDefaultsAsync();
+    await app.Services.SeedSubscriptionDefaultsAsync();
 
     // Serilog HTTP Request Logging
     app.UseEnrichedSerilogRequestLogging();

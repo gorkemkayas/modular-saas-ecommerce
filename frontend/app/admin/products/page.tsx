@@ -4,8 +4,13 @@ import { AdminErrorState } from "@/components/admin/admin-error-state"
 import { AdminPagination } from "@/components/admin/admin-pagination"
 import { searchProducts } from "@/lib/api/admin"
 import { getApiErrorMessage } from "@/lib/api/error-message"
+import {
+  formatSubscriptionLimit,
+  getCurrentSubscriptionOrNull,
+  getSubscriptionQuotaLimit,
+  subscriptionQuotaKeys,
+} from "@/lib/api/subscription"
 import { formatDateTime, formatEnumLabel } from "@/lib/admin-format"
-import { withQuery } from "@/lib/config"
 
 type Props = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
@@ -44,15 +49,27 @@ export default async function AdminProductsPage({ searchParams }: Props) {
   const page = getPage(resolvedSearchParams)
 
   try {
-    const result = await searchProducts({
-      searchTerm: query || undefined,
-      status: status || undefined,
-      isPublished:
-        published === "true" ? true : published === "false" ? false : undefined,
-      pageNumber: page,
-      pageSize: 12,
-    })
+    const [result, subscription, draftProducts, activeProducts] = await Promise.all([
+      searchProducts({
+        searchTerm: query || undefined,
+        status: status || undefined,
+        isPublished:
+          published === "true" ? true : published === "false" ? false : undefined,
+        pageNumber: page,
+        pageSize: 12,
+      }),
+      getCurrentSubscriptionOrNull(),
+      searchProducts({ status: "Draft", pageNumber: 1, pageSize: 1 }),
+      searchProducts({ status: "Active", pageNumber: 1, pageSize: 1 }),
+    ])
 
+    const currentProductCount = draftProducts.totalCount + activeProducts.totalCount
+    const productLimit = getSubscriptionQuotaLimit(
+      subscription,
+      subscriptionQuotaKeys.catalogProducts,
+    )
+    const productLimitReached =
+      typeof productLimit === "number" && currentProductCount >= productLimit
     const publishedCount = result.items.filter((product) => product.isPublished).length
     const draftCount = result.items.filter(
       (product) => product.productStatus === "Draft",
@@ -76,14 +93,31 @@ export default async function AdminProductsPage({ searchParams }: Props) {
                 jump into richer detail or editing flows without losing context.
               </p>
             </div>
-            <Link
-              href="/admin/products/create"
-              className="inline-flex items-center justify-center bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              New Product
-            </Link>
+            {productLimitReached ? (
+              <span className="inline-flex items-center justify-center bg-muted px-6 py-3 text-sm font-medium text-muted-foreground">
+                Product Limit Reached
+              </span>
+            ) : (
+              <Link
+                href="/admin/products/create"
+                className="inline-flex items-center justify-center bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                New Product
+              </Link>
+            )}
           </div>
         </div>
+
+        {typeof productLimit === "number" ? (
+          <div className="border border-border bg-secondary/35 px-5 py-4 text-sm text-muted-foreground">
+            Product usage:{" "}
+            <span className="text-foreground">{currentProductCount}</span>
+            {" / "}
+            <span className="text-foreground">
+              {formatSubscriptionLimit(productLimit)}
+            </span>
+          </div>
+        ) : null}
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <div className="border border-border bg-background/80 p-5">

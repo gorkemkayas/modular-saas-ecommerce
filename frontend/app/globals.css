@@ -146,3 +146,44 @@
 .premium-link:hover::after {
   width: 100%;
 }
+
+@keyframes store-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.store-marquee-track {
+  animation: store-marquee 52s linear infinite;
+}
+
+.store-marquee-track:hover {
+  animation-play-state: paused;
+}
+
+.store-marquee-shell {
+  position: relative;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 12%,
+    black 88%,
+    transparent
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 12%,
+    black 88%,
+    transparent
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .store-marquee-track {
+    animation: none;
+  }
+}

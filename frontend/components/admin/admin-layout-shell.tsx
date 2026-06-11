@@ -21,6 +21,7 @@ import {
   Menu,
   LogOut,
   Store,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react"
 import { useState } from "react"
@@ -43,6 +44,7 @@ type NavigationLink = {
 const navigation: Array<NavigationDivider | NavigationLink> = [
   { type: "link", name: "Dashboard", href: "", icon: LayoutDashboard },
   { type: "link", name: "Store Settings", href: "/store-settings", icon: Store },
+  { type: "link", name: "Subscription", href: "/subscription", icon: Sparkles },
   { type: "divider", label: "Catalog" },
   { type: "link", name: "Products", href: "/products", icon: Package },
   { type: "link", name: "Categories", href: "/categories", icon: FolderTree },

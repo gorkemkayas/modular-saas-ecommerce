@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Notification.Application.Abstractions.Queries;
 using Notification.Application.Common.Models;
+using Notification.Application.Feedbacks.DTOs;
 using Notification.Application.Notifications.DTOs;
 using Notification.Infrastructure.Persistence;
 
@@ -138,6 +139,22 @@ public sealed class NotificationReadService : INotificationReadService
             criteria.PageNumber,
             criteria.PageSize,
             totalCount);
+    }
+
+    public async Task<IReadOnlyCollection<ContactFeedbackDto>> ListContactFeedbacksAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.ContactFeedbacks
+            .AsNoTracking()
+            .OrderByDescending(x => x.CreatedAtUtc)
+            .Select(x => new ContactFeedbackDto(
+                x.Id,
+                x.FullName,
+                x.Subject,
+                x.Message,
+                x.Source,
+                x.CreatedAtUtc))
+            .ToArrayAsync(cancellationToken);
     }
 
     private static NotificationDispatchDto MapDispatch(Domain.Entities.NotificationDispatch dispatch)

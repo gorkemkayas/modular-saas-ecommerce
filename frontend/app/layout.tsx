@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Inter, Cormorant_Garamond } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
+import { Toaster } from "@/components/ui/toaster"
 import { StoreProvider } from "@/lib/store-context"
 import "./globals.css"
 
@@ -30,10 +31,12 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${inter.variable} ${cormorant.variable} bg-background`}
     >
       <body className="font-sans antialiased">
         <StoreProvider>{children}</StoreProvider>
+        <Toaster />
         {process.env.NODE_ENV === "production" && <Analytics />}
       </body>
     </html>

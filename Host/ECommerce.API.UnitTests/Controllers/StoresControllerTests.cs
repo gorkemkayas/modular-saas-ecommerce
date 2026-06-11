@@ -1,6 +1,7 @@
-﻿using BuildingBlocks.Application.Abstractions.Tenancy;
+using BuildingBlocks.Application.Abstractions.Tenancy;
 using ECommerce.API.Contracts.Store.UpdateStoreProfile;
 using ECommerce.API.Controllers.Store;
+using ECommerce.API.Integrations.Media;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -41,7 +42,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockTenantContext = new Mock<ITenantContext>();
             mockTenantContext.Setup(x => x.TenantIdAsGuid).Returns(tenantId);
             mockSender.Setup(x => x.Send(It.IsAny<GetStoreByTenantIdQuery>(), It.IsAny<CancellationToken>())).ReturnsAsync((StoreDto? )null);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             var cancellationToken = CancellationToken.None;
             // Act
             var result = await controller.GetStore(cancellationToken);
@@ -64,7 +65,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockTenantContext = new Mock<ITenantContext>();
             mockTenantContext.Setup(x => x.TenantIdAsGuid).Returns(tenantId);
             mockSender.Setup(x => x.Send(It.IsAny<UnpublishStoreCommand>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             var cancellationToken = CancellationToken.None;
             // Act
             var result = await controller.UnpublishStore(cancellationToken);
@@ -88,7 +89,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockTenantContext = new Mock<ITenantContext>();
             mockTenantContext.Setup(x => x.TenantIdAsGuid).Returns(tenantId);
             mockSender.Setup(x => x.Send(It.IsAny<UnpublishStoreCommand>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             var cancellationToken = CancellationToken.None;
             // Act
             var result = await controller.UnpublishStore(cancellationToken);
@@ -108,7 +109,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockSender = new Mock<ISender>();
             var mockTenantContext = new Mock<ITenantContext>();
             // Act
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             // Assert
             Assert.IsNotNull(controller);
             Assert.IsInstanceOfType(controller, typeof(StoresController));
@@ -126,7 +127,7 @@ namespace ECommerce.API.Controllers.UnitTests
             ISender? nullSender = null;
             var mockTenantContext = new Mock<ITenantContext>();
             // Act
-            var controller = new StoresController(nullSender!, mockTenantContext.Object);
+            var controller = new StoresController(nullSender!, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             // Assert
             Assert.IsNotNull(controller);
         }
@@ -143,7 +144,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockSender = new Mock<ISender>();
             ITenantContext? nullTenantContext = null;
             // Act
-            var controller = new StoresController(mockSender.Object, nullTenantContext!);
+            var controller = new StoresController(mockSender.Object, nullTenantContext!, Mock.Of<IProductMediaStorageService>());
             // Assert
             Assert.IsNotNull(controller);
         }
@@ -160,7 +161,7 @@ namespace ECommerce.API.Controllers.UnitTests
             ISender? nullSender = null;
             ITenantContext? nullTenantContext = null;
             // Act
-            var controller = new StoresController(nullSender!, nullTenantContext!);
+            var controller = new StoresController(nullSender!, nullTenantContext!, Mock.Of<IProductMediaStorageService>());
             // Assert
             Assert.IsNotNull(controller);
         }
@@ -179,7 +180,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockTenantContext = new Mock<ITenantContext>();
             mockTenantContext.Setup(x => x.TenantIdAsGuid).Returns(tenantId);
             mockSender.Setup(x => x.Send(It.IsAny<ChangeStoreSlugCommand>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             // Act
             var result = await controller.ChangeStoreSlug(newSlug, cancellationToken);
             // Assert
@@ -202,7 +203,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockTenantContext = new Mock<ITenantContext>();
             mockTenantContext.Setup(x => x.TenantIdAsGuid).Returns(tenantId);
             mockSender.Setup(x => x.Send(It.IsAny<ChangeStoreSlugCommand>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             // Act
             var result = await controller.ChangeStoreSlug(newSlug, cancellationToken);
             // Assert
@@ -225,7 +226,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockTenantContext = new Mock<ITenantContext>();
             mockTenantContext.Setup(x => x.TenantIdAsGuid).Returns(tenantId);
             mockSender.Setup(x => x.Send(It.IsAny<ChangeStoreSlugCommand>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             // Act
             var result = await controller.ChangeStoreSlug(newSlug, cancellationToken);
             // Assert
@@ -248,7 +249,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockTenantContext = new Mock<ITenantContext>();
             mockTenantContext.Setup(x => x.TenantIdAsGuid).Returns(tenantId);
             mockSender.Setup(x => x.Send(It.IsAny<ChangeStoreSlugCommand>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             // Act
             var result = await controller.ChangeStoreSlug(newSlug, cancellationToken);
             // Assert
@@ -271,7 +272,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockTenantContext = new Mock<ITenantContext>();
             mockTenantContext.Setup(x => x.TenantIdAsGuid).Returns(tenantId);
             mockSender.Setup(x => x.Send(It.IsAny<ChangeStoreSlugCommand>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             // Act
             var result = await controller.ChangeStoreSlug(newSlug, cancellationToken);
             // Assert
@@ -294,7 +295,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockTenantContext = new Mock<ITenantContext>();
             mockTenantContext.Setup(x => x.TenantIdAsGuid).Returns(tenantId);
             mockSender.Setup(x => x.Send(It.IsAny<ChangeStoreSlugCommand>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             // Act
             var result = await controller.ChangeStoreSlug(newSlug, cancellationToken);
             // Assert
@@ -318,7 +319,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockTenantContext = new Mock<ITenantContext>();
             mockTenantContext.Setup(x => x.TenantIdAsGuid).Returns(tenantId);
             mockSender.Setup(x => x.Send(It.IsAny<ChangeStoreSlugCommand>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             // Act
             var result = await controller.ChangeStoreSlug(newSlug, cancellationToken);
             // Assert
@@ -341,7 +342,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockTenantContext = new Mock<ITenantContext>();
             mockTenantContext.Setup(x => x.TenantIdAsGuid).Returns(tenantId);
             mockSender.Setup(x => x.Send(It.IsAny<ChangeStoreSlugCommand>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             // Act
             var result = await controller.ChangeStoreSlug(newSlug, cancellationToken);
             // Assert
@@ -364,7 +365,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockTenantContext = new Mock<ITenantContext>();
             mockTenantContext.Setup(x => x.TenantIdAsGuid).Returns(tenantId);
             mockSender.Setup(x => x.Send(It.IsAny<ChangeStoreSlugCommand>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             // Act
             var result = await controller.ChangeStoreSlug(newSlug, cancellationToken);
             // Assert
@@ -387,7 +388,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockTenantContext = new Mock<ITenantContext>();
             mockTenantContext.Setup(x => x.TenantIdAsGuid).Returns(tenantId);
             mockSender.Setup(x => x.Send(It.IsAny<ChangeStoreSlugCommand>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             // Act
             var result = await controller.ChangeStoreSlug(newSlug, cancellationToken);
             // Assert
@@ -409,7 +410,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockSender = new Mock<ISender>();
             var mockTenantContext = new Mock<ITenantContext>();
             mockTenantContext.Setup(x => x.TenantIdAsGuid).Returns(tenantId);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             var cancellationToken = CancellationToken.None;
             // Act
             var result = await controller.PublishStore(cancellationToken);
@@ -431,7 +432,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockSender = new Mock<ISender>();
             var mockTenantContext = new Mock<ITenantContext>();
             mockTenantContext.Setup(x => x.TenantIdAsGuid).Returns(tenantId);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             var cancellationTokenSource = new CancellationTokenSource();
             var cancellationToken = cancellationTokenSource.Token;
             // Act
@@ -456,7 +457,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockSender = new Mock<ISender>();
             var mockTenantContext = new Mock<ITenantContext>();
             mockTenantContext.Setup(x => x.TenantIdAsGuid).Returns(tenantId);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             var cancellationToken = CancellationToken.None;
             // Act
             var result = await controller.PublishStore(cancellationToken);
@@ -479,7 +480,7 @@ namespace ECommerce.API.Controllers.UnitTests
             mockSender.Setup(x => x.Send(It.IsAny<PublishStoreCommand>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
             var mockTenantContext = new Mock<ITenantContext>();
             mockTenantContext.Setup(x => x.TenantIdAsGuid).Returns(tenantId);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             // Act
             var result = await controller.PublishStore(CancellationToken.None);
             // Assert
@@ -500,7 +501,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockTenantContext = new Mock<ITenantContext>();
             var cancellationToken = CancellationToken.None;
             mockSender.Setup(s => s.Send(It.Is<CheckStoreSlugAvailabilityQuery>(q => q.Slug == slug), cancellationToken)).ReturnsAsync(true);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             // Act
             var result = await controller.CheckStoreSlugAvailability(slug, cancellationToken);
             // Assert
@@ -532,7 +533,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockTenantContext = new Mock<ITenantContext>();
             var cancellationToken = CancellationToken.None;
             mockSender.Setup(s => s.Send(It.Is<CheckStoreSlugAvailabilityQuery>(q => q.Slug == slug), cancellationToken)).ReturnsAsync(false);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             // Act
             var result = await controller.CheckStoreSlugAvailability(slug, cancellationToken);
             // Assert
@@ -564,7 +565,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockTenantContext = new Mock<ITenantContext>();
             var cancellationToken = CancellationToken.None;
             mockSender.Setup(s => s.Send(It.Is<CheckStoreSlugAvailabilityQuery>(q => q.Slug == slug), cancellationToken)).ReturnsAsync(true);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             // Act
             var result = await controller.CheckStoreSlugAvailability(slug, cancellationToken);
             // Assert
@@ -598,7 +599,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockTenantContext = new Mock<ITenantContext>();
             var cancellationToken = CancellationToken.None;
             mockSender.Setup(s => s.Send(It.Is<CheckStoreSlugAvailabilityQuery>(q => q.Slug == slug), cancellationToken)).ReturnsAsync(false);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             // Act
             var result = await controller.CheckStoreSlugAvailability(slug, cancellationToken);
             // Assert
@@ -628,7 +629,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockTenantContext = new Mock<ITenantContext>();
             var cancellationToken = CancellationToken.None;
             mockSender.Setup(s => s.Send(It.Is<CheckStoreSlugAvailabilityQuery>(q => q.Slug == slug), cancellationToken)).ReturnsAsync(true);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             // Act
             var result = await controller.CheckStoreSlugAvailability(slug, cancellationToken);
             // Assert
@@ -660,7 +661,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockTenantContext = new Mock<ITenantContext>();
             var cancellationToken = CancellationToken.None;
             mockSender.Setup(s => s.Send(It.Is<CheckStoreSlugAvailabilityQuery>(q => q.Slug == slug), cancellationToken)).ReturnsAsync(false);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             // Act
             var result = await controller.CheckStoreSlugAvailability(slug, cancellationToken);
             // Assert
@@ -695,7 +696,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var cancellationTokenSource = new CancellationTokenSource();
             var cancellationToken = cancellationTokenSource.Token;
             mockSender.Setup(s => s.Send(It.IsAny<CheckStoreSlugAvailabilityQuery>(), cancellationToken)).ReturnsAsync(true);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             // Act
             var result = await controller.CheckStoreSlugAvailability(slug, cancellationToken);
             // Assert
@@ -724,7 +725,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockTenantContext = new Mock<ITenantContext>();
             var cancellationToken = CancellationToken.None;
             mockSender.Setup(s => s.Send(It.Is<CheckStoreSlugAvailabilityQuery>(q => q.Slug == slug), cancellationToken)).ReturnsAsync(isAvailable);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             // Act
             var result = await controller.CheckStoreSlugAvailability(slug, cancellationToken);
             // Assert
@@ -754,7 +755,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockSender = new Mock<ISender>();
             var mockTenantContext = new Mock<ITenantContext>();
             mockTenantContext.Setup(x => x.TenantIdAsGuid).Returns(tenantId);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             var request = new UpdateStoreProfileRequest("Test Store", "Test Description", "https://example.com/logo.png");
             var cancellationToken = CancellationToken.None;
             mockSender.Setup(x => x.Send(It.IsAny<UpdateStoreProfileCommand>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(Unit.Value));
@@ -784,7 +785,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockSender = new Mock<ISender>();
             var mockTenantContext = new Mock<ITenantContext>();
             mockTenantContext.Setup(x => x.TenantIdAsGuid).Returns(tenantId);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             var request = new UpdateStoreProfileRequest(name, description, logoUrl);
             var cancellationToken = CancellationToken.None;
             mockSender.Setup(x => x.Send(It.IsAny<UpdateStoreProfileCommand>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(Unit.Value));
@@ -811,7 +812,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockSender = new Mock<ISender>();
             var mockTenantContext = new Mock<ITenantContext>();
             mockTenantContext.Setup(x => x.TenantIdAsGuid).Returns(tenantId);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             var request = new UpdateStoreProfileRequest(name, null, null);
             var cancellationToken = CancellationToken.None;
             mockSender.Setup(x => x.Send(It.IsAny<UpdateStoreProfileCommand>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(Unit.Value));
@@ -834,7 +835,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockSender = new Mock<ISender>();
             var mockTenantContext = new Mock<ITenantContext>();
             mockTenantContext.Setup(x => x.TenantIdAsGuid).Returns(tenantId);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             var longName = new string ('A', 10000);
             var longDescription = new string ('B', 10000);
             var longLogoUrl = "https://example.com/" + new string ('C', 10000);
@@ -860,7 +861,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockSender = new Mock<ISender>();
             var mockTenantContext = new Mock<ITenantContext>();
             mockTenantContext.Setup(x => x.TenantIdAsGuid).Returns(expectedTenantId);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             var request = new UpdateStoreProfileRequest("Store Name", null, null);
             var cancellationToken = CancellationToken.None;
             mockSender.Setup(x => x.Send(It.IsAny<UpdateStoreProfileCommand>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(Unit.Value));
@@ -882,7 +883,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockSender = new Mock<ISender>();
             var mockTenantContext = new Mock<ITenantContext>();
             mockTenantContext.Setup(x => x.TenantIdAsGuid).Returns(tenantId);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             var request = new UpdateStoreProfileRequest("Store Name", null, null);
             var cancellationTokenSource = new CancellationTokenSource();
             var cancellationToken = cancellationTokenSource.Token;
@@ -908,7 +909,7 @@ namespace ECommerce.API.Controllers.UnitTests
             var mockSender = new Mock<ISender>();
             var mockTenantContext = new Mock<ITenantContext>();
             mockTenantContext.Setup(x => x.TenantIdAsGuid).Returns(tenantId);
-            var controller = new StoresController(mockSender.Object, mockTenantContext.Object);
+            var controller = new StoresController(mockSender.Object, mockTenantContext.Object, Mock.Of<IProductMediaStorageService>());
             var request = new UpdateStoreProfileRequest("Store Name", null, logoUrl);
             var cancellationToken = CancellationToken.None;
             mockSender.Setup(x => x.Send(It.IsAny<UpdateStoreProfileCommand>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(Unit.Value));
@@ -922,7 +923,7 @@ namespace ECommerce.API.Controllers.UnitTests
 
         /// <summary>
         /// Tests that SuggestAvailableSlug correctly formats the response
-        /// with the Slug property containing the SlugSuggestionDto.
+        /// with the suggested slug value.
         /// </summary>
         [TestMethod]
         public async Task SuggestAvailableSlug_ValidSlug_ReturnsCorrectResponseStructure()
@@ -934,19 +935,16 @@ namespace ECommerce.API.Controllers.UnitTests
             Mock<ISender> senderMock = new Mock<ISender>();
             Mock<ITenantContext> tenantContextMock = new Mock<ITenantContext>();
             senderMock.Setup(s => s.Send(It.IsAny<SuggestAvailableSlugQuery>(), It.IsAny<CancellationToken>())).ReturnsAsync(expectedSuggestion);
-            StoresController controller = new StoresController(senderMock.Object, tenantContextMock.Object);
+            StoresController controller = new StoresController(senderMock.Object, tenantContextMock.Object, Mock.Of<IProductMediaStorageService>());
             CancellationToken cancellationToken = CancellationToken.None;
             // Act
             IActionResult result = await controller.SuggestAvailableSlug(inputSlug, cancellationToken);
             // Assert
             OkObjectResult okResult = (OkObjectResult)result;
             Assert.IsNotNull(okResult.Value);
-            Type valueType = okResult.Value!.GetType();
-            System.Reflection.PropertyInfo? slugProperty = valueType.GetProperty("Slug");
-            Assert.IsNotNull(slugProperty);
-            object? slugValue = slugProperty.GetValue(okResult.Value);
-            Assert.IsInstanceOfType<SlugSuggestionDto>(slugValue);
-            Assert.AreEqual(expectedSuggestion, slugValue);
+            Assert.IsInstanceOfType<SlugSuggestionDto>(okResult.Value);
+            var response = (SlugSuggestionDto)okResult.Value!;
+            Assert.AreEqual(suggestedSlugValue, response.Slug);
         }
 
     }

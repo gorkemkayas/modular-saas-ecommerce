@@ -20,6 +20,10 @@ using Store.Application.Stores.Queries.GetStoreBySlug;
 using Store.Application.Stores.Queries.GetStoreByTenantId;
 using Store.Application.Stores.Queries.SuggestAvailableSlug;
 using Store.Domain.Stores;
+using Subscription.Application.Commands.ProvisionTenantSubscription;
+using Subscription.Application.DTOs;
+using Subscription.Application.Queries.GetPublicPlans;
+using Subscription.Contracts;
 
 namespace ECommerce.API.Controllers.Store.Admin.UnitTests;
 
@@ -41,6 +45,27 @@ public sealed class AdminStoresControllerTests
 
     private static AdminStoresController CreateController(ISender sender)
         => new(sender, CreateConfiguration());
+
+    private static IReadOnlyCollection<PlanDto> CreatePublicPlans()
+    {
+        return
+        [
+            new(
+                SubscriptionPlanCodes.Starter,
+                "Starter",
+                "Starter plan",
+                10,
+                Array.Empty<PlanFeatureDto>(),
+                Array.Empty<PlanQuotaDto>()),
+            new(
+                SubscriptionPlanCodes.Growth,
+                "Growth",
+                "Growth plan",
+                20,
+                Array.Empty<PlanFeatureDto>(),
+                Array.Empty<PlanQuotaDto>())
+        ];
+    }
 
     /// <summary>
     /// Tests that GetStoreByTenantId returns OkObjectResult with the store when the store exists.
@@ -576,11 +601,21 @@ public sealed class AdminStoresControllerTests
             .ReturnsAsync(new SlugSuggestionDto(suggestedSlug));
 
         mockSender
+            .Setup(s => s.Send(It.IsAny<GetPublicPlansQuery>(), cancellationToken))
+            .ReturnsAsync(CreatePublicPlans());
+
+        mockSender
             .Setup(s => s.Send(It.Is<ProvisionStoreForTenantCommand>(
                     c => c.TenantId == TenantIdConverter.ToGuid(tenantId)
                       && c.Name == request.Name
                       && c.Slug == suggestedSlug), cancellationToken))
             .ReturnsAsync(expectedStoreId);
+
+        mockSender
+            .Setup(s => s.Send(It.Is<ProvisionTenantSubscriptionCommand>(
+                    c => c.TenantId == TenantIdConverter.ToGuid(tenantId)
+                      && c.PlanCode == SubscriptionPlanCodes.Starter), cancellationToken))
+            .ReturnsAsync(Guid.NewGuid());
 
         // Act
         var result = await controller.ProvisionStoreForTenant(tenantId, request, cancellationToken, ValidAuthHeader);
@@ -593,8 +628,14 @@ public sealed class AdminStoresControllerTests
         Assert.IsNotNull(createdResult.RouteValues);
         Assert.IsTrue(createdResult.RouteValues.ContainsKey("storeId"));
         Assert.AreEqual(expectedStoreId, createdResult.RouteValues["storeId"]);
-        Assert.IsNull(createdResult.Value);
+        Assert.IsNotNull(createdResult.Value);
+        Assert.IsInstanceOfType<ProvisionStoreForTenantResponse>(createdResult.Value);
+        var response = (ProvisionStoreForTenantResponse)createdResult.Value;
+        Assert.AreEqual(expectedStoreId.ToString(), response.StoreId);
+        Assert.AreEqual(suggestedSlug, response.StoreSlug);
         mockSender.Verify(s => s.Send(It.Is<SuggestAvailableSlugQuery>(q => q.Name == request.Name), cancellationToken), Times.Once);
+        mockSender.Verify(s => s.Send(It.IsAny<GetPublicPlansQuery>(), cancellationToken), Times.Once);
+        mockSender.Verify(s => s.Send(It.IsAny<ProvisionTenantSubscriptionCommand>(), cancellationToken), Times.Once);
     }
 
     /// <summary>
@@ -625,9 +666,17 @@ public sealed class AdminStoresControllerTests
             .ReturnsAsync(new SlugSuggestionDto(suggestedSlug));
 
         mockSender
+            .Setup(s => s.Send(It.IsAny<GetPublicPlansQuery>(), cancellationToken))
+            .ReturnsAsync(CreatePublicPlans());
+
+        mockSender
             .Setup(s => s.Send(It.IsAny<ProvisionStoreForTenantCommand>(), cancellationToken))
             .Callback<IRequest<Guid>, CancellationToken>((cmd, ct) => capturedCommand = cmd as ProvisionStoreForTenantCommand)
             .ReturnsAsync(expectedStoreId);
+
+        mockSender
+            .Setup(s => s.Send(It.IsAny<ProvisionTenantSubscriptionCommand>(), cancellationToken))
+            .ReturnsAsync(Guid.NewGuid());
 
         // Act
         await controller.ProvisionStoreForTenant(tenantId, request, cancellationToken, ValidAuthHeader);
@@ -639,6 +688,7 @@ public sealed class AdminStoresControllerTests
         Assert.AreEqual(suggestedSlug, capturedCommand.Slug);
         mockSender.Verify(s => s.Send(It.Is<SuggestAvailableSlugQuery>(q => q.Name == name), cancellationToken), Times.Once);
         mockSender.Verify(s => s.Send(It.IsAny<ProvisionStoreForTenantCommand>(), cancellationToken), Times.Once);
+        mockSender.Verify(s => s.Send(It.IsAny<ProvisionTenantSubscriptionCommand>(), cancellationToken), Times.Once);
     }
 
     /// <summary>
@@ -670,9 +720,17 @@ public sealed class AdminStoresControllerTests
             .ReturnsAsync(new SlugSuggestionDto(suggestedSlug));
 
         mockSender
+            .Setup(s => s.Send(It.IsAny<GetPublicPlansQuery>(), cancellationToken))
+            .ReturnsAsync(CreatePublicPlans());
+
+        mockSender
             .Setup(s => s.Send(It.IsAny<ProvisionStoreForTenantCommand>(), cancellationToken))
             .Callback<IRequest<Guid>, CancellationToken>((cmd, ct) => capturedCommand = cmd as ProvisionStoreForTenantCommand)
             .ReturnsAsync(expectedStoreId);
+
+        mockSender
+            .Setup(s => s.Send(It.IsAny<ProvisionTenantSubscriptionCommand>(), cancellationToken))
+            .ReturnsAsync(Guid.NewGuid());
 
         // Act
         await controller.ProvisionStoreForTenant(tenantId, request, cancellationToken, ValidAuthHeader);
@@ -703,11 +761,19 @@ public sealed class AdminStoresControllerTests
             .ReturnsAsync(new SlugSuggestionDto(suggestedSlug));
 
         mockSender
+            .Setup(s => s.Send(It.IsAny<GetPublicPlansQuery>(), cancellationToken))
+            .ReturnsAsync(CreatePublicPlans());
+
+        mockSender
             .Setup(s => s.Send(It.Is<ProvisionStoreForTenantCommand>(
                     c => c.TenantId == TenantIdConverter.ToGuid(tenantId)
                       && c.Name == request.Name
                       && c.Slug == suggestedSlug), cancellationToken))
             .ReturnsAsync(Guid.Empty);
+
+        mockSender
+            .Setup(s => s.Send(It.IsAny<ProvisionTenantSubscriptionCommand>(), cancellationToken))
+            .ReturnsAsync(Guid.NewGuid());
 
         // Act
         var result = await controller.ProvisionStoreForTenant(tenantId, request, cancellationToken, ValidAuthHeader);
@@ -717,6 +783,11 @@ public sealed class AdminStoresControllerTests
         Assert.IsInstanceOfType<CreatedAtActionResult>(result);
         var createdResult = (CreatedAtActionResult)result;
         Assert.AreEqual(Guid.Empty, createdResult.RouteValues?["storeId"]);
+        Assert.IsNotNull(createdResult.Value);
+        Assert.IsInstanceOfType<ProvisionStoreForTenantResponse>(createdResult.Value);
+        var response = (ProvisionStoreForTenantResponse)createdResult.Value;
+        Assert.AreEqual(Guid.Empty.ToString(), response.StoreId);
+        Assert.AreEqual(suggestedSlug, response.StoreSlug);
     }
 
     /// <summary>

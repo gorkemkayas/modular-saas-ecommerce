@@ -1,4 +1,5 @@
 using Notification.Application.Common.Models;
+using Notification.Application.Feedbacks.DTOs;
 using Notification.Application.Notifications.DTOs;
 using Notification.Domain.Enums;
 
@@ -25,5 +26,8 @@ public interface INotificationReadService
 
     Task<PagedResult<NotificationDispatchSummaryDto>> SearchDispatchesAsync(
         NotificationDispatchSearchCriteria criteria,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyCollection<ContactFeedbackDto>> ListContactFeedbacksAsync(
         CancellationToken cancellationToken = default);
 }

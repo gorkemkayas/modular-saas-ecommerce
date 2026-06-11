@@ -19,6 +19,21 @@ export interface StorefrontSearchParams {
   pageSize?: number
 }
 
+export interface StorefrontStoreSummaryDto {
+  tenantId: string
+  name: string
+  slug: string
+  logoUrl: string | null
+}
+
+export async function getPublishedStorefrontStores(
+  limit = 16,
+): Promise<StorefrontStoreSummaryDto[]> {
+  return fetchJson<StorefrontStoreSummaryDto[]>(
+    withQuery("/api/storefront/stores", { limit }),
+  )
+}
+
 export async function getStorefront(storeSlug: string): Promise<StorefrontDto> {
   return fetchJson<StorefrontDto>(`/api/storefront/${storeSlug}`)
 }

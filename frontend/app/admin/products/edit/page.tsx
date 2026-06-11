@@ -9,6 +9,7 @@ import {
   searchBrands,
 } from "@/lib/api/admin"
 import { getApiErrorMessage } from "@/lib/api/error-message"
+import { getCurrentSubscriptionOrNull } from "@/lib/api/subscription"
 
 type Props = {
   searchParams: Promise<{ id?: string }>
@@ -22,11 +23,12 @@ export default async function EditProductPage({ searchParams }: Props) {
   }
 
   try {
-    const [brands, categories, product, attributes] = await Promise.all([
+    const [brands, categories, product, attributes, subscription] = await Promise.all([
       searchBrands(),
       getCategoryTree(),
       getProductById(id),
       listAttributeDefinitions(true),
+      getCurrentSubscriptionOrNull(),
     ])
 
     return (
@@ -35,6 +37,7 @@ export default async function EditProductPage({ searchParams }: Props) {
         categories={categories}
         attributes={attributes}
         initialProduct={product}
+        subscription={subscription}
       />
     )
   } catch (error) {

@@ -30,6 +30,7 @@ import AdminShipmentDetailPage from "@/app/admin/shipments/[id]/page"
 import AdminStockMovementsPage from "@/app/admin/stock-movements/page"
 import AdminStoreSettingsPage from "@/app/admin/store-settings/page"
 import AdminStoreSettingsSlugPage from "@/app/admin/store-settings/slug/page"
+import AdminSubscriptionPage from "@/app/admin/subscription/page"
 import { getAdminPath } from "@/lib/admin-path"
 
 type Props = {
@@ -77,6 +78,8 @@ export default async function StoreAdminRouter(props: Props) {
         return <AdminStockMovementsPage searchParams={searchParams} />
       case "store-settings":
         return <AdminStoreSettingsPage />
+      case "subscription":
+        return <AdminSubscriptionPage />
       default:
         notFound()
     }

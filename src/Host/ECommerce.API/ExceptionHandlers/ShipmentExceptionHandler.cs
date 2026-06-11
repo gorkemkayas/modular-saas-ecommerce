@@ -47,6 +47,7 @@ public sealed class ShipmentExceptionHandler : IExceptionHandler
             Shipment.Application.Exceptions.ShipmentDispatchNotAllowedException => (StatusCodes.Status400BadRequest, "Shipment Dispatch Not Allowed"),
             Shipment.Application.Exceptions.ShipmentCancellationNotAllowedException => (StatusCodes.Status400BadRequest, "Shipment Cancellation Not Allowed"),
             Shipment.Application.Exceptions.ShipmentValidationException => (StatusCodes.Status400BadRequest, "Shipment Validation Error"),
+            Shipment.Application.Exceptions.ShippingCarrierQuotaExceededException => (StatusCodes.Status403Forbidden, "Shipping Carrier Quota Exceeded"),
             Shipment.Application.Exceptions.UnauthorizedShipmentAccessException => (StatusCodes.Status403Forbidden, "Unauthorized Shipment Access"),
             ShipmentDomainException => (StatusCodes.Status400BadRequest, "Shipment Domain Rule Violation"),
             ApplicationException => (StatusCodes.Status400BadRequest, "Shipment Application Error"),
@@ -72,6 +73,14 @@ public sealed class ShipmentExceptionHandler : IExceptionHandler
         {
             problemDetails.Extensions["exceptionType"] = exception.GetType().FullName;
             problemDetails.Extensions["stackTrace"] = exception.StackTrace;
+        }
+
+        if (exception is Shipment.Application.Exceptions.ShippingCarrierQuotaExceededException quotaExceeded)
+        {
+            problemDetails.Extensions["storeId"] = quotaExceeded.StoreId;
+            problemDetails.Extensions["quotaKey"] = quotaExceeded.QuotaKey;
+            problemDetails.Extensions["currentCount"] = quotaExceeded.CurrentCount;
+            problemDetails.Extensions["limit"] = quotaExceeded.Limit;
         }
 
         httpContext.Response.StatusCode = statusCode;

@@ -5,6 +5,7 @@ import { AdminPriceListCreateForm } from "@/components/admin/admin-create-forms"
 import { AdminPagination } from "@/components/admin/admin-pagination"
 import { searchPriceLists } from "@/lib/api/admin"
 import { getApiErrorMessage } from "@/lib/api/error-message"
+import { getCurrentSubscriptionOrNull } from "@/lib/api/subscription"
 import { formatDateTime } from "@/lib/admin-format"
 
 type Props = {
@@ -32,12 +33,20 @@ export default async function PricesPage({ searchParams }: Props) {
   const page = getPage(resolvedSearchParams)
 
   try {
-    const result = await searchPriceLists({
-      currencyCode: currency || undefined,
-      status: status || undefined,
-      pageNumber: page,
-      pageSize: 12,
-    })
+    const [result, subscription, draftLists, activeLists, inactiveLists] = await Promise.all([
+      searchPriceLists({
+        currencyCode: currency || undefined,
+        status: status || undefined,
+        pageNumber: page,
+        pageSize: 12,
+      }),
+      getCurrentSubscriptionOrNull(),
+      searchPriceLists({ status: "Draft", pageNumber: 1, pageSize: 1 }),
+      searchPriceLists({ status: "Active", pageNumber: 1, pageSize: 1 }),
+      searchPriceLists({ status: "Inactive", pageNumber: 1, pageSize: 1 }),
+    ])
+    const currentPriceListCount =
+      draftLists.totalCount + activeLists.totalCount + inactiveLists.totalCount
 
     return (
       <div className="space-y-6">
@@ -48,7 +57,10 @@ export default async function PricesPage({ searchParams }: Props) {
           </p>
         </div>
 
-        <AdminPriceListCreateForm />
+        <AdminPriceListCreateForm
+          subscription={subscription}
+          currentPriceListCount={currentPriceListCount}
+        />
 
         <form className="grid gap-4 border border-border p-4 md:grid-cols-3">
           <input

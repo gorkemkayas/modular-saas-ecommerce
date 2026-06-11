@@ -32,40 +32,55 @@ export function CategoriesSection({
           </p>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {featuredCategories.map((category, index) => (
-            <Link
-              key={category.id}
-              href={storefrontPath(storeSlug, `/categories/${category.slug}`)}
-              className="group relative overflow-hidden"
-            >
-              <div className="relative aspect-[3/4] overflow-hidden bg-secondary">
-                <Image
-                  src={category.imageUrl || "/placeholder.jpg"}
-                  alt={category.name}
-                  fill
-                  className="object-cover transition-all duration-1000 ease-out group-hover:scale-110"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+        {featuredCategories.length > 0 ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {featuredCategories.map((category, index) => (
+              <Link
+                key={category.id}
+                href={storefrontPath(storeSlug, `/categories/${category.slug}`)}
+                className="group relative overflow-hidden"
+              >
+                <div className="relative aspect-[3/4] overflow-hidden bg-secondary">
+                  <Image
+                    src={category.imageUrl || "/placeholder.jpg"}
+                    alt={category.name}
+                    fill
+                    className="object-cover transition-all duration-1000 ease-out group-hover:scale-110"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
-                <span className="absolute right-4 top-4 font-serif text-5xl font-light text-white/20">
-                  0{index + 1}
-                </span>
-              </div>
+                  <span className="absolute right-4 top-4 font-serif text-5xl font-light text-white/20">
+                    0{index + 1}
+                  </span>
+                </div>
 
-              <div className="absolute inset-x-0 bottom-0 p-6 lg:p-8">
-                <p className="text-[10px] font-normal uppercase tracking-[0.3em] text-white/60 transition-colors duration-300 group-hover:text-white/80">
-                  {category.description || "Published category"}
-                </p>
-                <h3 className="mt-2 font-serif text-2xl font-light tracking-wide text-white lg:text-3xl">
-                  {category.name}
-                </h3>
-                <div className="mt-4 h-px w-0 bg-white/50 transition-all duration-500 group-hover:w-full" />
-              </div>
-            </Link>
-          ))}
-        </div>
+                <div className="absolute inset-x-0 bottom-0 p-6 lg:p-8">
+                  <p className="text-[10px] font-normal uppercase tracking-[0.3em] text-white/60 transition-colors duration-300 group-hover:text-white/80">
+                    {category.description || "Published category"}
+                  </p>
+                  <h3 className="mt-2 font-serif text-2xl font-light tracking-wide text-white lg:text-3xl">
+                    {category.name}
+                  </h3>
+                  <div className="mt-4 h-px w-0 bg-white/50 transition-all duration-500 group-hover:w-full" />
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="border border-border bg-secondary/30 px-6 py-16 text-center">
+            <p className="text-[10px] font-normal uppercase tracking-[0.35em] text-muted-foreground">
+              Store setup in progress
+            </p>
+            <h3 className="mt-4 font-serif text-3xl font-light tracking-wide text-foreground">
+              No categories yet
+            </h3>
+            <p className="mx-auto mt-4 max-w-lg text-sm leading-relaxed text-muted-foreground">
+              This storefront is still being prepared. Categories will appear
+              here once the store owner publishes the first catalog structure.
+            </p>
+          </div>
+        )}
       </div>
     </section>
   )

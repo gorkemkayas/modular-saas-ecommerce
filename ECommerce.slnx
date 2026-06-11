@@ -101,5 +101,11 @@
     <Project Path="src/Modules/Store/tests/Store.Domain.UnitTests/Store.Domain.UnitTests.csproj" Id="a777c7d7-2eb0-4119-b5b9-339ee05760fb" />
     <Project Path="src/Modules/Store/tests/Store.Infrastructure.IntegrationTests/Store.Infrastructure.IntegrationTests.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Subscription/">
+    <Project Path="src/Modules/Subscription/Subscription.Application/Subscription.Application.csproj" />
+    <Project Path="src/Modules/Subscription/Subscription.Contracts/Subscription.Contracts.csproj" />
+    <Project Path="src/Modules/Subscription/Subscription.Domain/Subscription.Domain.csproj" />
+    <Project Path="src/Modules/Subscription/Subscription.Infrastructure/Subscription.Infrastructure.csproj" />
+  </Folder>
 </Solution>
 

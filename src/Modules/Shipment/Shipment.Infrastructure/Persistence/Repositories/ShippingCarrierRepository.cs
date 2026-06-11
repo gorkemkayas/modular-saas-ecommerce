@@ -27,6 +27,15 @@ public sealed class ShippingCarrierRepository : IShippingCarrierRepository
             .FirstOrDefaultAsync(x => x.StoreId == storeId && x.Id == carrierId, cancellationToken);
     }
 
+    public Task<int> CountActiveByStoreIdAsync(
+        Guid storeId,
+        CancellationToken cancellationToken = default)
+    {
+        return _context.ShippingCarriers.CountAsync(
+            x => x.StoreId == storeId && x.IsActive,
+            cancellationToken);
+    }
+
     public Task<bool> ExistsByCodeAsync(
         Guid storeId,
         string code,

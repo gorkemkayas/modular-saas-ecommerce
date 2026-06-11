@@ -18,8 +18,7 @@ interface HeroSectionProps {
 }
 
 const defaultHero = {
-  imageUrl:
-    "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=1920&h=1280&fit=crop&q=90",
+  imageUrl: "/images/platform/store-setup-hero.png",
   eyebrowText: "Spring / Summer 2026",
   title: "Timeless",
   accentTitle: "Elegance",
@@ -52,7 +51,7 @@ export function HeroSection({
   const isVideoHero = heroMediaType?.toLowerCase() === "video" && !!heroImageUrl?.trim()
   const heroAltText = storeName
     ? `${storeName} storefront hero`
-    : "Premium fashion"
+    : "Store setup workspace"
 
   return (
     <section className="relative h-screen overflow-hidden bg-background">

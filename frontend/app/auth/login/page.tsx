@@ -14,17 +14,17 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const storeSlug = resolvedSearchParams?.storeSlug
   const nextPath = resolvedSearchParams?.next || "/account"
-  const tenant = resolvedSearchParams?.storeSlug
-    ? await getTenantBySlug(resolvedSearchParams.storeSlug)
-    : null
-  const storefront = resolvedSearchParams?.storeSlug
-    ? await getStorefront(resolvedSearchParams.storeSlug)
-    : null
   const isAdminIntent =
     resolvedSearchParams?.intent === "admin" ||
     (storeSlug
       ? nextPath === `/${storeSlug}/admin` || nextPath.startsWith(`/${storeSlug}/admin/`)
       : false)
+  const tenant = resolvedSearchParams?.storeSlug
+    ? await getTenantBySlug(resolvedSearchParams.storeSlug)
+    : null
+  const storefront = resolvedSearchParams?.storeSlug && !isAdminIntent
+    ? await getStorefront(resolvedSearchParams.storeSlug)
+    : null
 
   return (
     <LoginPageContent

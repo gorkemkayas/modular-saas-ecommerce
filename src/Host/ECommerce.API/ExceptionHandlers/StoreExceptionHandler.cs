@@ -147,6 +147,12 @@ namespace ECommerce.API.ExceptionHandlers
                     "https://tools.ietf.org/html/rfc9110#section-15.5.4"
                 ),
 
+                StoreFeatureUnavailableException => (
+                    StatusCodes.Status403Forbidden,
+                    "Store Feature Unavailable",
+                    "https://tools.ietf.org/html/rfc9110#section-15.5.4"
+                ),
+
                 // Generic Domain Exception
                 DomainException => (
                     StatusCodes.Status400BadRequest,
@@ -209,6 +215,11 @@ namespace ECommerce.API.ExceptionHandlers
                     {
                         problemDetails.Extensions["storeId"] = unauthorized.StoreId.Value;
                     }
+                    break;
+
+                case StoreFeatureUnavailableException featureUnavailable:
+                    problemDetails.Extensions["tenantId"] = featureUnavailable.TenantId;
+                    problemDetails.Extensions["featureKey"] = featureUnavailable.FeatureKey;
                     break;
             }
         }

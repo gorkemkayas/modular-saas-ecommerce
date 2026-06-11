@@ -1,4 +1,5 @@
 using Catalog.Domain.Entities;
+using Catalog.Domain.Enums;
 using Catalog.Domain.Repositories;
 using Catalog.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
@@ -29,6 +30,13 @@ namespace Catalog.Infrastructure.Persistence.Repositories
         {
             return BuildAggregateQuery()
                 .FirstOrDefaultAsync(x => x.StoreId == storeId && x.Slug == slug, cancellationToken);
+        }
+
+        public Task<int> CountNonArchivedByStoreIdAsync(Guid storeId, CancellationToken cancellationToken = default)
+        {
+            return _context.Products.CountAsync(
+                x => x.StoreId == storeId && x.ProductStatus != ProductStatus.Archived,
+                cancellationToken);
         }
 
         public Task<bool> ExistsBySlugAsync(

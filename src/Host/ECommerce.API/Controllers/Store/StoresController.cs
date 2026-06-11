@@ -7,6 +7,7 @@ using ECommerce.API.Integrations.Media;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Store.Application.Exceptions;
 using Store.Application.DTOs;
 using Store.Application.Stores.Commands.ChangeStoreSlug;
 using Store.Application.Stores.Commands.PublishStore;
@@ -16,6 +17,7 @@ using Store.Application.Stores.Queries.CheckStoreSlugAvailability;
 using Store.Application.Stores.Queries.GetStoreByTenantId;
 using Store.Application.Stores.Queries.SuggestAvailableSlug;
 using Store.Domain.Stores;
+using Subscription.Contracts;
 
 namespace ECommerce.API.Controllers.Store
 {
@@ -27,15 +29,18 @@ namespace ECommerce.API.Controllers.Store
         private readonly ISender _sender;
         private readonly ITenantContext _tenantContext;
         private readonly IProductMediaStorageService _productMediaStorageService;
+        private readonly ISubscriptionModuleApi _subscriptionModuleApi;
 
         public StoresController(
             ISender sender,
             ITenantContext tenantContext,
-            IProductMediaStorageService productMediaStorageService)
+            IProductMediaStorageService productMediaStorageService,
+            ISubscriptionModuleApi? subscriptionModuleApi = null)
         {
             _sender = sender;
             _tenantContext = tenantContext;
             _productMediaStorageService = productMediaStorageService;
+            _subscriptionModuleApi = subscriptionModuleApi ?? new UnavailableSubscriptionModuleApi();
         }
 
         [HttpGet("me")]
@@ -95,10 +100,22 @@ namespace ECommerce.API.Controllers.Store
                 });
             }
 
+            var tenantId = _tenantContext.TenantIdAsGuid!.Value;
+
+            if (IsVideoUpload(request.File))
+            {
+                var hasVideoHeroFeature = await _subscriptionModuleApi.HasFeatureAsync(
+                    new FeatureAccessRequest(tenantId, SubscriptionFeatureKeys.StorefrontVideoHero),
+                    cancellationToken);
+
+                if (!hasVideoHeroFeature)
+                    throw new StoreFeatureUnavailableException(tenantId, SubscriptionFeatureKeys.StorefrontVideoHero);
+            }
+
             try
             {
                 var storedMedia = await _productMediaStorageService.UploadAsync(
-                    _tenantContext.TenantIdAsGuid!.Value,
+                    tenantId,
                     request.File,
                     cancellationToken);
 
@@ -157,11 +174,11 @@ namespace ECommerce.API.Controllers.Store
         }
 
         [HttpGet("suggest-slug")]
-        [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(SlugSuggestionDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> SuggestAvailableSlug([FromQuery] string slug, CancellationToken cancellationToken)
         {
             var suggestedSlug = await _sender.Send(new SuggestAvailableSlugQuery(slug), cancellationToken);
-            return Ok(new { Slug = suggestedSlug });
+            return Ok(suggestedSlug);
         }
 
         private static StorefrontHeroMediaType? ResolveHeroMediaType(string? value)
@@ -172,6 +189,54 @@ namespace ECommerce.API.Controllers.Store
             return Enum.TryParse<StorefrontHeroMediaType>(value, true, out var mediaType)
                 ? mediaType
                 : null;
+        }
+
+        private static bool IsVideoUpload(IFormFile file)
+        {
+            if (!string.IsNullOrWhiteSpace(file.ContentType) &&
+                file.ContentType.StartsWith("video/", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return Path.GetExtension(file.FileName).ToLowerInvariant() is
+                ".mp4" or ".webm" or ".mov" or ".m4v" or ".ogg";
+        }
+
+        private sealed class UnavailableSubscriptionModuleApi : ISubscriptionModuleApi
+        {
+            public Task<IReadOnlyCollection<PlanResult>> GetPublicPlansAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyCollection<PlanResult>>(Array.Empty<PlanResult>());
+            }
+
+            public Task<Guid> ProvisionTenantSubscriptionAsync(
+                ProvisionTenantSubscriptionRequest request,
+                CancellationToken cancellationToken = default)
+            {
+                throw new InvalidOperationException("Subscription module API is not available.");
+            }
+
+            public Task<TenantSubscriptionResult?> GetTenantSubscriptionAsync(
+                GetTenantSubscriptionRequest request,
+                CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<TenantSubscriptionResult?>(null);
+            }
+
+            public Task<bool> HasFeatureAsync(
+                FeatureAccessRequest request,
+                CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(false);
+            }
+
+            public Task<QuotaResult?> GetQuotaAsync(
+                QuotaRequest request,
+                CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<QuotaResult?>(null);
+            }
         }
     }
 }

@@ -26,6 +26,14 @@ import {
   updateProductDetails,
 } from "@/lib/api/admin"
 import { getApiErrorMessage } from "@/lib/api/error-message"
+import {
+  formatSubscriptionLimit,
+  getSubscriptionQuotaLimit,
+  hasSubscriptionFeature,
+  subscriptionFeatureKeys,
+  subscriptionQuotaKeys,
+  type TenantSubscriptionDto,
+} from "@/lib/api/subscription"
 import { resolveAdminBasePath } from "@/lib/admin-path"
 
 type ProductTypeValue = "Simple" | "Variant"
@@ -44,6 +52,7 @@ type ExistingMediaDraft = {
   isMain: boolean
   mediaType: "Image" | "Video"
   productVariantId: string | null
+  variantDraftSku: string | null
 }
 
 type MediaUploadDraft = {
@@ -226,11 +235,15 @@ export function AdminProductEditor({
   categories,
   attributes,
   initialProduct,
+  subscription,
+  currentProductCount,
 }: {
   brands: BrandDto[]
   categories: CategoryTreeNodeDto[]
   attributes: AttributeDefinitionDto[]
   initialProduct?: AdminProductDto | null
+  subscription?: TenantSubscriptionDto | null
+  currentProductCount?: number
 }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -273,6 +286,7 @@ export function AdminProductEditor({
       isMain: mediaItem.isMain,
       mediaType: resolveMediaType(mediaItem.mediaType),
       productVariantId: mediaItem.productVariantId ?? null,
+      variantDraftSku: null,
     })) ?? []),
   ])
   const [newMediaItems, setNewMediaItems] = useState<MediaUploadDraft[]>([
@@ -290,6 +304,31 @@ export function AdminProductEditor({
   const selectedCategoryCount = selectedCategoryIds.length
   const existingVariantCount = initialProduct?.variants.length ?? 0
   const existingMediaCount = mediaItems.length
+  const productLimit = getSubscriptionQuotaLimit(
+    subscription,
+    subscriptionQuotaKeys.catalogProducts,
+  )
+  const productLimitReached =
+    !initialProduct &&
+    typeof productLimit === "number" &&
+    typeof currentProductCount === "number" &&
+    currentProductCount >= productLimit
+  const mediaLimit = getSubscriptionQuotaLimit(
+    subscription,
+    subscriptionQuotaKeys.catalogMediaPerProduct,
+  )
+  const mediaRemaining =
+    typeof mediaLimit === "number"
+      ? Math.max(mediaLimit - existingMediaCount, 0)
+      : null
+  const newMediaCount = newMediaItems.filter((mediaItem) => mediaItem.uploadedUrl).length
+  const mediaLimitExceeded =
+    typeof mediaRemaining === "number" && newMediaCount > mediaRemaining
+  const canAddMoreMediaRows =
+    mediaRemaining === null || newMediaItems.length < mediaRemaining
+  const variantProductsLocked =
+    !!subscription &&
+    !hasSubscriptionFeature(subscription, subscriptionFeatureKeys.variantProducts)
   const attributeNameById = useMemo(
     () =>
       new Map(
@@ -347,6 +386,14 @@ export function AdminProductEditor({
     )
   }
 
+  function isMediaRowLocked(index: number, mediaItem: MediaUploadDraft): boolean {
+    return (
+      typeof mediaRemaining === "number" &&
+      index >= mediaRemaining &&
+      !mediaItem.uploadedUrl
+    )
+  }
+
   function validate(): string | null {
     if (!name.trim()) {
       return "Product name is required."
@@ -356,11 +403,19 @@ export function AdminProductEditor({
       return "Product slug is required."
     }
 
+    if (productLimitReached) {
+      return `Product limit reached for your current plan (${currentProductCount}/${productLimit}).`
+    }
+
     if (productType === "Simple" && !simpleSku.trim()) {
       return "Simple products require a SKU."
     }
 
     if (productType === "Variant") {
+      if (!initialProduct && variantProductsLocked) {
+        return "Variant products are not available in your current plan."
+      }
+
       const variants = normalizeVariants(newVariants)
       if (!initialProduct && variants.length === 0) {
         return "Variant products require at least one variant."
@@ -424,6 +479,10 @@ export function AdminProductEditor({
       )
     ) {
       return "Every variant-specific media item must target a variant row with a SKU."
+    }
+
+    if (mediaLimitExceeded) {
+      return `Product media limit reached for your current plan (${existingMediaCount + newMediaCount}/${mediaLimit}).`
     }
 
     return null
@@ -871,7 +930,10 @@ export function AdminProductEditor({
               <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
                 Media
               </p>
-              <p className="mt-2 text-base font-medium">{existingMediaCount}</p>
+              <p className="mt-2 text-base font-medium">
+                {existingMediaCount}
+                {typeof mediaLimit === "number" ? ` / ${mediaLimit}` : ""}
+              </p>
             </div>
           </div>
         </div>
@@ -897,6 +959,15 @@ export function AdminProductEditor({
           </p>
         </div>
       </div>
+
+      {!initialProduct && typeof productLimit === "number" ? (
+        <div className="border border-border bg-secondary/35 px-5 py-4 text-sm text-muted-foreground">
+          Current plan allows{" "}
+          <span className="text-foreground">{productLimit}</span> products.
+          This store currently has{" "}
+          <span className="text-foreground">{currentProductCount ?? 0}</span>.
+        </div>
+      ) : null}
 
       <form className="space-y-6" onSubmit={handleSubmit}>
         <SectionShell
@@ -950,8 +1021,15 @@ export function AdminProductEditor({
                     className={inputClassName}
                   >
                     <option value="Simple">Simple</option>
-                    <option value="Variant">Variant</option>
+                    <option value="Variant" disabled={variantProductsLocked}>
+                      Variant
+                    </option>
                   </select>
+                  {variantProductsLocked ? (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Variant products require a higher subscription plan.
+                    </p>
+                  ) : null}
                 </div>
                 {productType === "Simple" ? (
                   <div>
@@ -1274,6 +1352,13 @@ export function AdminProductEditor({
           title="Product media"
           description="Upload product images or videos from your device. Files are sent to Cloudinary first, then the returned URL is saved to the product."
         >
+          <div className="mb-5 border border-border bg-background/70 p-4 text-sm text-muted-foreground">
+            Current plan allows{" "}
+            <span className="text-foreground">
+              {formatSubscriptionLimit(mediaLimit)}
+            </span>{" "}
+            media items per product. This product currently has {existingMediaCount}.
+          </div>
           {mediaItems.length ? (
             <div className="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {mediaItems.map((mediaItem, index) => (
@@ -1337,16 +1422,22 @@ export function AdminProductEditor({
             </div>
           ) : null}
           <div className="space-y-3">
-            {newMediaItems.map((mediaItem, index) => (
-              <div
-                key={index}
-                className="grid gap-4 border border-border bg-background/70 p-4 md:grid-cols-[1.4fr_1fr_auto]"
-              >
+            {newMediaItems.map((mediaItem, index) => {
+              const mediaRowLocked = isMediaRowLocked(index, mediaItem)
+
+              return (
+                <div
+                  key={index}
+                  className="grid gap-4 border border-border bg-background/70 p-4 md:grid-cols-[1.4fr_1fr_auto]"
+                >
                 <div className="space-y-3">
                   <div
                     onDragOver={(event) => event.preventDefault()}
                     onDrop={(event) => {
                       event.preventDefault()
+                      if (mediaRowLocked) {
+                        return
+                      }
                       handleMediaFileChange(index, event.dataTransfer.files?.[0] ?? null)
                     }}
                     className="space-y-3 border border-dashed border-border p-4"
@@ -1354,13 +1445,16 @@ export function AdminProductEditor({
                     <input
                       type="file"
                       accept="image/*,video/*"
+                      disabled={mediaRowLocked}
                       onChange={(event) =>
                         handleMediaFileChange(index, event.target.files?.[0] ?? null)
                       }
                       className={inputClassName}
                     />
                     <p className="text-xs text-muted-foreground">
-                      Drag and drop an image or video here, or choose a file manually.
+                      {mediaRowLocked
+                        ? "Media limit reached for this product."
+                        : "Drag and drop an image or video here, or choose a file manually."}
                     </p>
                   </div>
                   {mediaItem.previewUrl ? (
@@ -1470,8 +1564,9 @@ export function AdminProductEditor({
                   />
                   Main media
                 </label>
-              </div>
-            ))}
+                </div>
+              )
+            })}
             <button
               type="button"
               onClick={() =>
@@ -1480,9 +1575,10 @@ export function AdminProductEditor({
                   createEmptyMediaUploadDraft(false),
                 ])
               }
-              className="border border-border px-5 py-3 text-sm font-medium transition hover:bg-secondary"
+              disabled={!canAddMoreMediaRows}
+              className="border border-border px-5 py-3 text-sm font-medium transition hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Add media row
+              {canAddMoreMediaRows ? "Add media row" : "Media limit reached"}
             </button>
           </div>
         </SectionShell>
@@ -1546,7 +1642,7 @@ export function AdminProductEditor({
             </Link>
             <button
               type="submit"
-              disabled={isPending}
+              disabled={isPending || productLimitReached}
               className="bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:opacity-60"
             >
               {isPending

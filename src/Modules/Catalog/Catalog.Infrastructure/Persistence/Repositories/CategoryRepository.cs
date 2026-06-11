@@ -26,6 +26,13 @@ namespace Catalog.Infrastructure.Persistence.Repositories
                 cancellationToken);
         }
 
+        public Task<int> CountActiveByStoreIdAsync(Guid storeId, CancellationToken cancellationToken = default)
+        {
+            return _context.Categories.CountAsync(
+                x => x.StoreId == storeId && x.IsActive,
+                cancellationToken);
+        }
+
         public Task<bool> ExistsByIdAsync(Guid storeId, Guid categoryId, CancellationToken cancellationToken = default)
         {
             return _context.Categories.AnyAsync(

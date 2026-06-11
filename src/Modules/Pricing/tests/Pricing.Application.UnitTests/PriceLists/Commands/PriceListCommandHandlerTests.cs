@@ -13,6 +13,7 @@ using Pricing.Application.PriceLists.Commands.SetVariantPrice;
 using Pricing.Domain.Entities;
 using Pricing.Domain.Repositories;
 using Pricing.Domain.ValueObjects;
+using Subscription.Contracts;
 
 namespace Pricing.Application.UnitTests.PriceLists.Commands;
 
@@ -34,6 +35,7 @@ public sealed class PriceListCommandHandlerTests
 
         var handler = new CreatePriceListCommandHandler(
             repository.Object,
+            Mock.Of<ISubscriptionModuleApi>(),
             Mock.Of<IUnitOfWork>(),
             NullLogger<CreatePriceListCommandHandler>.Instance);
 
@@ -47,9 +49,22 @@ public sealed class PriceListCommandHandlerTests
         var storeId = Guid.NewGuid();
         var repository = new Mock<IPriceListRepository>();
         var unitOfWork = new Mock<IUnitOfWork>();
+        repository
+            .Setup(x => x.CountNonArchivedByStoreIdAsync(storeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
+        var subscriptionModuleApi = new Mock<ISubscriptionModuleApi>();
+        subscriptionModuleApi
+            .Setup(x => x.GetQuotaAsync(
+                It.Is<QuotaRequest>(request =>
+                    request.TenantId == storeId &&
+                    request.QuotaKey == SubscriptionQuotaKeys.PricingPriceLists),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new QuotaResult(storeId, SubscriptionQuotaKeys.PricingPriceLists, 5));
 
         var handler = new CreatePriceListCommandHandler(
             repository.Object,
+            subscriptionModuleApi.Object,
             unitOfWork.Object,
             NullLogger<CreatePriceListCommandHandler>.Instance);
 

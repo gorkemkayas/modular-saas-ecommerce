@@ -8,6 +8,12 @@ import {
   updateShippingCarrier,
 } from "@/lib/api/admin"
 import { getApiErrorMessage } from "@/lib/api/error-message"
+import {
+  formatSubscriptionLimit,
+  getSubscriptionQuotaLimit,
+  subscriptionQuotaKeys,
+  type TenantSubscriptionDto,
+} from "@/lib/api/subscription"
 import type { ShippingCarrierDto } from "@/lib/api/types"
 
 type CarrierDraft = {
@@ -42,7 +48,11 @@ function toDraft(carrier: ShippingCarrierDto): CarrierDraft {
   }
 }
 
-export function AdminShippingCarriersManager() {
+export function AdminShippingCarriersManager({
+  subscription,
+}: {
+  subscription?: TenantSubscriptionDto | null
+}) {
   const [carriers, setCarriers] = useState<ShippingCarrierDto[]>([])
   const [draft, setDraft] = useState<CarrierDraft>(emptyDraft)
   const [editingCarrierId, setEditingCarrierId] = useState<string | null>(null)
@@ -50,6 +60,15 @@ export function AdminShippingCarriersManager() {
   const [isPending, startTransition] = useTransition()
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const shippingCarrierLimit = getSubscriptionQuotaLimit(
+    subscription,
+    subscriptionQuotaKeys.shippingCarriers,
+  )
+  const activeCarrierCount = carriers.filter((carrier) => carrier.isActive).length
+  const isCreateLimitReached =
+    !editingCarrierId &&
+    typeof shippingCarrierLimit === "number" &&
+    activeCarrierCount >= shippingCarrierLimit
 
   async function refreshCarriers() {
     const items = await listShippingCarriers(false)
@@ -91,6 +110,13 @@ export function AdminShippingCarriersManager() {
   function saveCarrier() {
     setError(null)
     setMessage(null)
+
+    if (isCreateLimitReached) {
+      setError(
+        `Shipping carrier limit reached for your current plan (${activeCarrierCount}/${shippingCarrierLimit}).`,
+      )
+      return
+    }
 
     const request = {
       code: draft.code.trim(),
@@ -148,6 +174,12 @@ export function AdminShippingCarriersManager() {
     <div className="space-y-6">
       <div>
         <h2 className="border-b border-border pb-4 text-lg font-light">Shipping Carriers</h2>
+        {typeof shippingCarrierLimit === "number" ? (
+          <p className="mt-3 text-xs text-muted-foreground">
+            Current plan allows {formatSubscriptionLimit(shippingCarrierLimit)} active shipping carriers.
+            This store currently has {activeCarrierCount}.
+          </p>
+        ) : null}
       </div>
 
       {error ? (
@@ -237,10 +269,16 @@ export function AdminShippingCarriersManager() {
         <button
           type="button"
           onClick={saveCarrier}
-          disabled={isPending || !draft.code.trim() || !draft.name.trim()}
+          disabled={isPending || !draft.code.trim() || !draft.name.trim() || isCreateLimitReached}
           className="bg-primary px-8 py-3 text-sm tracking-wide text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
         >
-          {isPending ? "Saving..." : editingCarrierId ? "Update Carrier" : "Add Carrier"}
+          {isPending
+            ? "Saving..."
+            : editingCarrierId
+              ? "Update Carrier"
+              : isCreateLimitReached
+                ? "Carrier Limit Reached"
+                : "Add Carrier"}
         </button>
       </div>
 

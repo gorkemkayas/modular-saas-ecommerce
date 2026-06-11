@@ -49,6 +49,7 @@ public static class NotificationInfrastructureServiceCollectionExtensions
             client.DefaultRequestHeaders.UserAgent.ParseAdd("modular-saas-ecommerce/1.0");
         });
 
+        services.AddScoped<IContactFeedbackRepository, ContactFeedbackRepository>();
         services.AddScoped<INotificationTemplateRepository, NotificationTemplateRepository>();
         services.AddScoped<INotificationDispatchRepository, NotificationDispatchRepository>();
         services.AddScoped<INotificationReadService, NotificationReadService>();
