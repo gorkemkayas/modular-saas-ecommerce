@@ -18,6 +18,8 @@ Bu dokuman, bu repo icindeki `ECommerce.API` ve `frontend` uygulamalarini Docker
 - `ecommerce-frontend` -> Next.js frontend
 - `nginx` -> `shop` ve `api` subdomain reverse proxy
 
+`nginx` servisi artik `edge` profile'i altinda. Bu sayede sunucunda zaten baska bir Nginx varsa onu kullanmaya devam edebilirsin.
+
 ## AuthService konusunda kritik not
 
 Bu repoda `AuthService` kodu yok. Dolayisiyla bu compose dosyasi `AuthService API` ve `Auth frontend` container'larini build etmez.
@@ -45,12 +47,26 @@ Copy-Item .env.production.example .env.production
 docker compose --env-file .env.production -f docker-compose.production.yml up -d --build
 ```
 
+Bu komut varsayilan olarak sadece su servisleri kaldirir:
+
+- `ecommerce-db`
+- `ecommerce-api`
+- `ecommerce-frontend`
+
+Host seviyesinde zaten Nginx kullaniyorsan dogru komut budur.
+
+Container icindeki `nginx` servisini de kullanmak istersen:
+
+```powershell
+docker compose --profile edge --env-file .env.production -f docker-compose.production.yml up -d --build
+```
+
 4. Loglari kontrol et
 
 ```powershell
 docker compose --env-file .env.production -f docker-compose.production.yml logs -f ecommerce-api
 docker compose --env-file .env.production -f docker-compose.production.yml logs -f ecommerce-frontend
-docker compose --env-file .env.production -f docker-compose.production.yml logs -f nginx
+docker compose --env-file .env.production -f docker-compose.production.yml logs -f ecommerce-db
 ```
 
 ## Domain eslestirmesi
@@ -63,6 +79,55 @@ docker compose --env-file .env.production -f docker-compose.production.yml logs 
 icin hazir geldi. DNS'te bu iki subdomain ayni sunucu IP'sine gitmelidir.
 
 Farkli domain kullanacaksan bu dosyadaki `server_name` degerlerini degistir.
+
+## Sunucuda zaten Nginx varsa
+
+Bu durumda Docker icindeki `nginx` servisini kullanma. Host Nginx, Docker container'larina proxy etsin.
+
+Varsayilan portlar:
+
+- `FRONTEND_HOST_PORT=3000`
+- `API_HOST_PORT=8080`
+
+### `shop.kayas.dev` icin host Nginx config
+
+```nginx
+server {
+    listen 80;
+    server_name shop.kayas.dev;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
+```
+
+### `api.kayas.dev` icin host Nginx config
+
+```nginx
+server {
+    listen 80;
+    server_name api.kayas.dev;
+
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+Port cakismasi varsa `.env.production` icindeki `FRONTEND_HOST_PORT` ve `API_HOST_PORT` degerlerini degistir. Sonra Nginx config'inde ayni portlari kullan.
 
 ## HTTPS
 
