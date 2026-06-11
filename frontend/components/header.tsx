@@ -135,11 +135,11 @@ export function Header({ storeSlug, storeName, initialSession }: HeaderProps) {
           : "bg-transparent py-6",
       )}
     >
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 lg:px-8">
+      <nav className="mx-auto grid max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-3 px-4 sm:px-6 lg:flex lg:justify-between lg:px-8">
         <Button
           variant="ghost"
           size="icon"
-          className="lg:hidden hover:bg-transparent"
+          className="justify-self-start lg:hidden hover:bg-transparent"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         >
           {mobileMenuOpen ? (
@@ -162,13 +162,16 @@ export function Header({ storeSlug, storeName, initialSession }: HeaderProps) {
           ))}
         </div>
 
-        <Link href={homeHref} className="absolute left-1/2 -translate-x-1/2">
-          <span className="font-serif text-2xl font-light tracking-[0.4em] text-foreground lg:text-3xl">
+        <Link
+          href={homeHref}
+          className="mx-auto block max-w-full min-w-0 text-center lg:absolute lg:left-1/2 lg:-translate-x-1/2"
+        >
+          <span className="block truncate px-2 font-serif text-lg font-light tracking-[0.24em] text-foreground sm:text-xl sm:tracking-[0.32em] lg:text-3xl lg:tracking-[0.4em]">
             {displayName}
           </span>
         </Link>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center justify-self-end gap-1 sm:gap-2 lg:gap-4">
           <Link href={productsHref}>
             <Button variant="ghost" size="icon" className="hidden md:flex hover:bg-transparent">
               <Search className="h-5 w-5" strokeWidth={1} />
@@ -208,11 +211,11 @@ export function Header({ storeSlug, storeName, initialSession }: HeaderProps) {
 
       <div
         className={cn(
-          "lg:hidden fixed inset-0 top-[73px] bg-background transition-all duration-500",
+          "fixed inset-x-0 bottom-0 top-[73px] overflow-y-auto bg-background transition-all duration-500 lg:hidden",
           mobileMenuOpen ? "opacity-100 visible" : "opacity-0 invisible",
         )}
       >
-        <div className="flex flex-col items-center justify-center h-full gap-8">
+        <div className="flex min-h-full flex-col items-center justify-center gap-8 px-6 py-10 text-center">
           {navigation.map((item, index) => (
             <Link
               key={item.name}
@@ -241,6 +244,23 @@ export function Header({ storeSlug, storeName, initialSession }: HeaderProps) {
               Admin
             </Link>
           ) : null}
+
+          <div className="mt-6 flex flex-col items-center gap-4">
+            <Link
+              href={productsHref}
+              className="text-sm uppercase tracking-[0.22em] text-muted-foreground transition-colors hover:text-foreground"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Search Products
+            </Link>
+            <Link
+              href={accountHref}
+              className="text-sm uppercase tracking-[0.22em] text-muted-foreground transition-colors hover:text-foreground"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Account
+            </Link>
+          </div>
         </div>
       </div>
     </header>

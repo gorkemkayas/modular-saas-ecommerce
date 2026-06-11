@@ -128,13 +128,13 @@ export function ContactPageContent({
   return (
     <main className="min-h-screen bg-background text-foreground">
       <section className="border-b border-border bg-foreground text-background">
-        <div className="mx-auto grid max-w-7xl gap-12 px-6 py-20 lg:grid-cols-[1.05fr_0.95fr] lg:px-8 lg:py-24">
+        <div className="mx-auto grid max-w-7xl gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8 lg:py-24">
           <div className="max-w-3xl">
             <p className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.28em] text-background/62">
               <MessageSquareHeart className="h-4 w-4" strokeWidth={1.5} />
               Contact and Feedback
             </p>
-            <h1 className="mt-6 font-serif text-5xl font-light tracking-wide sm:text-6xl">
+            <h1 className="mt-6 font-serif text-4xl font-light tracking-wide sm:text-5xl lg:text-6xl">
               Let&apos;s keep improving the platform together.
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-8 text-background/72">
@@ -190,7 +190,7 @@ export function ContactPageContent({
         </div>
       </section>
 
-      <section className="px-6 py-16 lg:px-8 lg:py-20">
+      <section className="px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
         <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.78fr_1.22fr]">
           <div className="space-y-6">
             <div className="border border-border bg-secondary/35 p-6">
@@ -237,7 +237,7 @@ export function ContactPageContent({
                 <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
                   Send a message
                 </p>
-                <h2 className="mt-3 font-serif text-3xl font-light tracking-wide">
+                <h2 className="mt-3 font-serif text-2xl font-light tracking-wide sm:text-3xl">
                   Tell us what&apos;s on your mind.
                 </h2>
               </div>
@@ -373,14 +373,14 @@ export function ContactPageContent({
         </div>
       </section>
 
-      <section className="border-t border-border bg-[linear-gradient(180deg,_rgba(255,255,255,0.98)_0%,_rgba(250,249,246,0.98)_100%)] px-6 py-16 text-foreground lg:px-8 lg:py-24">
+      <section className="border-t border-border bg-[linear-gradient(180deg,_rgba(255,255,255,0.98)_0%,_rgba(250,249,246,0.98)_100%)] px-4 py-16 text-foreground sm:px-6 lg:px-8 lg:py-24">
         <div className="mx-auto max-w-7xl">
           <div className="mb-12 grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
             <div>
               <p className="text-xs uppercase tracking-[0.28em] text-muted-foreground">
                 Feedback Wall
               </p>
-              <h2 className="mt-4 font-serif text-4xl font-light tracking-[0.02em] sm:text-5xl">
+              <h2 className="mt-4 font-serif text-3xl font-light tracking-[0.02em] sm:text-4xl lg:text-5xl">
                 Shared openly, so the product journey stays visible.
               </h2>
               <p className="mt-5 max-w-2xl text-sm leading-8 text-muted-foreground">

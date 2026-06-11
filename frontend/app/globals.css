@@ -78,11 +78,15 @@
 }
 
 @layer base {
+  html {
+    overflow-x: hidden;
+  }
   * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground antialiased;
+    overflow-x: hidden;
   }
   
   /* Premium scrollbar */
@@ -180,6 +184,15 @@
     black 88%,
     transparent
   );
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

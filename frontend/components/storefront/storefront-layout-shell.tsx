@@ -45,7 +45,7 @@ export function StorefrontLayoutShell({
         storeName={storeName}
         initialSession={initialSession}
       />
-      <main className={isStoreHomePage ? "min-h-screen" : "min-h-screen pt-24"}>
+      <main className={isStoreHomePage ? "min-h-screen" : "min-h-screen pt-20 sm:pt-24"}>
         {children}
       </main>
       <Footer storeSlug={storeSlug} storeName={storeName} />
