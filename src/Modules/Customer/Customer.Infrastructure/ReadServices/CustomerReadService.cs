@@ -16,14 +16,20 @@ public sealed class CustomerReadService : ICustomerReadService
 
     public Task<CustomerDto?> GetByIdAsync(Guid tenantId, Guid customerId, CancellationToken cancellationToken = default)
     {
-        return BuildCustomerQuery(tenantId)
-            .FirstOrDefaultAsync(x => x.Id == customerId, cancellationToken);
+        return BuildCustomerQuery(
+                _context.Customers
+                    .AsNoTracking()
+                    .Where(x => x.TenantId == tenantId && x.Id == customerId))
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     public Task<CustomerDto?> GetByExternalUserIdAsync(Guid tenantId, Guid externalUserId, CancellationToken cancellationToken = default)
     {
-        return BuildCustomerQuery(tenantId)
-            .FirstOrDefaultAsync(x => x.ExternalUserId == externalUserId, cancellationToken);
+        return BuildCustomerQuery(
+                _context.Customers
+                    .AsNoTracking()
+                    .Where(x => x.TenantId == tenantId && x.ExternalUserId == externalUserId))
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<PagedResult<CustomerSummaryDto>> SearchAsync(CustomerSearchCriteria criteria, CancellationToken cancellationToken = default)
@@ -72,11 +78,9 @@ public sealed class CustomerReadService : ICustomerReadService
             totalCount);
     }
 
-    private IQueryable<CustomerDto> BuildCustomerQuery(Guid tenantId)
+    private static IQueryable<CustomerDto> BuildCustomerQuery(IQueryable<Domain.Entities.Customer> query)
     {
-        return _context.Customers
-            .AsNoTracking()
-            .Where(x => x.TenantId == tenantId)
+        return query
             .Select(x => new CustomerDto(
                 x.Id,
                 x.TenantId,

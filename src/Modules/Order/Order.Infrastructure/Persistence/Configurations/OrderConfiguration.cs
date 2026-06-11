@@ -12,6 +12,7 @@ public sealed class OrderConfiguration : IEntityTypeConfiguration<OrderEntity>
         builder.ToTable("Orders");
 
         builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).ValueGeneratedNever();
 
         builder.Property(x => x.StoreId).IsRequired();
         builder.Property(x => x.CustomerId).IsRequired();
@@ -51,6 +52,16 @@ public sealed class OrderConfiguration : IEntityTypeConfiguration<OrderEntity>
         builder.OwnsOne(x => x.ShippingAddressSnapshot, owned =>
         {
             ConfigureAddress(owned, "Shipping");
+        });
+
+        builder.OwnsOne(x => x.ShippingCarrierSnapshot, owned =>
+        {
+            owned.Property(x => x.CarrierId).HasColumnName("ShippingCarrierId");
+            owned.Property(x => x.Code).HasColumnName("ShippingCarrierCode").HasMaxLength(50);
+            owned.Property(x => x.Name).HasColumnName("ShippingCarrierName").HasMaxLength(200);
+            owned.Property(x => x.ServiceCode).HasColumnName("ShippingCarrierServiceCode").HasMaxLength(50);
+            owned.Property(x => x.ServiceName).HasColumnName("ShippingCarrierServiceName").HasMaxLength(200);
+            owned.Property(x => x.TrackingUrl).HasColumnName("ShippingCarrierTrackingUrl").HasMaxLength(500);
         });
 
         builder.OwnsOne(x => x.Totals, owned =>

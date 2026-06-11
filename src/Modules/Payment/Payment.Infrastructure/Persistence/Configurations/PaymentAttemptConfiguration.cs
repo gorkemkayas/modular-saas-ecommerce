@@ -11,6 +11,7 @@ public sealed class PaymentAttemptConfiguration : IEntityTypeConfiguration<Payme
         builder.ToTable("PaymentAttempts");
 
         builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).ValueGeneratedNever();
         builder.Property(x => x.PaymentId).IsRequired();
         builder.Property(x => x.AttemptNumber).IsRequired();
         builder.Property(x => x.OperationType).IsRequired();

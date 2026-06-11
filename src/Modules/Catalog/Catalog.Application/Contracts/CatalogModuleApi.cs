@@ -1,7 +1,6 @@
 using Catalog.Application.Abstractions.Queries;
 using Catalog.Contracts;
 using Catalog.Domain.Enums;
-
 namespace Catalog.Application.Contracts;
 
 public sealed class CatalogModuleApi : ICatalogModuleApi
@@ -22,7 +21,7 @@ public sealed class CatalogModuleApi : ICatalogModuleApi
             request.ProductId,
             cancellationToken);
 
-        if (product is null || !product.IsPublished || product.ProductStatus != ProductStatus.Active)
+        if (product is null)
             return null;
 
         if (product.ProductType == ProductType.Variant)

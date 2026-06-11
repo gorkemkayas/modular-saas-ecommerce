@@ -3,6 +3,7 @@ namespace ECommerce.API.Contracts.Order;
 public sealed record PlaceOrderRequest(
     Guid ShippingAddressId,
     Guid? BillingAddressId,
+    Guid ShippingCarrierId,
     string CurrencyCode,
     IReadOnlyCollection<PlaceOrderItemRequest> Items);
 

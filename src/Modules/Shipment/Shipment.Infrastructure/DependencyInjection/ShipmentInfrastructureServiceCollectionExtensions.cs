@@ -41,7 +41,9 @@ public static class ShipmentInfrastructureServiceCollectionExtensions
         services.AddScoped<IOrderShipmentSyncService, OrderShipmentSyncService>();
         services.AddScoped<IShipmentNotificationService, ShipmentNotificationService>();
         services.AddScoped<IShipmentRepository, ShipmentRepository>();
+        services.AddScoped<IShippingCarrierRepository, ShippingCarrierRepository>();
         services.AddScoped<IShipmentReadService, ShipmentReadService>();
+        services.AddScoped<IShippingCarrierReadService, ShippingCarrierReadService>();
         services.AddScoped<IShipmentModuleApi, ShipmentModuleApi>();
         services.AddScoped<IShipmentNumberGenerator, ShipmentNumberGenerator>();
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ShipmentDbContext>());

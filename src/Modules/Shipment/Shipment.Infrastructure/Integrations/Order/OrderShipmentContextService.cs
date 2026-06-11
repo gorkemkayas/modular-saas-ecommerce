@@ -59,6 +59,15 @@ public sealed class OrderShipmentContextService : IOrderShipmentContextService
                 context.ShippingAddress.Line1,
                 context.ShippingAddress.Line2,
                 context.ShippingAddress.PostalCode),
+            context.ShippingCarrier is null
+                ? null
+                : new OrderShipmentCarrier(
+                    context.ShippingCarrier.CarrierId,
+                    context.ShippingCarrier.Code,
+                    context.ShippingCarrier.Name,
+                    context.ShippingCarrier.ServiceCode,
+                    context.ShippingCarrier.ServiceName,
+                    context.ShippingCarrier.TrackingUrl),
             context.Items
                 .Select(item => new OrderShipmentItem(
                     item.OrderItemId,

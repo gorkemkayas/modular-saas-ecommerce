@@ -1,23 +1,11 @@
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
-using Microsoft.Extensions.Options;
-using Payment.Application.Exceptions;
 using Payment.Application.Integrations;
 using Payment.Domain.Enums;
-using Payment.Infrastructure.Options;
 
 namespace Payment.Infrastructure.Gateways;
 
 public sealed class PaymentWebhookParser : IPaymentWebhookParser
 {
-    private readonly IyzicoOptions _iyzicoOptions;
-
-    public PaymentWebhookParser(IOptions<IyzicoOptions> iyzicoOptions)
-    {
-        _iyzicoOptions = iyzicoOptions.Value;
-    }
-
     public Task<ParsedPaymentWebhook> ParseAsync(
         PaymentProvider provider,
         string payload,
@@ -26,9 +14,6 @@ public sealed class PaymentWebhookParser : IPaymentWebhookParser
     {
         using var document = JsonDocument.Parse(payload);
         var root = document.RootElement;
-
-        if (provider == PaymentProvider.Iyzico)
-            ValidateIyzicoSignature(root, signature);
 
         var status = GetString(root, "paymentStatus")
             ?? GetString(root, "status")
@@ -57,39 +42,6 @@ public sealed class PaymentWebhookParser : IPaymentWebhookParser
             GetString(root, "failureCode") ?? GetString(root, "errorCode"),
             GetString(root, "failureMessage") ?? GetString(root, "errorMessage"),
             refundedAmount));
-    }
-
-    private void ValidateIyzicoSignature(JsonElement root, string? signature)
-    {
-        if (string.IsNullOrWhiteSpace(_iyzicoOptions.SecretKey))
-            return;
-
-        if (string.IsNullOrWhiteSpace(signature))
-            throw new PaymentWebhookValidationException("Webhook signature is missing.");
-
-        var expected = ComputeHmac(
-            _iyzicoOptions.SecretKey,
-            GetString(root, "iyziEventType"),
-            GetString(root, "iyziPaymentId"),
-            GetString(root, "token"),
-            GetString(root, "paymentConversationId"),
-            GetString(root, "status"));
-
-        if (!EqualsFixedTime(expected, signature.Trim()))
-            throw new PaymentWebhookValidationException("Webhook signature validation failed.");
-    }
-
-    private static string ComputeHmac(string secretKey, params string?[] values)
-    {
-        var payload = string.Join(
-            ":",
-            values.Select(value => string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim()));
-
-        var hashBytes = HMACSHA256.HashData(
-            Encoding.UTF8.GetBytes(secretKey),
-            Encoding.UTF8.GetBytes(payload));
-
-        return Convert.ToHexString(hashBytes).ToLowerInvariant();
     }
 
     private static string? GetString(JsonElement root, string propertyName)
@@ -143,13 +95,6 @@ public sealed class PaymentWebhookParser : IPaymentWebhookParser
         }
 
         return null;
-    }
-
-    private static bool EqualsFixedTime(string expected, string actual)
-    {
-        return CryptographicOperations.FixedTimeEquals(
-            Encoding.UTF8.GetBytes(expected),
-            Encoding.UTF8.GetBytes(actual.Trim().ToLowerInvariant()));
     }
 
     private static PaymentGatewayOutcome MapOutcome(string? status, int? fraudStatus)

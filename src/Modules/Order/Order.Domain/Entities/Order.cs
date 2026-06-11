@@ -22,7 +22,8 @@ public sealed class Order : IAggregateRoot
         OrderAddressSnapshot billingAddressSnapshot,
         OrderAddressSnapshot shippingAddressSnapshot,
         string currencyCode,
-        IReadOnlyCollection<OrderItemDraft> items)
+        IReadOnlyCollection<OrderItemDraft> items,
+        ShippingCarrierSnapshot? shippingCarrierSnapshot)
     {
         if (storeId == Guid.Empty)
             throw new OrderDomainException("Store id is required.");
@@ -37,6 +38,7 @@ public sealed class Order : IAggregateRoot
         CustomerSnapshot = customerSnapshot ?? throw new ArgumentNullException(nameof(customerSnapshot));
         BillingAddressSnapshot = billingAddressSnapshot ?? throw new ArgumentNullException(nameof(billingAddressSnapshot));
         ShippingAddressSnapshot = shippingAddressSnapshot ?? throw new ArgumentNullException(nameof(shippingAddressSnapshot));
+        ShippingCarrierSnapshot = shippingCarrierSnapshot;
         CurrencyCode = NormalizeCurrency(currencyCode);
         Status = OrderStatus.Confirmed;
         PaymentStatus = PaymentStatus.Pending;
@@ -75,6 +77,7 @@ public sealed class Order : IAggregateRoot
     public CustomerSnapshot CustomerSnapshot { get; private set; } = default!;
     public OrderAddressSnapshot BillingAddressSnapshot { get; private set; } = default!;
     public OrderAddressSnapshot ShippingAddressSnapshot { get; private set; } = default!;
+    public ShippingCarrierSnapshot? ShippingCarrierSnapshot { get; private set; }
     public OrderTotals Totals { get; private set; } = default!;
     public DateTime PlacedAtUtc { get; private set; }
     public DateTime? CancelledAtUtc { get; private set; }
@@ -94,7 +97,8 @@ public sealed class Order : IAggregateRoot
         OrderAddressSnapshot billingAddressSnapshot,
         OrderAddressSnapshot shippingAddressSnapshot,
         string currencyCode,
-        IReadOnlyCollection<OrderItemDraft> items)
+        IReadOnlyCollection<OrderItemDraft> items,
+        ShippingCarrierSnapshot? shippingCarrierSnapshot = null)
     {
         return new Order(
             Guid.NewGuid(),
@@ -104,7 +108,8 @@ public sealed class Order : IAggregateRoot
             billingAddressSnapshot,
             shippingAddressSnapshot,
             currencyCode,
-            items);
+            items,
+            shippingCarrierSnapshot);
     }
 
     public void Cancel(string? reason)

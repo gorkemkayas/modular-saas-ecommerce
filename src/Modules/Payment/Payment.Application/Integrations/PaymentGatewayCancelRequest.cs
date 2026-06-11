@@ -8,4 +8,5 @@ public sealed record PaymentGatewayCancelRequest(
     string CurrencyCode,
     string? ExternalPaymentReference,
     string? ExternalConversationId,
-    string IdempotencyKey);
+    string IdempotencyKey,
+    Guid? ProviderAccountId = null);

@@ -7,5 +7,6 @@ public sealed record PlaceOrderCommand(
     Guid ExternalUserId,
     Guid ShippingAddressId,
     Guid? BillingAddressId,
+    Guid ShippingCarrierId,
     string CurrencyCode,
     IReadOnlyCollection<PlaceOrderItemInput> Items) : IRequest<Guid>;

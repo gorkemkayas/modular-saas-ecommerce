@@ -58,4 +58,14 @@ namespace ECommerce.API.Contracts.Catalog.Products
         bool IsMain,
         int SortOrder,
         Guid? ProductVariantId);
+
+    public sealed class UploadProductMediaFileRequest
+    {
+        public IFormFile File { get; init; } = default!;
+    }
+
+    public sealed record UploadProductMediaFileResponse(
+        string Url,
+        MediaType MediaType,
+        string OriginalFileName);
 }

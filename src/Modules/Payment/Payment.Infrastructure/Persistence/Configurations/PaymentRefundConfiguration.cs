@@ -11,6 +11,7 @@ public sealed class PaymentRefundConfiguration : IEntityTypeConfiguration<Paymen
         builder.ToTable("PaymentRefunds");
 
         builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).ValueGeneratedNever();
         builder.Property(x => x.PaymentId).IsRequired();
         builder.Property(x => x.Amount).HasPrecision(18, 2).IsRequired();
         builder.Property(x => x.Reason).HasMaxLength(500).IsRequired();

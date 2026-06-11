@@ -72,6 +72,7 @@ public sealed class MarkShipmentDeliveredCommandHandlerTests
                     "Street 1",
                     null,
                     "34000"),
+                null,
                 new[]
                 {
                     new OrderShipmentItem(Guid.NewGuid(), Guid.NewGuid(), null, "Phone", null, "SKU-1", 1)

@@ -39,6 +39,7 @@ public sealed class PaymentRepository : IPaymentRepository
         PaymentProvider provider,
         string? externalConversationId,
         string? externalPaymentReference,
+        string? providerRequestReference,
         CancellationToken cancellationToken = default)
     {
         return _context.Payments
@@ -47,7 +48,22 @@ public sealed class PaymentRepository : IPaymentRepository
             .FirstOrDefaultAsync(
                 x => x.Provider == provider
                     && ((!string.IsNullOrWhiteSpace(externalConversationId) && x.ExternalConversationId == externalConversationId)
-                        || (!string.IsNullOrWhiteSpace(externalPaymentReference) && x.ExternalPaymentReference == externalPaymentReference)),
+                        || (!string.IsNullOrWhiteSpace(externalPaymentReference) && x.ExternalPaymentReference == externalPaymentReference)
+                        || (!string.IsNullOrWhiteSpace(providerRequestReference) && x.Attempts.Any(a => a.ProviderRequestReference == providerRequestReference))),
+                cancellationToken);
+    }
+
+    public Task<Payment.Domain.Entities.Payment?> GetByProviderRequestReferenceAsync(
+        PaymentProvider provider,
+        string providerRequestReference,
+        CancellationToken cancellationToken = default)
+    {
+        return _context.Payments
+            .Include(x => x.Attempts)
+            .Include(x => x.Refunds)
+            .FirstOrDefaultAsync(
+                x => x.Provider == provider
+                    && x.Attempts.Any(a => a.ProviderRequestReference == providerRequestReference),
                 cancellationToken);
     }
 }

@@ -4,6 +4,7 @@ namespace ECommerce.API.Contracts.Catalog.Categories
         string Name,
         string Slug,
         string? Description,
+        string? ImageUrl,
         Guid? ParentCategoryId,
         int SortOrder);
 
@@ -11,7 +12,17 @@ namespace ECommerce.API.Contracts.Catalog.Categories
         string Name,
         string Slug,
         string? Description,
+        string? ImageUrl,
         int SortOrder);
 
     public sealed record ChangeCategoryParentRequest(Guid? ParentCategoryId);
+
+    public sealed class UploadCategoryImageFileRequest
+    {
+        public IFormFile File { get; init; } = default!;
+    }
+
+    public sealed record UploadCategoryImageFileResponse(
+        string Url,
+        string OriginalFileName);
 }

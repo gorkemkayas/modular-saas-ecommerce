@@ -12,6 +12,7 @@ public sealed class ShipmentDbContext : DbContext, IUnitOfWork
     }
 
     public DbSet<Shipment.Domain.Entities.Shipment> Shipments => Set<Shipment.Domain.Entities.Shipment>();
+    public DbSet<ShippingCarrier> ShippingCarriers => Set<ShippingCarrier>();
     public DbSet<ShipmentLine> ShipmentLines => Set<ShipmentLine>();
     public DbSet<ShipmentPackage> ShipmentPackages => Set<ShipmentPackage>();
     public DbSet<TrackingEvent> TrackingEvents => Set<TrackingEvent>();

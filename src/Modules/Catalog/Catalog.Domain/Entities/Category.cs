@@ -11,6 +11,7 @@ namespace Catalog.Domain.Entities
         public string Name { get; private set; } = default!;
         public Slug Slug { get; private set; } = default!;
         public string? Description { get; private set; }
+        public string? ImageUrl { get; private set; }
         public Guid? ParentCategoryId { get; private set; }
         public bool IsActive { get; private set; }
         public int SortOrder { get; private set; }
@@ -27,6 +28,7 @@ namespace Catalog.Domain.Entities
             string name,
             Slug slug,
             string? description,
+            string? imageUrl,
             Guid? parentCategoryId,
             int sortOrder)
         {
@@ -44,6 +46,7 @@ namespace Catalog.Domain.Entities
             Name = name.Trim();
             Slug = slug;
             Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
+            ImageUrl = string.IsNullOrWhiteSpace(imageUrl) ? null : imageUrl.Trim();
             ParentCategoryId = parentCategoryId;
             SortOrder = sortOrder;
             IsActive = true;
@@ -56,10 +59,11 @@ namespace Catalog.Domain.Entities
             string name,
             Slug slug,
             string? description = null,
+            string? imageUrl = null,
             Guid? parentCategoryId = null,
             int sortOrder = 0)
         {
-            return new Category(Guid.NewGuid(), storeId, name, slug, description, parentCategoryId, sortOrder);
+            return new Category(Guid.NewGuid(), storeId, name, slug, description, imageUrl, parentCategoryId, sortOrder);
         }
 
         public void Rename(string name)
@@ -80,6 +84,12 @@ namespace Catalog.Domain.Entities
         public void ChangeDescription(string? description)
         {
             Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
+            UpdatedAtUtc = DateTime.UtcNow;
+        }
+
+        public void ChangeImageUrl(string? imageUrl)
+        {
+            ImageUrl = string.IsNullOrWhiteSpace(imageUrl) ? null : imageUrl.Trim();
             UpdatedAtUtc = DateTime.UtcNow;
         }
 

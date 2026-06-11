@@ -73,8 +73,12 @@ public sealed class CapturePaymentCommandHandler : IRequestHandler<CapturePaymen
                 payment.CurrencyCode,
                 payment.ExternalPaymentReference,
                 payment.ExternalConversationId,
-                command.IdempotencyKey),
+                command.IdempotencyKey,
+                payment.ProviderAccountId),
             cancellationToken);
+
+        if (gatewayResult.ProviderAccountId.HasValue)
+            payment.AssignProviderAccount(gatewayResult.ProviderAccountId.Value);
 
         if (gatewayResult.Outcome == PaymentGatewayOutcome.Captured)
         {
@@ -178,6 +182,8 @@ public sealed class CapturePaymentCommandHandler : IRequestHandler<CapturePaymen
 
         return new PaymentActionResultDto(
             payment.Id,
+            payment.StoreId,
+            payment.OrderId,
             payment.Status,
             payment.ExternalPaymentReference,
             payment.ExternalConversationId,

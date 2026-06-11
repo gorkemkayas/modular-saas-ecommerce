@@ -29,6 +29,7 @@ namespace Catalog.Infrastructure.ReadServices
                     category.Name,
                     category.Slug.Value,
                     category.Description,
+                    category.ImageUrl,
                     category.ParentCategoryId,
                     category.IsActive,
                     category.SortOrder,
@@ -49,6 +50,7 @@ namespace Catalog.Infrastructure.ReadServices
                     x.Name,
                     x.Slug.Value,
                     x.Description,
+                    x.ImageUrl,
                     x.ParentCategoryId,
                     x.IsActive,
                     x.SortOrder))
@@ -78,6 +80,7 @@ namespace Catalog.Infrastructure.ReadServices
                 string name,
                 string slug,
                 string? description,
+                string? imageUrl,
                 Guid? parentCategoryId,
                 bool isActive,
                 int sortOrder)
@@ -87,6 +90,7 @@ namespace Catalog.Infrastructure.ReadServices
                 Name = name;
                 Slug = slug;
                 Description = description;
+                ImageUrl = imageUrl;
                 ParentCategoryId = parentCategoryId;
                 IsActive = isActive;
                 SortOrder = sortOrder;
@@ -97,6 +101,7 @@ namespace Catalog.Infrastructure.ReadServices
             public string Name { get; }
             public string Slug { get; }
             public string? Description { get; }
+            public string? ImageUrl { get; }
             public Guid? ParentCategoryId { get; }
             public bool IsActive { get; }
             public int SortOrder { get; }
@@ -110,6 +115,7 @@ namespace Catalog.Infrastructure.ReadServices
                     Name,
                     Slug,
                     Description,
+                    ImageUrl,
                     ParentCategoryId,
                     IsActive,
                     SortOrder,

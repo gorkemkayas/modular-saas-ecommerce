@@ -120,6 +120,7 @@ namespace Store.Application.Stores.Commands.ProvisionStoreForTenant.UnitTests
             Assert.AreEqual(tenantId, addedStore.TenantId);
             Assert.AreEqual("Store Name", addedStore.Name);
             Assert.AreEqual("store-slug", addedStore.Slug.Value);
+            Assert.IsTrue(addedStore.IsPublished);
             Assert.AreEqual(addedStore.Id, result);
 
             repository.Verify(r => r.AddAsync(It.IsAny<Store.Domain.Stores.Store>(), cancellationToken), Times.Once);

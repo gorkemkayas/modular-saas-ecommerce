@@ -13,6 +13,7 @@ namespace Catalog.Application.Categories
                 category.Name,
                 category.Slug.Value,
                 category.Description,
+                category.ImageUrl,
                 category.ParentCategoryId,
                 category.IsActive,
                 category.SortOrder,

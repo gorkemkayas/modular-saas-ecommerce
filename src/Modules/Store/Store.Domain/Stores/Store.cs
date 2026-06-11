@@ -12,6 +12,15 @@ namespace Store.Domain.Stores
         public Slug Slug { get; private set; } = default!;
         public string? Description { get; private set; }
         public string? LogoUrl { get; private set; }
+        public string? HeroImageUrl { get; private set; }
+        public StorefrontHeroMediaType? HeroMediaType { get; private set; }
+        public string? HeroEyebrowText { get; private set; }
+        public string? HeroTitle { get; private set; }
+        public string? HeroAccentTitle { get; private set; }
+        public string? HeroDescription { get; private set; }
+        public string? HeroPrimaryButtonText { get; private set; }
+        public string? LoginPageImageUrl { get; private set; }
+        public string? RegisterPageImageUrl { get; private set; }
         public StoreStatus Status { get; private set; }
         public bool IsPublished { get; private set; }
         public DateTime CreatedAtUtc { get; private set; }
@@ -27,7 +36,16 @@ namespace Store.Domain.Stores
             string name,
             Slug slug,
             string? description,
-            string? logoUrl)
+            string? logoUrl,
+            string? heroImageUrl,
+            StorefrontHeroMediaType? heroMediaType,
+            string? heroEyebrowText,
+            string? heroTitle,
+            string? heroAccentTitle,
+            string? heroDescription,
+            string? heroPrimaryButtonText,
+            string? loginPageImageUrl,
+            string? registerPageImageUrl)
         {
             if (tenantId == Guid.Empty)
                 throw new InvalidTenantException();
@@ -41,6 +59,15 @@ namespace Store.Domain.Stores
             Slug = slug;
             Description = description?.Trim();
             LogoUrl = logoUrl?.Trim();
+            HeroImageUrl = heroImageUrl?.Trim();
+            HeroMediaType = heroMediaType;
+            HeroEyebrowText = heroEyebrowText?.Trim();
+            HeroTitle = heroTitle?.Trim();
+            HeroAccentTitle = heroAccentTitle?.Trim();
+            HeroDescription = heroDescription?.Trim();
+            HeroPrimaryButtonText = heroPrimaryButtonText?.Trim();
+            LoginPageImageUrl = loginPageImageUrl?.Trim();
+            RegisterPageImageUrl = registerPageImageUrl?.Trim();
             Status = StoreStatus.Active;
             IsPublished = false;
             CreatedAtUtc = DateTime.UtcNow;
@@ -51,7 +78,16 @@ namespace Store.Domain.Stores
             string name,
             Slug slug,
             string? description = null,
-            string? logoUrl = null)
+            string? logoUrl = null,
+            string? heroImageUrl = null,
+            StorefrontHeroMediaType? heroMediaType = null,
+            string? heroEyebrowText = null,
+            string? heroTitle = null,
+            string? heroAccentTitle = null,
+            string? heroDescription = null,
+            string? heroPrimaryButtonText = null,
+            string? loginPageImageUrl = null,
+            string? registerPageImageUrl = null)
         {
             return new Store(
                 Guid.NewGuid(),
@@ -59,10 +95,31 @@ namespace Store.Domain.Stores
                 name,
                 slug,
                 description,
-                logoUrl);
+                logoUrl,
+                heroImageUrl,
+                heroMediaType,
+                heroEyebrowText,
+                heroTitle,
+                heroAccentTitle,
+                heroDescription,
+                heroPrimaryButtonText,
+                loginPageImageUrl,
+                registerPageImageUrl);
         }
 
-        public void UpdateProfile(string name, string? description, string? logoUrl)
+        public void UpdateProfile(
+            string name,
+            string? description,
+            string? logoUrl,
+            string? heroImageUrl = null,
+            StorefrontHeroMediaType? heroMediaType = null,
+            string? heroEyebrowText = null,
+            string? heroTitle = null,
+            string? heroAccentTitle = null,
+            string? heroDescription = null,
+            string? heroPrimaryButtonText = null,
+            string? loginPageImageUrl = null,
+            string? registerPageImageUrl = null)
         {
             EnsureNotArchived();
 
@@ -72,6 +129,15 @@ namespace Store.Domain.Stores
             Name = name.Trim();
             Description = description?.Trim();
             LogoUrl = logoUrl?.Trim();
+            HeroImageUrl = heroImageUrl?.Trim();
+            HeroMediaType = heroMediaType;
+            HeroEyebrowText = heroEyebrowText?.Trim();
+            HeroTitle = heroTitle?.Trim();
+            HeroAccentTitle = heroAccentTitle?.Trim();
+            HeroDescription = heroDescription?.Trim();
+            HeroPrimaryButtonText = heroPrimaryButtonText?.Trim();
+            LoginPageImageUrl = loginPageImageUrl?.Trim();
+            RegisterPageImageUrl = registerPageImageUrl?.Trim();
             UpdatedAtUtc = DateTime.UtcNow;
         }
 

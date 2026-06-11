@@ -10,6 +10,7 @@ public sealed class InventoryItemConfiguration : IEntityTypeConfiguration<Invent
     {
         builder.ToTable("InventoryItems");
         builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).ValueGeneratedNever();
 
         builder.Property(x => x.Sku).HasMaxLength(100).IsRequired();
         builder.Property(x => x.DisplayName).HasMaxLength(250).IsRequired();

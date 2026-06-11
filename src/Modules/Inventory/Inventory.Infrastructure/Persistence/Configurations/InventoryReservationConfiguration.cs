@@ -10,6 +10,7 @@ public sealed class InventoryReservationConfiguration : IEntityTypeConfiguration
     {
         builder.ToTable("InventoryReservations");
         builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).ValueGeneratedNever();
 
         builder.Property(x => x.ReservationReference).HasMaxLength(100).IsRequired();
         builder.Property(x => x.Quantity).IsRequired();

@@ -26,6 +26,7 @@ The project currently contains these modules:
 - `Payment`
 - `Shipment`
 - `Notification`
+- `Subscription`
 
 These modules already model the core commerce flow:
 
@@ -85,6 +86,7 @@ Implemented today:
 - payment module with authorization, capture, cancel, refund, and order sync
 - shipment module with package-level fulfillment and tracking events
 - notification module with store-scoped templates and persisted dispatch history
+- subscription plans with tenant-level package provisioning and feature/quota definitions
 
 ## Progress Visuals
 
@@ -158,6 +160,7 @@ Common keys:
 - `Modules:Order:Database:ConnectionString`
 - `Modules:Payment:Database:ConnectionString`
 - `Modules:Shipment:Database:ConnectionString`
+- `Modules:Subscription:Database:ConnectionString`
 - `Modules:Notification:Email:ApiKey`
 - `Modules:Notification:Email:WebhookSecret`
 - `Modules:Payment:Iyzico:ApiKey`

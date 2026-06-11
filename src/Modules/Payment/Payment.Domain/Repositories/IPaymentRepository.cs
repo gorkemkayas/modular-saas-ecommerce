@@ -11,5 +11,11 @@ public interface IPaymentRepository
         Payment.Domain.Enums.PaymentProvider provider,
         string? externalConversationId,
         string? externalPaymentReference,
+        string? providerRequestReference,
+        CancellationToken cancellationToken = default);
+
+    Task<PaymentEntity?> GetByProviderRequestReferenceAsync(
+        Payment.Domain.Enums.PaymentProvider provider,
+        string providerRequestReference,
         CancellationToken cancellationToken = default);
 }

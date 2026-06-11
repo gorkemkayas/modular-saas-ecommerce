@@ -13,4 +13,12 @@ public interface IShipmentModuleApi
     Task<ShipmentDetailResult?> GetStoreShipmentByIdAsync(
         GetStoreShipmentByIdRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyCollection<ShippingCarrierResult>> GetActiveShippingCarriersAsync(
+        GetActiveShippingCarriersRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<ShippingCarrierResult?> GetActiveShippingCarrierByIdAsync(
+        GetActiveShippingCarrierByIdRequest request,
+        CancellationToken cancellationToken = default);
 }

@@ -5,6 +5,7 @@ using Catalog.Domain.Repositories;
 using Catalog.Domain.ValueObjects;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Subscription.Contracts;
 
 namespace Catalog.Application.UnitTests.Products.Commands.CreateSimpleProduct
 {
@@ -38,6 +39,7 @@ namespace Catalog.Application.UnitTests.Products.Commands.CreateSimpleProduct
                 productRepository.Object,
                 Mock.Of<IBrandRepository>(),
                 Mock.Of<ICategoryRepository>(),
+                Mock.Of<ISubscriptionModuleApi>(),
                 Mock.Of<IUnitOfWork>(),
                 Mock.Of<ILogger<CreateSimpleProductCommandHandler>>());
 
@@ -77,6 +79,9 @@ namespace Catalog.Application.UnitTests.Products.Commands.CreateSimpleProduct
                 .Setup(x => x.ExistsBySkuAsync(storeId, It.IsAny<Sku>(), null, null, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(false);
             productRepository
+                .Setup(x => x.CountNonArchivedByStoreIdAsync(storeId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(1);
+            productRepository
                 .Setup(x => x.AddAsync(It.IsAny<Catalog.Domain.Entities.Product>(), It.IsAny<CancellationToken>()))
                 .Callback<Catalog.Domain.Entities.Product, CancellationToken>((product, _) => addedProduct = product)
                 .Returns(Task.CompletedTask);
@@ -86,6 +91,15 @@ namespace Catalog.Application.UnitTests.Products.Commands.CreateSimpleProduct
                 .Setup(x => x.ExistsByIdAsync(storeId, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
 
+            var subscriptionModuleApi = new Mock<ISubscriptionModuleApi>();
+            subscriptionModuleApi
+                .Setup(x => x.GetQuotaAsync(
+                    It.Is<QuotaRequest>(request =>
+                        request.TenantId == storeId &&
+                        request.QuotaKey == SubscriptionQuotaKeys.CatalogProducts),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new QuotaResult(storeId, SubscriptionQuotaKeys.CatalogProducts, 10));
+
             var unitOfWork = new Mock<IUnitOfWork>();
             unitOfWork.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
@@ -93,6 +107,7 @@ namespace Catalog.Application.UnitTests.Products.Commands.CreateSimpleProduct
                 productRepository.Object,
                 Mock.Of<IBrandRepository>(),
                 categoryRepository.Object,
+                subscriptionModuleApi.Object,
                 unitOfWork.Object,
                 Mock.Of<ILogger<CreateSimpleProductCommandHandler>>());
 
@@ -106,6 +121,63 @@ namespace Catalog.Application.UnitTests.Products.Commands.CreateSimpleProduct
             Assert.HasCount(1, addedProduct.Categories);
 
             unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [TestMethod]
+        public async Task Handle_WhenProductQuotaIsReached_ThrowsCatalogQuotaExceededException()
+        {
+            var storeId = Guid.NewGuid();
+            var command = new CreateSimpleProductCommand(
+                storeId,
+                "Basic Tee",
+                "basic-tee",
+                "TEE-001",
+                null,
+                null,
+                null,
+                null);
+
+            var productRepository = new Mock<IProductRepository>();
+            productRepository
+                .Setup(x => x.ExistsBySlugAsync(storeId, It.IsAny<Slug>(), null, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+            productRepository
+                .Setup(x => x.ExistsBySkuAsync(storeId, It.IsAny<Sku>(), null, null, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+            productRepository
+                .Setup(x => x.CountNonArchivedByStoreIdAsync(storeId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(50);
+
+            var subscriptionModuleApi = new Mock<ISubscriptionModuleApi>();
+            subscriptionModuleApi
+                .Setup(x => x.GetQuotaAsync(
+                    It.Is<QuotaRequest>(request =>
+                        request.TenantId == storeId &&
+                        request.QuotaKey == SubscriptionQuotaKeys.CatalogProducts),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new QuotaResult(storeId, SubscriptionQuotaKeys.CatalogProducts, 50));
+
+            var handler = new CreateSimpleProductCommandHandler(
+                productRepository.Object,
+                Mock.Of<IBrandRepository>(),
+                Mock.Of<ICategoryRepository>(),
+                subscriptionModuleApi.Object,
+                Mock.Of<IUnitOfWork>(),
+                Mock.Of<ILogger<CreateSimpleProductCommandHandler>>());
+
+            var exception = await Assert.ThrowsExactlyAsync<CatalogQuotaExceededException>(
+                () => handler.Handle(command, CancellationToken.None));
+
+            Assert.AreEqual(storeId, exception.StoreId);
+            Assert.AreEqual(SubscriptionQuotaKeys.CatalogProducts, exception.QuotaKey);
+            Assert.AreEqual(50, exception.CurrentCount);
+            Assert.AreEqual(50, exception.Limit);
+
+            productRepository.Verify(
+                x => x.AddAsync(
+                    It.IsAny<Catalog.Domain.Entities.Product>(),
+                    It.IsAny<CancellationToken>()),
+                Times.Never);
         }
     }
 }

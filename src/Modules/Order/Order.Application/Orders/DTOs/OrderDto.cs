@@ -14,6 +14,7 @@ public sealed record OrderDto(
     OrderCustomerSnapshotDto Customer,
     OrderAddressSnapshotDto BillingAddress,
     OrderAddressSnapshotDto ShippingAddress,
+    OrderShippingCarrierSnapshotDto? ShippingCarrier,
     OrderTotalsDto Totals,
     DateTime PlacedAtUtc,
     DateTime? CancelledAtUtc,

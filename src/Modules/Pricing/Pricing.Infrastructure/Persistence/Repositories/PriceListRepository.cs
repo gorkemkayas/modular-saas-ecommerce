@@ -38,6 +38,13 @@ public sealed class PriceListRepository : IPriceListRepository
                 cancellationToken);
     }
 
+    public Task<int> CountNonArchivedByStoreIdAsync(Guid storeId, CancellationToken cancellationToken = default)
+    {
+        return _context.PriceLists.CountAsync(
+            x => x.StoreId == storeId && x.Status != PriceListStatus.Archived,
+            cancellationToken);
+    }
+
     public Task<bool> ExistsDefaultActiveListAsync(
         Guid storeId,
         Currency currency,

@@ -19,3 +19,8 @@ public sealed record SearchPaymentsRequest(
     PaymentStatus? Status,
     int PageNumber = 1,
     int PageSize = 20);
+
+public sealed record UpsertIyzicoPaymentProviderAccountRequest(
+    string? ApiKey,
+    string? SecretKey,
+    bool IsEnabled);

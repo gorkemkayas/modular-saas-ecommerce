@@ -33,6 +33,18 @@ namespace Store.Infrastructure.Persistance.Repositories
             return _context.Stores.FirstOrDefaultAsync(x => x.Slug == slug, cancellationToken);
         }
 
+        public async Task<IReadOnlyCollection<Store.Domain.Stores.Store>> ListPublishedAsync(
+            int limit,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.Stores
+                .Where(x => x.IsPublished && x.Status == StoreStatus.Active)
+                .OrderByDescending(x => x.UpdatedAtUtc ?? x.CreatedAtUtc)
+                .ThenBy(x => x.Name)
+                .Take(limit)
+                .ToListAsync(cancellationToken);
+        }
+
         public Task<bool> ExistsByTenantIdAsync(Guid tenantId, CancellationToken cancellationToken = default)
         {
             return _context.Stores.AnyAsync(x => x.TenantId == tenantId, cancellationToken);

@@ -18,6 +18,7 @@ using Payment.Infrastructure.Options;
 using Payment.Infrastructure.Persistence;
 using Payment.Infrastructure.Persistence.Repositories;
 using Payment.Infrastructure.ReadServices;
+using Payment.Infrastructure.Security;
 
 namespace Payment.Infrastructure.DependencyInjection;
 
@@ -44,13 +45,7 @@ public static class PaymentInfrastructureServiceCollectionExtensions
             options.UseNpgsql(dbOptions.ConnectionString);
         });
 
-        services.AddHttpClient<IyzicoPaymentGateway>((sp, client) =>
-        {
-            var options = sp.GetRequiredService<IOptions<IyzicoOptions>>().Value;
-
-            if (!string.IsNullOrWhiteSpace(options.BaseUrl))
-                client.BaseAddress = new Uri(options.BaseUrl, UriKind.Absolute);
-        });
+        services.AddHttpClient<IyzicoPaymentGateway>();
 
         services.AddScoped<IOrderPaymentContextService, OrderPaymentContextService>();
         services.AddScoped<IOrderPaymentSyncService, OrderPaymentSyncService>();
@@ -58,11 +53,16 @@ public static class PaymentInfrastructureServiceCollectionExtensions
         services.AddScoped<IPaymentNotificationService, PaymentNotificationService>();
         services.AddScoped<IShipmentPaymentService, PaymentShipmentService>();
         services.AddScoped<IPaymentWebhookParser, PaymentWebhookParser>();
+        services.AddScoped<IPaymentWebhookSignatureValidator, PaymentWebhookSignatureValidator>();
         services.AddScoped<MockPaymentGateway>();
         services.AddScoped<IPaymentRepository, PaymentRepository>();
+        services.AddScoped<IPaymentProviderAccountRepository, PaymentProviderAccountRepository>();
         services.AddScoped<IPaymentReadService, PaymentReadService>();
+        services.AddScoped<IPaymentCredentialProtector, DataProtectionPaymentCredentialProtector>();
+        services.AddScoped<IIyzicoPaymentAccountResolver, IyzicoPaymentAccountResolver>();
         services.AddScoped<IPaymentModuleApi, PaymentModuleApi>();
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<PaymentDbContext>());
+        services.AddDataProtection();
         services.AddScoped<IPaymentGateway>(sp =>
         {
             var gatewayOptions = sp.GetRequiredService<IOptions<PaymentGatewayOptions>>().Value;

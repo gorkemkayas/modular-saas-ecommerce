@@ -33,7 +33,16 @@ namespace Store.Application.Stores.Queries.GetStoreBySlug
                 store.Description,
                 store.LogoUrl,
                 store.Status,
-                store.IsPublished);
+                store.IsPublished,
+                store.HeroImageUrl,
+                store.HeroMediaType,
+                store.HeroEyebrowText,
+                store.HeroTitle,
+                store.HeroAccentTitle,
+                store.HeroDescription,
+                store.HeroPrimaryButtonText,
+                store.LoginPageImageUrl,
+                store.RegisterPageImageUrl);
         }
     }
 }

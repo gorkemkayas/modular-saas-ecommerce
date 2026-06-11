@@ -13,6 +13,9 @@ public sealed class CustomerAddressConfiguration : IEntityTypeConfiguration<Cust
 
         builder.HasKey(x => x.Id);
 
+        builder.Property(x => x.Id)
+            .ValueGeneratedNever();
+
         builder.Property(x => x.CustomerId)
             .IsRequired();
 

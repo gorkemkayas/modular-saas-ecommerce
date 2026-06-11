@@ -88,6 +88,8 @@ namespace ECommerce.API.ExceptionHandlers
                 Catalog.Application.Exceptions.DuplicateAttributeCodeException => (StatusCodes.Status409Conflict, "Duplicate Attribute Code"),
 
                 Catalog.Application.Exceptions.ProductPricingRequiredException => (StatusCodes.Status400BadRequest, "Product Pricing Required"),
+                Catalog.Application.Exceptions.CatalogQuotaExceededException => (StatusCodes.Status403Forbidden, "Catalog Quota Exceeded"),
+                Catalog.Application.Exceptions.CatalogFeatureUnavailableException => (StatusCodes.Status403Forbidden, "Catalog Feature Unavailable"),
                 Catalog.Application.Exceptions.ProductNotFoundException => (StatusCodes.Status404NotFound, "Product Not Found"),
                 Catalog.Application.Exceptions.CategoryNotFoundException => (StatusCodes.Status404NotFound, "Category Not Found"),
                 Catalog.Application.Exceptions.BrandNotFoundException => (StatusCodes.Status404NotFound, "Brand Not Found"),
@@ -105,6 +107,18 @@ namespace ECommerce.API.ExceptionHandlers
             {
                 case Catalog.Application.Exceptions.ProductPricingRequiredException pricingRequired:
                     problemDetails.Extensions["productId"] = pricingRequired.ProductId;
+                    break;
+
+                case Catalog.Application.Exceptions.CatalogQuotaExceededException quotaExceeded:
+                    problemDetails.Extensions["storeId"] = quotaExceeded.StoreId;
+                    problemDetails.Extensions["quotaKey"] = quotaExceeded.QuotaKey;
+                    problemDetails.Extensions["currentCount"] = quotaExceeded.CurrentCount;
+                    problemDetails.Extensions["limit"] = quotaExceeded.Limit;
+                    break;
+
+                case Catalog.Application.Exceptions.CatalogFeatureUnavailableException featureUnavailable:
+                    problemDetails.Extensions["storeId"] = featureUnavailable.StoreId;
+                    problemDetails.Extensions["featureKey"] = featureUnavailable.FeatureKey;
                     break;
 
                 case Catalog.Application.Exceptions.ProductNotFoundException notFound:

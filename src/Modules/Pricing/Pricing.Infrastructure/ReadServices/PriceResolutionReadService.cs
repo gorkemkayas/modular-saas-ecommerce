@@ -24,36 +24,39 @@ public sealed class PriceResolutionReadService : IPriceResolutionReadService
         CancellationToken cancellationToken = default)
     {
         var currency = Currency.Create(currencyCode);
-
-        var defaultPriceList = await _context.PriceLists
+        var defaultPriceLists = await _context.PriceLists
             .AsNoTracking()
             .Include(x => x.Entries)
             .Where(x =>
                 x.StoreId == storeId &&
                 x.IsDefault &&
-                x.Status == PriceListStatus.Active &&
-                x.Currency == currency)
-            .FirstOrDefaultAsync(cancellationToken);
+                x.Status == PriceListStatus.Active)
+            .OrderByDescending(x => x.Currency == currency)
+            .ThenByDescending(x => x.Priority)
+            .ThenBy(x => x.CreatedAtUtc)
+            .ToListAsync(cancellationToken);
 
-        if (defaultPriceList is null)
-            return null;
+        foreach (var priceList in defaultPriceLists)
+        {
+            var resolvedEntry = priceList.Entries.FirstOrDefault(x =>
+                x.Target.ProductId == productId &&
+                x.Target.ProductVariantId == productVariantId &&
+                x.IsActive);
 
-        var resolvedEntry = defaultPriceList.Entries.FirstOrDefault(x =>
-            x.Target.ProductId == productId &&
-            x.Target.ProductVariantId == productVariantId &&
-            x.IsActive);
+            if (resolvedEntry is null)
+                continue;
 
-        if (resolvedEntry is null)
-            return null;
+            return new ResolvedPriceDto(
+                priceList.StoreId,
+                resolvedEntry.Target.ProductId,
+                resolvedEntry.Target.ProductVariantId,
+                resolvedEntry.Price.Amount,
+                resolvedEntry.Price.Currency.Code,
+                resolvedEntry.CompareAtPrice?.Amount,
+                priceList.Id,
+                resolvedEntry.Id);
+        }
 
-        return new ResolvedPriceDto(
-            defaultPriceList.StoreId,
-            resolvedEntry.Target.ProductId,
-            resolvedEntry.Target.ProductVariantId,
-            resolvedEntry.Price.Amount,
-            resolvedEntry.Price.Currency.Code,
-            resolvedEntry.CompareAtPrice?.Amount,
-            defaultPriceList.Id,
-            resolvedEntry.Id);
+        return null;
     }
 }

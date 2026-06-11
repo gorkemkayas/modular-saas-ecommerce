@@ -11,6 +11,7 @@ public sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment.Doma
         builder.ToTable("Payments");
 
         builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).ValueGeneratedNever();
         builder.Property(x => x.StoreId).IsRequired();
         builder.Property(x => x.OrderId).IsRequired();
         builder.Property(x => x.OrderNumber).HasMaxLength(50).IsRequired();
@@ -19,6 +20,7 @@ public sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment.Doma
         builder.Property(x => x.CurrencyCode).HasMaxLength(3).IsRequired();
         builder.Property(x => x.Status).IsRequired();
         builder.Property(x => x.Provider).IsRequired();
+        builder.Property(x => x.ProviderAccountId);
         builder.Property(x => x.MethodType).IsRequired();
         builder.Property(x => x.ExternalPaymentReference).HasMaxLength(200);
         builder.Property(x => x.ExternalConversationId).HasMaxLength(200);
@@ -37,8 +39,14 @@ public sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment.Doma
             .HasForeignKey(x => x.PaymentId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder.HasOne<PaymentProviderAccount>()
+            .WithMany()
+            .HasForeignKey(x => x.ProviderAccountId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasIndex(x => new { x.StoreId, x.OrderId }).IsUnique();
         builder.HasIndex(x => new { x.StoreId, x.Status, x.CreatedAtUtc });
+        builder.HasIndex(x => x.ProviderAccountId);
         builder.HasIndex(x => x.ExternalPaymentReference);
         builder.HasIndex(x => x.ExternalConversationId);
     }

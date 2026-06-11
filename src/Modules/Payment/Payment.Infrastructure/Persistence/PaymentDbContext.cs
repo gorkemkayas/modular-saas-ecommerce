@@ -14,6 +14,7 @@ public sealed class PaymentDbContext : DbContext, IUnitOfWork
     public DbSet<Payment.Domain.Entities.Payment> Payments => Set<Payment.Domain.Entities.Payment>();
     public DbSet<PaymentAttempt> PaymentAttempts => Set<PaymentAttempt>();
     public DbSet<PaymentRefund> PaymentRefunds => Set<PaymentRefund>();
+    public DbSet<PaymentProviderAccount> PaymentProviderAccounts => Set<PaymentProviderAccount>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

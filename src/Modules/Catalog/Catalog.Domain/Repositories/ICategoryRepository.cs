@@ -7,6 +7,7 @@ namespace Catalog.Domain.Repositories
     {
         Task AddAsync(Category category, CancellationToken cancellationToken = default);
         Task<Category?> GetByIdAsync(Guid storeId, Guid categoryId, CancellationToken cancellationToken = default);
+        Task<int> CountActiveByStoreIdAsync(Guid storeId, CancellationToken cancellationToken = default);
         Task<bool> ExistsByIdAsync(Guid storeId, Guid categoryId, CancellationToken cancellationToken = default);
         Task<bool> ExistsBySlugAsync(Guid storeId, Slug slug, Guid? excludedCategoryId = null, CancellationToken cancellationToken = default);
         Task<bool> IsDescendantOfAsync(
