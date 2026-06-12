@@ -364,3 +364,9 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Environment / Secrets
+.env.production
+.env.staging
+.env.local
+.env.*.local
