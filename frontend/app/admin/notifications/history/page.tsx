@@ -74,7 +74,7 @@ export default async function AdminNotificationHistoryPage({ searchParams }: Pro
           </button>
         </form>
 
-        <div className="border border-border overflow-hidden">
+        <div className="border border-border overflow-x-auto">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>

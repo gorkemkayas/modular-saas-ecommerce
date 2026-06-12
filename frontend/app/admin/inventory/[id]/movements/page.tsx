@@ -54,7 +54,7 @@ export default async function AdminInventoryMovementsPage({ params, searchParams
           <p className="mt-2 text-sm text-muted-foreground">{item.displayName} • {item.sku}</p>
         </div>
 
-        <div className="border border-border overflow-hidden">
+        <div className="border border-border overflow-x-auto">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>

@@ -6,7 +6,7 @@ import { ChevronRight, Calendar, CreditCard, Package, MapPin } from 'lucide-reac
 export default function AdminOrderDetailPage({ params }: { params: { id: string } }) {
   return (
     <div className="max-w-7xl">
-      <nav className="flex items-center gap-2 text-sm mb-8 uppercase tracking-widest">
+      <nav className="mb-8 flex flex-wrap items-center gap-2 text-sm uppercase tracking-widest">
         <Link href="/admin/orders" className="text-gray-500 hover:text-black">
           Orders
         </Link>
@@ -16,11 +16,11 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
         <div className="md:col-span-2">
-          <h1 className="text-3xl font-light tracking-tight mb-8">Order {params.id}</h1>
+          <h1 className="mb-8 text-2xl font-light tracking-tight sm:text-3xl">Order {params.id}</h1>
 
-          <div className="border border-gray-200 p-8 mb-8">
+          <div className="mb-8 border border-gray-200 p-5 sm:p-8">
             <h2 className="text-lg font-light tracking-tight mb-6">Order Summary</h2>
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
               <div>
                 <p className="text-xs text-gray-600 mb-2 font-light tracking-widest uppercase">Customer</p>
                 <p className="font-light">John Doe</p>
@@ -43,16 +43,16 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
             </div>
           </div>
 
-          <div className="border border-gray-200 p-8 mb-8">
+          <div className="mb-8 border border-gray-200 p-5 sm:p-8">
             <h2 className="text-lg font-light tracking-tight mb-6">Items</h2>
             <div className="space-y-4">
               {[1, 2].map((item) => (
-                <div key={item} className="flex justify-between items-start border-b border-gray-200 pb-4">
+                <div key={item} className="flex flex-col items-start justify-between gap-3 border-b border-gray-200 pb-4 sm:flex-row">
                   <div>
                     <p className="font-light">Premium Cotton T-Shirt</p>
                     <p className="text-sm text-gray-600 font-light">Black • Size M</p>
                   </div>
-                  <div className="text-right">
+                  <div className="sm:text-right">
                     <p className="font-light">Qty: 1</p>
                     <p className="text-sm text-gray-600 font-light">$149.50</p>
                   </div>
@@ -61,7 +61,7 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
             </div>
           </div>
 
-          <div className="border border-gray-200 p-8">
+          <div className="border border-gray-200 p-5 sm:p-8">
             <h2 className="text-lg font-light tracking-tight mb-6">Shipping Address</h2>
             <p className="font-light mb-1">John Doe</p>
             <p className="text-sm text-gray-600 font-light">123 Main Street</p>
@@ -70,7 +70,7 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
         </div>
 
         <div>
-          <div className="border border-gray-200 p-6 sticky top-32">
+          <div className="sticky top-32 border border-gray-200 p-5 sm:p-6">
             <h2 className="text-lg font-light tracking-tight mb-6">Actions</h2>
             <div className="space-y-3">
               <button className="w-full px-4 py-3 bg-black text-white font-light tracking-widest uppercase text-sm hover:bg-gray-800 transition-colors">
