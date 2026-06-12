@@ -580,7 +580,7 @@ export function ProductDetail({ product, storeSlug }: ProductDetailProps) {
             </div>
           ) : null}
 
-          <div className="mt-12 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center">
+          <div className="mt-12 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
             <div className="flex w-full items-center border border-border sm:w-auto">
               <button
                 onClick={decrementQuantity}
@@ -599,24 +599,26 @@ export function ProductDetail({ product, storeSlug }: ProductDetailProps) {
               </button>
             </div>
 
-            <Button
-              onClick={handleAddToCart}
-              size="lg"
-              className="h-14 w-full flex-1 text-[11px] uppercase tracking-[0.2em] sm:w-auto"
-              disabled={!cartProduct}
-            >
-              <ShoppingBag className="mr-3 h-4 w-4" strokeWidth={1} />
-              Add to Cart
-            </Button>
+            <div className="flex w-full gap-3 sm:flex-1">
+              <Button
+                onClick={handleAddToCart}
+                size="lg"
+                className="h-14 flex-1 text-[11px] uppercase tracking-[0.2em]"
+                disabled={!cartProduct}
+              >
+                <ShoppingBag className="mr-3 h-4 w-4" strokeWidth={1} />
+                Add to Cart
+              </Button>
 
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-14 w-full border-border hover:border-foreground hover:bg-transparent sm:w-14"
-            >
-              <Heart className="h-5 w-5" strokeWidth={1} />
-              <span className="sr-only">Wishlist</span>
-            </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-14 w-14 shrink-0 border-border hover:border-foreground hover:bg-transparent"
+              >
+                <Heart className="h-5 w-5" strokeWidth={1} />
+                <span className="sr-only">Wishlist</span>
+              </Button>
+            </div>
           </div>
 
           <div className="mt-16 grid gap-6 border-t border-border pt-12 sm:grid-cols-3">

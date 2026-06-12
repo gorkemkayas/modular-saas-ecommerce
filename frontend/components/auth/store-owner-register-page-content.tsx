@@ -248,18 +248,12 @@ export function StoreOwnerRegisterPageContent({
 
       <div className="flex flex-1 items-center justify-center px-4 py-8 sm:px-6 sm:py-10">
         <div className="w-full max-w-2xl">
-          <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+          <div className="mb-8">
             <Link
               href="/"
               className="font-serif text-xl font-light tracking-[0.22em] sm:text-2xl sm:tracking-[0.3em]"
             >
               KAYAS
-            </Link>
-            <Link
-              href="/auth/login"
-              className="text-sm text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
-            >
-              Sign in
             </Link>
           </div>
 
@@ -296,7 +290,7 @@ export function StoreOwnerRegisterPageContent({
 
           <div className="overflow-visible md:min-h-[520px] md:overflow-hidden md:[height:min(720px,calc(100svh-9rem))]">
             <div
-              className="block md:flex md:h-full md:transition-transform md:duration-500 md:ease-out md:[transform:translateX(var(--step-offset))]"
+              className="block md:flex md:h-full md:transition-transform md:duration-500 md:ease-out md:[transform:translateX(var(--step-offset))] pb-8 md:pb-0"
               style={stepSliderStyle}
             >
               <section
@@ -364,16 +358,16 @@ export function StoreOwnerRegisterPageContent({
                             </span>
                           </div>
 
-                          <div className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
+                          <div className="mt-4 grid gap-2 text-sm sm:grid-cols-3 sm:gap-3">
                             {displayedQuotaKeys.map((quotaKey) => (
                               <div
                                 key={`${plan.code}-${quotaKey}`}
-                                className="flex items-center justify-between gap-3 sm:block"
+                                className="flex items-center justify-between gap-3 border-b border-border/50 pb-2 last:border-0 last:pb-0 sm:block sm:border-0 sm:pb-0"
                               >
                                 <span className="text-muted-foreground">
                                   {getSubscriptionQuotaLabel(quotaKey)}
                                 </span>
-                                <p className="sm:mt-1">
+                                <p className="font-medium sm:mt-1 sm:font-normal">
                                   {getPlanQuotaValue(plan, quotaKey)}
                                 </p>
                               </div>
