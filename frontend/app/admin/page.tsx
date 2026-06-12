@@ -146,10 +146,10 @@ export default async function AdminDashboard() {
             </div>
             <Link
               href="/admin/subscription"
-              className="w-fit border border-border bg-background px-4 py-2 text-sm transition-colors hover:bg-secondary"
-            >
-              View Subscription
-            </Link>
+                className="inline-flex min-h-11 w-full items-center justify-center border border-border bg-background px-4 py-2 text-sm transition-colors hover:bg-secondary md:w-fit"
+              >
+                View Subscription
+              </Link>
           </div>
         ) : null}
 
@@ -192,7 +192,7 @@ export default async function AdminDashboard() {
                 payments.items.map((payment) => (
                   <div
                     key={payment.id}
-                    className="flex items-center justify-between gap-4 p-4 transition-colors hover:bg-secondary/50"
+                    className="flex flex-col gap-4 p-4 transition-colors hover:bg-secondary/50 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div>
                       <p className="text-sm font-medium">{payment.orderNumber}</p>
@@ -200,13 +200,13 @@ export default async function AdminDashboard() {
                         {formatEnumLabel(payment.provider)} · {formatEnumLabel(payment.methodType)}
                       </p>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
                       <span
                         className={`px-2 py-1 text-[10px] uppercase tracking-wider ${getPaymentStatusClasses(payment.status)}`}
                       >
                         {formatEnumLabel(payment.status)}
                       </span>
-                      <div className="text-right">
+                      <div className="sm:text-right">
                         <p className="text-sm">
                           {formatMoney(payment.amount, payment.currencyCode)}
                         </p>
@@ -240,7 +240,7 @@ export default async function AdminDashboard() {
                 shipments.items.map((shipment) => (
                   <div
                     key={shipment.id}
-                    className="flex items-center justify-between gap-4 p-4 transition-colors hover:bg-secondary/50"
+                    className="flex flex-col gap-4 p-4 transition-colors hover:bg-secondary/50 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div>
                       <p className="text-sm font-medium">{shipment.shipmentNumber}</p>
@@ -248,13 +248,13 @@ export default async function AdminDashboard() {
                         {shipment.orderNumber} · {shipment.recipientName}
                       </p>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
                       <span
                         className={`px-2 py-1 text-[10px] uppercase tracking-wider ${getShipmentStatusClasses(shipment.status)}`}
                       >
                         {formatEnumLabel(shipment.status)}
                       </span>
-                      <div className="text-right">
+                      <div className="sm:text-right">
                         <p className="text-sm">{shipment.carrierName ?? "Carrier pending"}</p>
                         <p className="text-xs text-muted-foreground">
                           {formatDateTime(
@@ -292,13 +292,13 @@ export default async function AdminDashboard() {
                 products.items.map((product) => (
                   <div
                     key={product.id}
-                    className="flex items-center justify-between gap-4 p-4 transition-colors hover:bg-secondary/50"
+                    className="flex flex-col gap-4 p-4 transition-colors hover:bg-secondary/50 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div>
                       <p className="text-sm font-medium">{product.name}</p>
                       <p className="text-xs text-muted-foreground">/{product.slug}</p>
                     </div>
-                    <div className="text-right">
+                    <div className="sm:text-right">
                       <p className="text-sm">{formatEnumLabel(product.productType)}</p>
                       <p className="text-xs text-muted-foreground">
                         {formatEnumLabel(product.productStatus)} ·{" "}
@@ -330,13 +330,13 @@ export default async function AdminDashboard() {
                 customers.items.map((customer) => (
                   <div
                     key={customer.id}
-                    className="flex items-center justify-between gap-4 p-4 transition-colors hover:bg-secondary/50"
+                    className="flex flex-col gap-4 p-4 transition-colors hover:bg-secondary/50 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div>
                       <p className="text-sm font-medium">{customer.fullName}</p>
                       <p className="text-xs text-muted-foreground">{customer.email}</p>
                     </div>
-                    <div className="text-right">
+                    <div className="sm:text-right">
                       <p className="text-sm">{formatEnumLabel(customer.status)}</p>
                       <p className="text-xs text-muted-foreground">
                         {formatDateTime(customer.registeredAtUtc)}
@@ -353,7 +353,7 @@ export default async function AdminDashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {[
             { name: "Add Product", href: "/admin/products/create", icon: Package },
             { name: "Payments", href: "/admin/payments", icon: CreditCard },

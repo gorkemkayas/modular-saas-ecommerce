@@ -55,7 +55,7 @@ export default async function StockMovementsPage({ searchParams }: Props) {
           />
         </form>
 
-        <div className="border border-border overflow-hidden">
+        <div className="border border-border overflow-x-auto">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>

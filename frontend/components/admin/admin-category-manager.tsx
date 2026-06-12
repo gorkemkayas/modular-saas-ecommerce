@@ -186,7 +186,7 @@ export function AdminCategoryManager({
 
   return (
     <div className="space-y-4">
-      <div className="border border-border overflow-hidden">
+      <div className="border border-border overflow-x-auto">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>

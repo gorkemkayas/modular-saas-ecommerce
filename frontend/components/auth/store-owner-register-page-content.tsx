@@ -29,6 +29,7 @@ import { withQuery } from "@/lib/config"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import type { CSSProperties } from "react"
 
 interface StoreOwnerRegisterPageContentProps {
   plans: SubscriptionPlanDto[]
@@ -90,6 +91,9 @@ export function StoreOwnerRegisterPageContent({
   const selectedPlan = plans.find((plan) => plan.code === selectedPlanCode)
   const currentStepIndex = stepOrder.indexOf(step)
   const canSubmit = Boolean(selectedPlanCode) && plans.length > 0 && !isLoading
+  const stepSliderStyle = {
+    "--step-offset": `-${currentStepIndex * 100}%`,
+  } as CSSProperties
 
   const passwordRequirements = [
     { label: "At least 8 characters", met: formData.password.length >= 8 },
@@ -290,19 +294,16 @@ export function StoreOwnerRegisterPageContent({
             })}
           </div>
 
-          <div
-            className="overflow-hidden"
-            style={{
-              height: "min(720px, calc(100svh - 9rem))",
-              minHeight: "520px",
-            }}
-          >
+          <div className="overflow-visible md:min-h-[520px] md:overflow-hidden md:[height:min(720px,calc(100svh-9rem))]">
             <div
-              className="flex h-full transition-transform duration-500 ease-out"
-              style={{ transform: `translateX(-${currentStepIndex * 100}%)` }}
+              className="block md:flex md:h-full md:transition-transform md:duration-500 md:ease-out md:[transform:translateX(var(--step-offset))]"
+              style={stepSliderStyle}
             >
               <section
-                className="h-full w-full shrink-0 overflow-y-auto pr-1"
+                className={cn(
+                  "w-full shrink-0 overflow-visible pr-0 md:h-full md:overflow-y-auto md:pr-1",
+                  step === "plan" ? "block" : "hidden md:block",
+                )}
                 aria-hidden={step !== "plan"}
               >
                 <div className="mb-7">
@@ -386,7 +387,10 @@ export function StoreOwnerRegisterPageContent({
               </section>
 
               <section
-                className="h-full w-full shrink-0 overflow-y-auto px-1"
+                className={cn(
+                  "w-full shrink-0 overflow-visible px-0 md:h-full md:overflow-y-auto md:px-1",
+                  step === "planDetails" ? "block" : "hidden md:block",
+                )}
                 aria-hidden={step !== "planDetails"}
               >
                 <div className="mb-7">
@@ -502,7 +506,10 @@ export function StoreOwnerRegisterPageContent({
               </section>
 
               <section
-                className="h-full w-full shrink-0 overflow-y-auto pl-1"
+                className={cn(
+                  "w-full shrink-0 overflow-visible pl-0 md:h-full md:overflow-y-auto md:pl-1",
+                  step === "storeDetails" ? "block" : "hidden md:block",
+                )}
                 aria-hidden={step !== "storeDetails"}
               >
                 <div className="mb-7">
