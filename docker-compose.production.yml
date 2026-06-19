@@ -74,6 +74,14 @@ services:
       Modules__Payment__Iyzico__CapturePath: /payment/capture
       Modules__Payment__Iyzico__CancelPath: /payment/cancel
       Modules__Payment__Iyzico__RefundPath: /payment/refund
+      Modules__Payment__Iyzico__ApiKey: ${IYZICO_API_KEY}
+      Modules__Payment__Iyzico__SecretKey: ${IYZICO_SECRET_KEY}
+      Modules__Subscription__Iyzico__ApiKey: ${SUBSCRIPTION_IYZICO_API_KEY}
+      Modules__Subscription__Iyzico__SecretKey: ${SUBSCRIPTION_IYZICO_SECRET_KEY}
+      Modules__Subscription__Iyzico__BaseUrl: ${SUBSCRIPTION_IYZICO_BASE_URL}
+      Modules__Subscription__Iyzico__CallbackUrl: ${SUBSCRIPTION_IYZICO_CALLBACK_URL}
+      Modules__Subscription__Iyzico__Locale: tr
+      Modules__Subscription__Iyzico__DefaultBuyerIdentityNumber: ${IYZICO_DEFAULT_BUYER_IDENTITY_NUMBER}
     volumes:
       - ecommerce_dp_keys:${DATA_PROTECTION_KEYS_PATH}
       - ecommerce_api_logs:/app/Logs
