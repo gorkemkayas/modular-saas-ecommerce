@@ -18,25 +18,25 @@ export function TestimonialSection() {
           
           <blockquote className="-mt-12">
             <p className="font-serif text-2xl font-light leading-relaxed tracking-wide text-background sm:text-3xl lg:text-4xl">
-              For those seeking quality and timeless design, KAYAS is an essential destination. 
-              Every piece has become a cornerstone of my wardrobe.
+              We strive to deliver the best service possible.
+              You can support us with your feedback.
             </p>
           </blockquote>
-          
+
           <div className="mt-12 flex flex-col items-center">
-            <div className="relative h-16 w-16 overflow-hidden">
+            <div className="relative h-16 w-16 overflow-hidden rounded-full">
               <Image
-                src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop&q=90"
-                alt="Sarah Mitchell"
+                src="/gorkem-kaya.png"
+                alt="Görkem Kaya"
                 fill
                 className="object-cover"
               />
             </div>
             <p className="mt-6 text-[11px] font-normal uppercase tracking-[0.3em] text-background">
-              Sarah Mitchell
+              Görkem Kaya
             </p>
             <p className="mt-2 text-sm text-background/50">
-              Fashion Editor, New York
+              Founder & Developer
             </p>
           </div>
         </div>
