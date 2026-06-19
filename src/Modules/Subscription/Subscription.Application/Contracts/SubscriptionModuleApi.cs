@@ -1,4 +1,6 @@
 using MediatR;
+using Subscription.Application.Commands.CompleteSubscriptionPayment;
+using Subscription.Application.Commands.InitiateSubscriptionCheckout;
 using Subscription.Application.Commands.ProvisionTenantSubscription;
 using Subscription.Application.Queries.GetPublicPlans;
 using Subscription.Application.Queries.GetTenantSubscription;
@@ -26,6 +28,8 @@ public sealed class SubscriptionModuleApi : ISubscriptionModuleApi
                 x.Name,
                 x.Description,
                 x.DisplayOrder,
+                x.MonthlyPriceAmount,
+                x.Currency,
                 x.Features
                     .Select(feature => new PlanFeatureResult(feature.Key, feature.IsEnabled, feature.Description))
                     .ToArray(),
@@ -96,5 +100,44 @@ public sealed class SubscriptionModuleApi : ISubscriptionModuleApi
         return quota is null
             ? null
             : new QuotaResult(request.TenantId, quota.Key, quota.Limit);
+    }
+
+    public async Task<Subscription.Contracts.InitiateSubscriptionCheckoutResult> InitiateCheckoutAsync(
+        InitiateSubscriptionCheckoutRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _sender.Send(
+            new InitiateSubscriptionCheckoutCommand(
+                request.TenantId,
+                request.PlanCode,
+                request.StoreName,
+                request.StoreSlug,
+                request.BuyerEmail,
+                request.BuyerName,
+                request.BuyerPhone,
+                request.BuyerIdentityNumber,
+                request.BuyerIpAddress),
+            cancellationToken);
+
+        return new Subscription.Contracts.InitiateSubscriptionCheckoutResult(
+            result.SubscriptionId,
+            result.PaymentPageUrl,
+            result.Token);
+    }
+
+    public async Task<Subscription.Contracts.CompleteSubscriptionPaymentResult> CompletePaymentAsync(
+        CompleteSubscriptionPaymentRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _sender.Send(
+            new CompleteSubscriptionPaymentCommand(request.Token),
+            cancellationToken);
+
+        return new Subscription.Contracts.CompleteSubscriptionPaymentResult(
+            result.IsSuccess,
+            result.SubscriptionId,
+            result.TenantId,
+            result.PlanCode,
+            result.ErrorMessage);
     }
 }

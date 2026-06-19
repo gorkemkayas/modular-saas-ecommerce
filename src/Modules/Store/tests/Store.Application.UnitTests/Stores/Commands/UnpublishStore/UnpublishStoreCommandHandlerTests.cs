@@ -60,6 +60,7 @@ namespace Store.Application.Stores.Commands.UnpublishStore.UnitTests
             var cancellationToken = CancellationToken.None;
 
             var store = Store.Domain.Stores.Store.Create(tenantId, "Test Store", Slug.Create("test-store"));
+            store.Activate();
             store.Publish();
 
             var repository = new Mock<IStoreRepository>();

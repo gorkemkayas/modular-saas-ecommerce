@@ -5,5 +5,7 @@ public sealed record PlanResult(
     string Name,
     string? Description,
     int DisplayOrder,
+    decimal MonthlyPriceAmount,
+    string Currency,
     IReadOnlyCollection<PlanFeatureResult> Features,
     IReadOnlyCollection<PlanQuotaResult> Quotas);

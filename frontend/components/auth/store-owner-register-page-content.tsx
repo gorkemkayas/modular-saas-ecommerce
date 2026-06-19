@@ -14,6 +14,7 @@ import {
 
 import { ApiError } from "@/lib/api/client"
 import {
+  formatPlanPrice,
   formatSubscriptionLimit,
   getSubscriptionFeatureLabel,
   getSubscriptionQuotaLabel,
@@ -25,6 +26,7 @@ import {
   registerStoreOwner,
   type RegisterStoreOwnerResponse,
 } from "@/lib/api/store-owner-registration"
+import { initiateSubscriptionCheckout } from "@/lib/api/subscription-checkout"
 import { withQuery } from "@/lib/config"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -147,7 +149,38 @@ export function StoreOwnerRegisterPageContent({
         },
       })
 
-      setRegistrationResult(result)
+      const tenantId = typeof result.tenantId === "number"
+        ? result.tenantId
+        : typeof result.tenantId === "string"
+          ? parseInt(result.tenantId, 10)
+          : null
+
+      if (tenantId) {
+        try {
+          const checkout = await initiateSubscriptionCheckout({
+            tenantId,
+            planCode: selectedPlanCode,
+            buyerEmail: formData.email.trim(),
+            buyerName: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
+            buyerPhone: "+905555555555",
+            buyerIdentityNumber: "11111111111",
+          })
+
+          window.location.href = checkout.paymentPageUrl
+          return
+        } catch (checkoutError) {
+          console.error("Checkout initiation failed:", checkoutError)
+          setErrorMessage(
+            checkoutError instanceof ApiError
+              ? (typeof checkoutError.payload === "object" && checkoutError.payload !== null && "detail" in checkoutError.payload
+                  ? String((checkoutError.payload as Record<string, unknown>).detail)
+                  : "Payment could not be initiated. Please try again.")
+              : "Payment could not be initiated. Please try again."
+          )
+        }
+      } else {
+        setRegistrationResult(result)
+      }
     } catch (error) {
       setErrorMessage(getStoreOwnerRegisterErrorMessage(error))
     } finally {
@@ -345,6 +378,10 @@ export function StoreOwnerRegisterPageContent({
                           <div className="flex items-start justify-between gap-4">
                             <div>
                               <p className="text-base font-medium">{plan.name}</p>
+                              <p className="mt-1 text-lg font-light tracking-tight">
+                                {formatPlanPrice(plan)}
+                                <span className="text-xs text-muted-foreground"> / ay</span>
+                              </p>
                               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                                 {plan.description ?? "Subscription plan"}
                               </p>
@@ -421,6 +458,10 @@ export function StoreOwnerRegisterPageContent({
                           <h2 className="mt-2 text-xl font-medium">
                             {selectedPlan.name}
                           </h2>
+                          <p className="mt-2 text-2xl font-light tracking-tight">
+                            {formatPlanPrice(selectedPlan)}
+                            <span className="text-sm text-muted-foreground"> / ay</span>
+                          </p>
                           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                             {selectedPlan.description ?? "Subscription plan"}
                           </p>
@@ -536,8 +577,9 @@ export function StoreOwnerRegisterPageContent({
                       </p>
                       <p className="mt-1 text-sm font-medium">{selectedPlan.name}</p>
                     </div>
-                    <span className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                      {selectedPlan.code}
+                    <span className="text-base font-light tracking-tight">
+                      {formatPlanPrice(selectedPlan)}
+                      <span className="text-xs text-muted-foreground"> / ay</span>
                     </span>
                   </div>
                 ) : null}

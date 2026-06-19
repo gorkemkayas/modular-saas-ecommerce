@@ -17,6 +17,7 @@ namespace Store.Application.Stores.Queries.ListPublishedStorefrontStores.UnitTes
                 "North Studio",
                 Slug.Create("north-studio"),
                 logoUrl: "https://example.com/logo.png");
+            store.Activate();
             store.Publish();
 
             var repository = new Mock<IStoreRepository>();

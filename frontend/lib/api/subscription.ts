@@ -35,8 +35,18 @@ export interface SubscriptionPlanDto {
   name: string
   description: string | null
   displayOrder: number
+  monthlyPriceAmount: number
+  currency: string
   features: PlanFeatureDto[]
   quotas: PlanQuotaDto[]
+}
+
+export function formatPlanPrice(plan: SubscriptionPlanDto): string {
+  return new Intl.NumberFormat("tr-TR", {
+    style: "currency",
+    currency: plan.currency || "TRY",
+    minimumFractionDigits: 2,
+  }).format(plan.monthlyPriceAmount)
 }
 
 export interface TenantSubscriptionDto {

@@ -6,6 +6,7 @@ using Subscription.Application.Abstractions;
 using Subscription.Application.Contracts;
 using Subscription.Contracts;
 using Subscription.Domain.Repositories;
+using Subscription.Infrastructure.Gateways;
 using Subscription.Infrastructure.Options;
 using Subscription.Infrastructure.Persistence;
 using Subscription.Infrastructure.Persistence.Repositories;
@@ -37,6 +38,11 @@ public static class SubscriptionInfrastructureServiceCollectionExtensions
         services.AddScoped<ISubscriptionModuleApi, SubscriptionModuleApi>();
         services.AddScoped<SubscriptionPlanSeeder>();
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<SubscriptionDbContext>());
+
+        services.Configure<SubscriptionIyzicoOptions>(
+            configuration.GetSection(SubscriptionIyzicoOptions.SectionName));
+
+        services.AddHttpClient<ISubscriptionPaymentGateway, IyzicoSubscriptionPaymentGateway>();
 
         return services;
     }

@@ -55,6 +55,7 @@ namespace Store.Application.Stores.Queries.GetStoreById.UnitTests
                 "Description",
                 "https://logo.example");
 
+            store.Activate();
             store.Publish();
 
             var query = new GetStoreByIdQuery(store.Id);

@@ -25,6 +25,7 @@ import {
   type StorefrontStoreSummaryDto,
 } from "@/lib/api/storefront"
 import {
+  formatPlanPrice,
   formatSubscriptionLimit,
   getPublicPlans,
   getSubscriptionFeatureLabel,
@@ -484,6 +485,10 @@ export default async function RootPage() {
                         <p className="text-xl font-medium">{plan.name}</p>
                         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                           {plan.description ?? "A plan for your store stage."}
+                        </p>
+                        <p className="mt-3 text-2xl font-light tracking-tight">
+                          {formatPlanPrice(plan)}
+                          <span className="text-sm text-muted-foreground"> / ay</span>
                         </p>
                       </div>
                       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border transition-colors group-hover:border-foreground">
@@ -981,6 +986,17 @@ function PlanComparisonTable({ plans }: { plans: SubscriptionPlanDto[] }) {
           </tr>
         </thead>
         <tbody>
+          <tr className="border-b border-border bg-secondary/40">
+            <td className="px-4 py-4 font-medium">
+              Monthly Price
+            </td>
+            {plans.map((plan) => (
+              <td key={`${plan.code}-price`} className="px-4 py-4 text-lg font-medium">
+                {formatPlanPrice(plan)}
+                <span className="text-xs font-normal text-muted-foreground"> / ay</span>
+              </td>
+            ))}
+          </tr>
           {comparisonQuotaKeys.map((quotaKey) => (
             <tr key={quotaKey} className="border-b border-border">
               <td className="px-4 py-4 text-muted-foreground">

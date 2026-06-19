@@ -122,6 +122,7 @@ namespace Store.Application.Stores.Commands.SuspendStore.UnitTests
                 tenantId,
                 "Test Store",
                 Slug.Create("test-store"));
+            store.Activate();
             store.Publish();
 
             Mock<IStoreRepository> storeRepositoryMock = new Mock<IStoreRepository>();

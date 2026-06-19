@@ -20,4 +20,12 @@ public interface ISubscriptionModuleApi
     Task<QuotaResult?> GetQuotaAsync(
         QuotaRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<InitiateSubscriptionCheckoutResult> InitiateCheckoutAsync(
+        InitiateSubscriptionCheckoutRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<CompleteSubscriptionPaymentResult> CompletePaymentAsync(
+        CompleteSubscriptionPaymentRequest request,
+        CancellationToken cancellationToken = default);
 }

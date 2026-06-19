@@ -54,5 +54,10 @@ namespace Store.Infrastructure.Persistance.Repositories
         {
             return _context.Stores.AnyAsync(x => x.Slug == slug, cancellationToken);
         }
+
+        public void Remove(Store.Domain.Stores.Store store)
+        {
+            _context.Stores.Remove(store);
+        }
     }
 }

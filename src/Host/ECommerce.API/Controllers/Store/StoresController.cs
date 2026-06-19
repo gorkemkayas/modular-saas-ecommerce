@@ -237,6 +237,20 @@ namespace ECommerce.API.Controllers.Store
             {
                 return Task.FromResult<QuotaResult?>(null);
             }
+
+            public Task<InitiateSubscriptionCheckoutResult> InitiateCheckoutAsync(
+                InitiateSubscriptionCheckoutRequest request,
+                CancellationToken cancellationToken = default)
+            {
+                throw new InvalidOperationException("Subscription module API is not available.");
+            }
+
+            public Task<CompleteSubscriptionPaymentResult> CompletePaymentAsync(
+                CompleteSubscriptionPaymentRequest request,
+                CancellationToken cancellationToken = default)
+            {
+                throw new InvalidOperationException("Subscription module API is not available.");
+            }
         }
     }
 }

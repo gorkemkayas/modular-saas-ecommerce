@@ -18,14 +18,21 @@ public sealed class Plan : IAggregateRoot
         string name,
         string? description,
         int displayOrder,
-        bool isPublic)
+        bool isPublic,
+        decimal monthlyPriceAmount,
+        string currency)
     {
+        if (monthlyPriceAmount < 0)
+            throw new SubscriptionDomainException("Monthly price cannot be negative.");
+
         Id = id;
         Code = NormalizeCode(code);
         Name = NormalizeRequired(name, "Plan name", 120);
         Description = NormalizeOptional(description, 500);
         DisplayOrder = displayOrder;
         IsPublic = isPublic;
+        MonthlyPriceAmount = monthlyPriceAmount;
+        Currency = NormalizeRequired(currency, "Currency", 3);
         IsActive = true;
         CreatedAtUtc = DateTime.UtcNow;
         UpdatedAtUtc = CreatedAtUtc;
@@ -37,7 +44,10 @@ public sealed class Plan : IAggregateRoot
     public string? Description { get; private set; }
     public int DisplayOrder { get; private set; }
     public bool IsPublic { get; private set; }
+    public decimal MonthlyPriceAmount { get; private set; }
+    public string Currency { get; private set; } = default!;
     public bool IsActive { get; private set; }
+    public string? ExternalPricingPlanReferenceCode { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
     public DateTime UpdatedAtUtc { get; private set; }
 
@@ -49,17 +59,31 @@ public sealed class Plan : IAggregateRoot
         string name,
         string? description,
         int displayOrder,
+        decimal monthlyPriceAmount,
+        string currency,
         bool isPublic = true)
     {
-        return new Plan(Guid.NewGuid(), code, name, description, displayOrder, isPublic);
+        return new Plan(Guid.NewGuid(), code, name, description, displayOrder, isPublic, monthlyPriceAmount, currency);
     }
 
-    public void UpdateMetadata(string name, string? description, int displayOrder, bool isPublic)
+    public void UpdateMetadata(string name, string? description, int displayOrder, bool isPublic,
+        decimal monthlyPriceAmount, string currency)
     {
+        if (monthlyPriceAmount < 0)
+            throw new SubscriptionDomainException("Monthly price cannot be negative.");
+
         Name = NormalizeRequired(name, "Plan name", 120);
         Description = NormalizeOptional(description, 500);
         DisplayOrder = displayOrder;
         IsPublic = isPublic;
+        MonthlyPriceAmount = monthlyPriceAmount;
+        Currency = NormalizeRequired(currency, "Currency", 3);
+        Touch();
+    }
+
+    public void SetExternalPricingPlanReferenceCode(string referenceCode)
+    {
+        ExternalPricingPlanReferenceCode = referenceCode?.Trim();
         Touch();
     }
 

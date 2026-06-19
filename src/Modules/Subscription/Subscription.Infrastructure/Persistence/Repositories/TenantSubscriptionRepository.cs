@@ -21,10 +21,23 @@ public sealed class TenantSubscriptionRepository : ITenantSubscriptionRepository
             .FirstOrDefaultAsync(x => x.TenantId == tenantId, cancellationToken);
     }
 
+    public Task<TenantSubscription?> GetByExternalPaymentTokenAsync(
+        string token,
+        CancellationToken cancellationToken = default)
+    {
+        return _context.TenantSubscriptions
+            .FirstOrDefaultAsync(x => x.ExternalPaymentToken == token, cancellationToken);
+    }
+
     public async Task AddAsync(
         TenantSubscription subscription,
         CancellationToken cancellationToken = default)
     {
         await _context.TenantSubscriptions.AddAsync(subscription, cancellationToken);
+    }
+
+    public void Remove(TenantSubscription subscription)
+    {
+        _context.TenantSubscriptions.Remove(subscription);
     }
 }

@@ -68,7 +68,7 @@ namespace Store.Domain.Stores
             HeroPrimaryButtonText = heroPrimaryButtonText?.Trim();
             LoginPageImageUrl = loginPageImageUrl?.Trim();
             RegisterPageImageUrl = registerPageImageUrl?.Trim();
-            Status = StoreStatus.Active;
+            Status = StoreStatus.PendingPayment;
             IsPublished = false;
             CreatedAtUtc = DateTime.UtcNow;
         }

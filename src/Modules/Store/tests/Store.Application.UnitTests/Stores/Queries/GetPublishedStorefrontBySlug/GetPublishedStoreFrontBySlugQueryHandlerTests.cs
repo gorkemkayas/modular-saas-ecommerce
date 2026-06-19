@@ -107,6 +107,7 @@ namespace Store.Application.Stores.Queries.GetPublishedStorefrontBySlug.UnitTest
             var store = Domain.Stores.Store.Create(tenantId, "Test Store", slug, "Description", "logo.png");
 
             // Publish first (requires Active status)
+            store.Activate();
             store.Publish();
 
             // Then change status
@@ -149,6 +150,7 @@ namespace Store.Application.Stores.Queries.GetPublishedStorefrontBySlug.UnitTest
             var logoUrl = "https://example.com/logo.png";
             var slug = Slug.Create(slugValue);
             var store = Domain.Stores.Store.Create(tenantId, storeName, slug, description, logoUrl);
+            store.Activate();
             store.Publish();
 
             var mockRepository = new Mock<IStoreRepository>();
@@ -184,6 +186,7 @@ namespace Store.Application.Stores.Queries.GetPublishedStorefrontBySlug.UnitTest
             var storeName = "Test Store";
             var slug = Slug.Create(slugValue);
             var store = Domain.Stores.Store.Create(tenantId, storeName, slug, null, null);
+            store.Activate();
             store.Publish();
 
             var mockRepository = new Mock<IStoreRepository>();
@@ -254,6 +257,7 @@ namespace Store.Application.Stores.Queries.GetPublishedStorefrontBySlug.UnitTest
             var tenantId = Guid.NewGuid();
             var slug = Slug.Create(validSlug);
             var store = Domain.Stores.Store.Create(tenantId, "Test Store", slug);
+            store.Activate();
             store.Publish();
 
             var mockRepository = new Mock<IStoreRepository>();
@@ -284,6 +288,7 @@ namespace Store.Application.Stores.Queries.GetPublishedStorefrontBySlug.UnitTest
             var slugValue = "test-store";
             var slug = Slug.Create(slugValue);
             var store = Domain.Stores.Store.Create(tenantId, "Test Store", slug);
+            store.Activate();
             store.Publish();
 
             var mockRepository = new Mock<IStoreRepository>();

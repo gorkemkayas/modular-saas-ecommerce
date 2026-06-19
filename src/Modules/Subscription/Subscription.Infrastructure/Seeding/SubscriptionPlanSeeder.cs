@@ -34,7 +34,9 @@ public sealed class SubscriptionPlanSeeder
                     definition.Code,
                     definition.Name,
                     definition.Description,
-                    definition.DisplayOrder);
+                    definition.DisplayOrder,
+                    definition.MonthlyPriceAmount,
+                    definition.Currency);
 
                 await _context.Plans.AddAsync(plan, cancellationToken);
 
@@ -48,7 +50,9 @@ public sealed class SubscriptionPlanSeeder
                     definition.Name,
                     definition.Description,
                     definition.DisplayOrder,
-                    isPublic: true);
+                    isPublic: true,
+                    definition.MonthlyPriceAmount,
+                    definition.Currency);
 
                 plan.Activate();
             }
@@ -76,6 +80,8 @@ public sealed class SubscriptionPlanSeeder
                 "Starter",
                 "Launch a small store with essential commerce features.",
                 10,
+                99.99m,
+                "TRY",
                 [
                     new(SubscriptionFeatureKeys.VariantProducts, false, "Variant products are not included."),
                     new(SubscriptionFeatureKeys.AdvancedNotifications, false, "Custom notification templates are not included."),
@@ -98,6 +104,8 @@ public sealed class SubscriptionPlanSeeder
                 "Growth",
                 "Scale a growing catalog with richer storefront and operations tools.",
                 20,
+                249.99m,
+                "TRY",
                 [
                     new(SubscriptionFeatureKeys.VariantProducts, true, "Variant products are included."),
                     new(SubscriptionFeatureKeys.AdvancedNotifications, true, "Custom notification templates are included."),
@@ -120,6 +128,8 @@ public sealed class SubscriptionPlanSeeder
                 "Premium",
                 "Unlock advanced commerce features and high operational limits.",
                 30,
+                499.99m,
+                "TRY",
                 [
                     new(SubscriptionFeatureKeys.VariantProducts, true, "Variant products are included."),
                     new(SubscriptionFeatureKeys.AdvancedNotifications, true, "Custom notification templates are included."),
@@ -145,6 +155,8 @@ public sealed class SubscriptionPlanSeeder
         string Name,
         string Description,
         int DisplayOrder,
+        decimal MonthlyPriceAmount,
+        string Currency,
         IReadOnlyCollection<FeatureDefinition> Features,
         IReadOnlyCollection<QuotaDefinition> Quotas);
 

@@ -11,6 +11,8 @@ internal static class SubscriptionMappings
             plan.Name,
             plan.Description,
             plan.DisplayOrder,
+            plan.MonthlyPriceAmount,
+            plan.Currency,
             plan.Features
                 .OrderBy(x => x.Key)
                 .Select(x => new PlanFeatureDto(x.Key, x.IsEnabled, x.Description))

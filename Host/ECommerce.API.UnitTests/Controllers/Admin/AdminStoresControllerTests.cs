@@ -55,6 +55,8 @@ public sealed class AdminStoresControllerTests
                 "Starter",
                 "Starter plan",
                 10,
+                99.99m,
+                "TRY",
                 Array.Empty<PlanFeatureDto>(),
                 Array.Empty<PlanQuotaDto>()),
             new(
@@ -62,6 +64,8 @@ public sealed class AdminStoresControllerTests
                 "Growth",
                 "Growth plan",
                 20,
+                249.99m,
+                "TRY",
                 Array.Empty<PlanFeatureDto>(),
                 Array.Empty<PlanQuotaDto>())
         ];

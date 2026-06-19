@@ -52,6 +52,7 @@ namespace Store.Application.Stores.Commands.PublishStore.UnitTests
                 tenantId,
                 "Test Store",
                 Slug.Create("test-store"));
+            store.Activate();
 
             var mockRepository = new Mock<IStoreRepository>();
             mockRepository
@@ -92,6 +93,7 @@ namespace Store.Application.Stores.Commands.PublishStore.UnitTests
                 tenantId,
                 "Test Store",
                 Slug.Create("test-store"));
+            store.Activate();
 
             var mockRepository = new Mock<IStoreRepository>();
             mockRepository
@@ -130,6 +132,7 @@ namespace Store.Application.Stores.Commands.PublishStore.UnitTests
                 tenantId,
                 "Test Store",
                 Slug.Create("test-store"));
+            store.Activate();
 
             var mockRepository = new Mock<IStoreRepository>();
             mockRepository

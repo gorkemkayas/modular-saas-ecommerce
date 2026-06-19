@@ -18,6 +18,10 @@ public sealed class TenantSubscriptionConfiguration : IEntityTypeConfiguration<T
         builder.Property(x => x.StartedAtUtc).IsRequired();
         builder.Property(x => x.CancelledAtUtc);
         builder.Property(x => x.UpdatedAtUtc).IsRequired();
+        builder.Property(x => x.CurrentPeriodStartUtc);
+        builder.Property(x => x.CurrentPeriodEndUtc);
+        builder.Property(x => x.ExternalPaymentToken).HasMaxLength(500);
+        builder.Property(x => x.ExternalSubscriptionReferenceCode).HasMaxLength(500);
 
         builder.HasIndex(x => x.TenantId).IsUnique();
         builder.HasIndex(x => new { x.PlanCode, x.Status });

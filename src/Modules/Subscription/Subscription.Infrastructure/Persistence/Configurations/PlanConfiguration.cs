@@ -15,9 +15,12 @@ public sealed class PlanConfiguration : IEntityTypeConfiguration<Plan>
         builder.Property(x => x.Code).HasMaxLength(120).IsRequired();
         builder.Property(x => x.Name).HasMaxLength(120).IsRequired();
         builder.Property(x => x.Description).HasMaxLength(500);
+        builder.Property(x => x.MonthlyPriceAmount).HasPrecision(18, 2).IsRequired();
+        builder.Property(x => x.Currency).HasMaxLength(3).IsRequired();
         builder.Property(x => x.DisplayOrder).IsRequired();
         builder.Property(x => x.IsPublic).IsRequired();
         builder.Property(x => x.IsActive).IsRequired();
+        builder.Property(x => x.ExternalPricingPlanReferenceCode).HasMaxLength(500);
         builder.Property(x => x.CreatedAtUtc).IsRequired();
         builder.Property(x => x.UpdatedAtUtc).IsRequired();
 

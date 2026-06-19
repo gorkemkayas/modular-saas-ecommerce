@@ -375,7 +375,7 @@ namespace Store.Domain.Stores.UnitTests
             Assert.AreEqual(slug, store.Slug);
             Assert.IsNull(store.Description);
             Assert.IsNull(store.LogoUrl);
-            Assert.AreEqual(StoreStatus.Active, store.Status);
+            Assert.AreEqual(StoreStatus.PendingPayment, store.Status);
             Assert.IsFalse(store.IsPublished);
             Assert.IsTrue(store.CreatedAtUtc >= beforeCreation && store.CreatedAtUtc <= afterCreation);
             Assert.IsNull(store.UpdatedAtUtc);
@@ -407,7 +407,7 @@ namespace Store.Domain.Stores.UnitTests
             Assert.AreEqual(slug, store.Slug);
             Assert.AreEqual(description, store.Description);
             Assert.AreEqual(logoUrl, store.LogoUrl);
-            Assert.AreEqual(StoreStatus.Active, store.Status);
+            Assert.AreEqual(StoreStatus.PendingPayment, store.Status);
             Assert.IsFalse(store.IsPublished);
             Assert.IsTrue(store.CreatedAtUtc >= beforeCreation && store.CreatedAtUtc <= afterCreation);
             Assert.IsNull(store.UpdatedAtUtc);
@@ -494,10 +494,10 @@ namespace Store.Domain.Stores.UnitTests
         }
 
         /// <summary>
-        /// Tests that Create sets Status to Active by default.
+        /// Tests that Create sets Status to PendingPayment by default.
         /// </summary>
         [TestMethod]
-        public void Create_WithValidParameters_SetsStatusToActive()
+        public void Create_WithValidParameters_SetsStatusToPendingPayment()
         {
             // Arrange
             Guid tenantId = Guid.NewGuid();
@@ -508,7 +508,7 @@ namespace Store.Domain.Stores.UnitTests
             Store store = Store.Create(tenantId, name, slug);
 
             // Assert
-            Assert.AreEqual(StoreStatus.Active, store.Status);
+            Assert.AreEqual(StoreStatus.PendingPayment, store.Status);
         }
 
         /// <summary>
@@ -689,6 +689,7 @@ namespace Store.Domain.Stores.UnitTests
             var tenantId = Guid.NewGuid();
             var slug = Slug.Create("test-store");
             var store = global::Store.Domain.Stores.Store.Create(tenantId, "Test Store", slug);
+            store.Activate();
             store.Publish();
 
             // Act
@@ -896,7 +897,7 @@ namespace Store.Domain.Stores.UnitTests
             var beforeArchive = DateTime.UtcNow;
 
             // Verify initial state
-            Assert.AreEqual(StoreStatus.Active, store.Status);
+            Assert.AreEqual(StoreStatus.PendingPayment, store.Status);
             Assert.IsFalse(store.IsPublished);
             Assert.IsNull(store.UpdatedAtUtc);
 
@@ -924,6 +925,7 @@ namespace Store.Domain.Stores.UnitTests
             var name = "Test Store";
             var slug = Slug.Create("test-store");
             var store = Store.Create(tenantId, name, slug);
+            store.Activate();
             var beforePublish = DateTime.UtcNow.AddSeconds(-1);
 
             // Act

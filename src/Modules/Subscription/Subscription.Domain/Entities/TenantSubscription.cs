@@ -18,7 +18,7 @@ public sealed class TenantSubscription : IAggregateRoot
         Id = id;
         TenantId = tenantId;
         PlanCode = Plan.NormalizeCode(planCode);
-        Status = SubscriptionStatus.Active;
+        Status = SubscriptionStatus.PendingPayment;
         StartedAtUtc = DateTime.UtcNow;
         UpdatedAtUtc = StartedAtUtc;
     }
@@ -30,6 +30,10 @@ public sealed class TenantSubscription : IAggregateRoot
     public DateTime StartedAtUtc { get; private set; }
     public DateTime? CancelledAtUtc { get; private set; }
     public DateTime UpdatedAtUtc { get; private set; }
+    public DateTime? CurrentPeriodStartUtc { get; private set; }
+    public DateTime? CurrentPeriodEndUtc { get; private set; }
+    public string? ExternalPaymentToken { get; private set; }
+    public string? ExternalSubscriptionReferenceCode { get; private set; }
 
     public static TenantSubscription Create(Guid tenantId, string planCode)
     {
@@ -42,12 +46,32 @@ public sealed class TenantSubscription : IAggregateRoot
         UpdatedAtUtc = DateTime.UtcNow;
     }
 
+    public void SetExternalPaymentToken(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+            throw new SubscriptionDomainException("Payment token is required.");
+
+        ExternalPaymentToken = token.Trim();
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
+    public void SetExternalSubscriptionReferenceCode(string referenceCode)
+    {
+        if (string.IsNullOrWhiteSpace(referenceCode))
+            throw new SubscriptionDomainException("Subscription reference code is required.");
+
+        ExternalSubscriptionReferenceCode = referenceCode.Trim();
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
     public void Activate()
     {
         if (Status == SubscriptionStatus.Active)
             return;
 
         Status = SubscriptionStatus.Active;
+        CurrentPeriodStartUtc = DateTime.UtcNow;
+        CurrentPeriodEndUtc = CurrentPeriodStartUtc.Value.AddMonths(1);
         UpdatedAtUtc = DateTime.UtcNow;
     }
 
