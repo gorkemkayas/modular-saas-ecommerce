@@ -15,6 +15,7 @@ import {
   getProductById,
   getProductBySlug,
   publishProduct,
+  setProductAttributes,
   type AddProductMediaRequest,
   type AddVariantRequest,
   type AdminProductDto,
@@ -266,6 +267,21 @@ export function AdminProductEditor({
   const [simpleReorderThreshold, setSimpleReorderThreshold] = useState("")
   const variantDefiningAttributes = attributes.filter(
     (attribute) => attribute.isActive && attribute.isVariantDefining,
+  )
+  const generalAttributes = attributes.filter(
+    (attribute) => attribute.isActive && !attribute.isVariantDefining,
+  )
+  const initialProductAttributeValues = useMemo(() => {
+    const values: Record<string, string> = {}
+    for (const av of initialProduct?.attributeValues ?? []) {
+      if (!av.productVariantId) {
+        values[av.attributeDefinitionId] = av.value
+      }
+    }
+    return values
+  }, [initialProduct])
+  const [productAttributeValues, setProductAttributeValues] = useState<Record<string, string>>(
+    initialProductAttributeValues,
   )
   const initialSelectedVariantAttributeIds = Array.from(
     new Set(
@@ -748,6 +764,18 @@ export function AdminProductEditor({
       }
     }
 
+    const generalAttributeEntries = Object.entries(productAttributeValues).filter(
+      ([, value]) => value.trim(),
+    )
+    if (generalAttributeEntries.length > 0) {
+      await setProductAttributes(createdProduct.id, {
+        attributeValues: generalAttributeEntries.map(([attributeDefinitionId, value]) => ({
+          attributeDefinitionId,
+          value: value.trim(),
+        })),
+      })
+    }
+
     const mediaToCreate = buildPendingMedia(createdVariantIdBySku)
     for (const [index, mediaItem] of mediaToCreate.entries()) {
       await addProductMedia(createdProduct.id, {
@@ -782,6 +810,16 @@ export function AdminProductEditor({
 
     await assignProductCategories(initialProduct.id, {
       categoryIds: selectedCategoryIds,
+    })
+
+    const generalAttributeEntries = Object.entries(productAttributeValues).filter(
+      ([, value]) => value.trim(),
+    )
+    await setProductAttributes(initialProduct.id, {
+      attributeValues: generalAttributeEntries.map(([attributeDefinitionId, value]) => ({
+        attributeDefinitionId,
+        value: value.trim(),
+      })),
     })
 
     const variantsToCreate = normalizeVariants(newVariants)
@@ -1126,6 +1164,34 @@ export function AdminProductEditor({
             })}
           </div>
         </SectionShell>
+
+        {generalAttributes.length > 0 ? (
+          <SectionShell
+            eyebrow="Attributes"
+            title="Product attributes"
+            description="Assign general attribute values to this product. These are non-variant attributes that describe the product as a whole."
+          >
+            <div className="grid gap-4 md:grid-cols-2">
+              {generalAttributes.map((attribute) => (
+                <div key={attribute.id}>
+                  <FieldLabel hint={attribute.code}>{attribute.name}</FieldLabel>
+                  <input
+                    type="text"
+                    value={productAttributeValues[attribute.id] ?? ""}
+                    onChange={(event) =>
+                      setProductAttributeValues((current) => ({
+                        ...current,
+                        [attribute.id]: event.target.value,
+                      }))
+                    }
+                    placeholder={`Enter ${attribute.name.toLowerCase()}`}
+                    className={inputClassName}
+                  />
+                </div>
+              ))}
+            </div>
+          </SectionShell>
+        ) : null}
 
         {!initialProduct && productType === "Simple" ? (
           <SectionShell
