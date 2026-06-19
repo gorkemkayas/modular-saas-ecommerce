@@ -1,10 +1,18 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { Suspense, useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 
 export default function CheckoutPage() {
+  return (
+    <Suspense>
+      <CheckoutContent />
+    </Suspense>
+  )
+}
+
+function CheckoutContent() {
   const searchParams = useSearchParams()
   const containerRef = useRef<HTMLDivElement>(null)
   const formContent = searchParams.get("formContent")
