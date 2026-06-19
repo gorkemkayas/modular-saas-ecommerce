@@ -1,5 +1,7 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Subscription.Infrastructure.Persistence;
 using Subscription.Infrastructure.Seeding;
 
 namespace Subscription.Infrastructure.DependencyInjection;
@@ -16,6 +18,9 @@ public static class SubscriptionApplicationBuilderExtensions
 
         try
         {
+            var dbContext = scope.ServiceProvider.GetRequiredService<SubscriptionDbContext>();
+            await dbContext.Database.MigrateAsync(cancellationToken);
+
             var seeder = scope.ServiceProvider.GetRequiredService<SubscriptionPlanSeeder>();
             await seeder.SeedAsync(cancellationToken);
         }
