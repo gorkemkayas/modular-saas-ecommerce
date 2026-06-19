@@ -276,7 +276,7 @@ export default async function AdminProductDetailPage({ params }: { params: { id:
               </p>
               <div className="mt-5 space-y-3">
 	                <Link
-	                  href="edit"
+	                  href={`edit?id=${product.id}`}
 	                  className="block border border-border px-4 py-3 text-center text-sm font-medium transition-colors hover:bg-secondary"
 	                >
                   Edit Product
