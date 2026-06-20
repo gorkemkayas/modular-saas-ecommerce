@@ -1,6 +1,7 @@
 "use client"
 
 import { FormEvent, useState } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import {
   ArrowRight,
@@ -143,6 +144,34 @@ export function ContactPageContent({
               from you. Every message helps shape the next iteration of KAYAS.
             </p>
 
+            <div className="mt-8 flex items-center gap-4 border-t border-background/10 pt-6">
+              <div className="relative h-14 w-14 shrink-0">
+                <div className="relative h-full w-full overflow-hidden border border-background/14 bg-background/5">
+                  <Image
+                    src="/gorkem-kaya.png"
+                    alt="Görkem Kaya"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <span
+                  className="absolute -right-1.5 -top-1.5 flex h-3.5 w-3.5 items-center justify-center"
+                  aria-hidden="true"
+                >
+                  <span className="absolute h-full w-full animate-pulse bg-red-500/45 shadow-[0_0_10px_rgba(239,68,68,0.45)]" />
+                  <span className="relative h-2.5 w-2.5 border border-white/70 bg-red-500 shadow-[0_0_0_1px_rgba(10,10,10,0.55),0_0_8px_rgba(239,68,68,0.35)]" />
+                </span>
+              </div>
+                <div>
+                  <p className="font-serif text-xl font-light tracking-wide text-background">
+                    Görkem Kaya
+                  </p>
+                  <p className="mt-1 text-sm text-background/58">
+                    Your thoughts matter to us.
+                  </p>
+                </div>
+              </div>
+
             <div className="mt-10 grid gap-4 sm:grid-cols-3">
               {supportTopics.map((topic) => (
                 <div
@@ -229,6 +258,7 @@ export function ContactPageContent({
                 <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
               </Link>
             </div>
+
           </div>
 
           <div className="border border-border bg-background p-6 sm:p-8">

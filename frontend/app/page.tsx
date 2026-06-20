@@ -598,6 +598,7 @@ function LandingFooter() {
           <p>2026 KAYAS Commerce Platform</p>
           <p>Built for modular, multi-tenant commerce</p>
         </div>
+
       </div>
     </footer>
   )

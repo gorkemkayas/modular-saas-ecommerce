@@ -2,7 +2,6 @@ import { CategoriesSection } from "@/components/home/categories-section"
 import { FeaturesSection } from "@/components/home/features-section"
 import { HeroSection } from "@/components/home/hero-section"
 import { ProductsSection } from "@/components/home/products-section"
-import { TestimonialSection } from "@/components/home/testimonial-section"
 import {
   getStorefront,
   getStorefrontCategoryTree,
@@ -41,7 +40,6 @@ export default async function StoreHomePage({
         products={products.items}
       />
       <FeaturesSection />
-      <TestimonialSection />
     </>
   )
 }
