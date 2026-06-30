@@ -115,7 +115,8 @@ public sealed class NotificationSender : INotificationSender
             CallToAction: request.Content?.CallToAction,
             Details: request.Content?.Details ?? Array.Empty<EmailDetailRow>(),
             LineItems: request.Content?.LineItems ?? Array.Empty<EmailLineItem>(),
-            Totals: request.Content?.Totals ?? Array.Empty<EmailDetailRow>()));
+            Totals: request.Content?.Totals ?? Array.Empty<EmailDetailRow>(),
+            Eyebrow: ResolveEyebrow(request.Trigger)));
 
         try
         {
@@ -163,6 +164,24 @@ public sealed class NotificationSender : INotificationSender
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return dispatch.Id;
+    }
+
+    private static string ResolveEyebrow(NotificationTrigger trigger)
+    {
+        return trigger switch
+        {
+            NotificationTrigger.OrderPlaced => "Order Confirmation",
+            NotificationTrigger.OrderCancelled => "Order Update",
+            NotificationTrigger.PaymentAuthorized => "Payment",
+            NotificationTrigger.PaymentCaptured => "Payment",
+            NotificationTrigger.PaymentFailed => "Payment",
+            NotificationTrigger.PaymentRefunded => "Refund",
+            NotificationTrigger.ShipmentCreated => "Shipment",
+            NotificationTrigger.ShipmentShipped => "Shipment",
+            NotificationTrigger.ShipmentDelivered => "Delivery",
+            NotificationTrigger.ShipmentDeliveryException => "Delivery Update",
+            _ => "Notification"
+        };
     }
 
     private async Task<NotificationTemplate?> ResolveTemplateAsync(

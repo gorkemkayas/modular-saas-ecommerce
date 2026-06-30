@@ -63,96 +63,98 @@ public sealed class NotificationTemplateSeeder
             new(
                 NotificationTrigger.OrderPlaced,
                 "Default Order Placed Email",
-                "Your order has been received — {{OrderNumber}}",
+                "Your order is confirmed — {{OrderNumber}}",
                 """
-                Hi {{RecipientName}},
+                Dear {{RecipientName}},
 
-                We have received your order {{OrderNumber}} successfully. You can find your order summary below.
+                Thank you for your order. We are delighted to confirm that order {{OrderNumber}} has been received and is now being prepared with care.
 
-                We will let you know again as soon as your order starts being prepared.
+                A summary of your purchase is below. We will be in touch again as soon as it is on its way.
                 """),
             new(
                 NotificationTrigger.OrderCancelled,
                 "Default Order Cancelled Email",
                 "Your order has been cancelled — {{OrderNumber}}",
                 """
-                Hi {{RecipientName}},
+                Dear {{RecipientName}},
 
-                Your order {{OrderNumber}} has been cancelled.
+                We are writing to let you know that your order {{OrderNumber}} has been cancelled.
 
-                If you think this is a mistake, please get in touch with us.
+                If this was not expected, our team is always happy to help — simply reply to this email.
                 """),
             new(
                 NotificationTrigger.PaymentAuthorized,
                 "Default Payment Authorized Email",
                 "Your payment is authorized — {{OrderNumber}}",
                 """
-                Hi {{RecipientName}},
+                Dear {{RecipientName}},
 
-                The payment for your order {{OrderNumber}} has been authorized.
+                The payment for your order {{OrderNumber}} has been successfully authorized. There is nothing further you need to do.
                 """),
             new(
                 NotificationTrigger.PaymentCaptured,
                 "Default Payment Captured Email",
                 "Your payment is complete — {{OrderNumber}}",
                 """
-                Hi {{RecipientName}},
+                Dear {{RecipientName}},
 
-                The payment for your order {{OrderNumber}} has been captured successfully.
+                We are pleased to confirm that the payment for your order {{OrderNumber}} has been completed. Thank you for your purchase.
                 """),
             new(
                 NotificationTrigger.PaymentFailed,
                 "Default Payment Failed Email",
-                "Your payment could not be completed — {{OrderNumber}}",
+                "We could not process your payment — {{OrderNumber}}",
                 """
-                Hi {{RecipientName}},
+                Dear {{RecipientName}},
 
-                The payment for your order {{OrderNumber}} could not be completed. Please try again.
+                Unfortunately, we were unable to process the payment for your order {{OrderNumber}}. No charge has been made.
+
+                Please try again, or reply to this email if you would like assistance.
                 """),
             new(
                 NotificationTrigger.PaymentRefunded,
                 "Default Payment Refunded Email",
                 "Your refund is complete — {{OrderNumber}}",
                 """
-                Hi {{RecipientName}},
+                Dear {{RecipientName}},
 
-                The refund for your order {{OrderNumber}} has been completed.
+                Your refund for order {{OrderNumber}} has been processed. Please allow a few business days for it to appear on your statement.
                 """),
             new(
                 NotificationTrigger.ShipmentCreated,
                 "Default Shipment Created Email",
-                "Your shipment is ready — {{OrderNumber}}",
+                "Your order is being prepared — {{OrderNumber}}",
                 """
-                Hi {{RecipientName}},
+                Dear {{RecipientName}},
 
-                A shipment has been created for your order {{OrderNumber}}. You can find the details below.
+                Good news — a shipment has been prepared for your order {{OrderNumber}}. The details are below, and we will notify you the moment it is dispatched.
                 """),
             new(
                 NotificationTrigger.ShipmentShipped,
                 "Default Shipment Shipped Email",
-                "Your order is on the way — {{OrderNumber}}",
+                "Your order is on its way — {{OrderNumber}}",
                 """
-                Hi {{RecipientName}},
+                Dear {{RecipientName}},
 
-                Your order {{OrderNumber}} has been shipped and is on its way.
+                Your order {{OrderNumber}} is now on its way to you. You can follow its journey using the tracking details below.
                 """),
             new(
                 NotificationTrigger.ShipmentDelivered,
                 "Default Shipment Delivered Email",
-                "Your order has been delivered — {{OrderNumber}}",
+                "Your order has arrived — {{OrderNumber}}",
                 """
-                Hi {{RecipientName}},
+                Dear {{RecipientName}},
 
-                Your order {{OrderNumber}} has been delivered. We hope you enjoy it!
+                Your order {{OrderNumber}} has been delivered. We hope you love it — thank you for shopping with us.
                 """),
             new(
                 NotificationTrigger.ShipmentDeliveryException,
                 "Default Delivery Update Email",
-                "Delivery update — {{OrderNumber}}",
+                "An update on your delivery — {{OrderNumber}}",
                 """
-                Hi {{RecipientName}},
+                Dear {{RecipientName}},
 
-                There is an update regarding the delivery of your order {{OrderNumber}}. Details are below.
+                We have an update regarding the delivery of your order {{OrderNumber}}. Please find the latest details below.
                 """)
         ];
     }

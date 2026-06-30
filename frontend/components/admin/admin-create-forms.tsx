@@ -569,7 +569,7 @@ export function AdminNotificationTemplateCreateForm() {
   const [name, setName] = useState("")
   const [trigger, setTrigger] = useState("OrderPlaced")
   const [channel, setChannel] = useState("Email")
-  const [locale, setLocale] = useState("tr-TR")
+  const [locale, setLocale] = useState("default")
   const [subjectTemplate, setSubjectTemplate] = useState("")
   const [bodyTemplate, setBodyTemplate] = useState("")
   const [error, setError] = useState<string | null>(null)

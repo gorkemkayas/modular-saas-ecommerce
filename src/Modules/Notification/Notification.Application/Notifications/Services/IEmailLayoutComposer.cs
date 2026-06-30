@@ -12,7 +12,8 @@ public sealed record EmailComposition(
     EmailCallToAction? CallToAction,
     IReadOnlyCollection<EmailDetailRow> Details,
     IReadOnlyCollection<EmailLineItem> LineItems,
-    IReadOnlyCollection<EmailDetailRow> Totals);
+    IReadOnlyCollection<EmailDetailRow> Totals,
+    string? Eyebrow = null);
 
 public sealed record EmailCallToAction(
     string Text,
