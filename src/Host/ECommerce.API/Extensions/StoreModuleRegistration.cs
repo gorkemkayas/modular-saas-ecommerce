@@ -4,7 +4,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Store.Application.Abstractions;
+using Store.Contracts;
 using Store.Domain.Stores;
+using Store.Infrastructure.Integrations;
 using Store.Infrastructure.Options;
 using Store.Infrastructure.Persistance;
 using Store.Infrastructure.Persistance.Repositories;
@@ -32,6 +34,7 @@ namespace ECommerce.API.Extensions
             });
 
             services.AddScoped<IStoreRepository, StoreRepository>();
+            services.AddScoped<IStoreModuleApi, StoreModuleApi>();
             services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<StoreDbContext>());
 
             return services;

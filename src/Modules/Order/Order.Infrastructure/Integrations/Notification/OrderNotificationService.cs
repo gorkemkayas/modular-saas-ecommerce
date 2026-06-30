@@ -21,6 +21,9 @@ public sealed class OrderNotificationService : IOrderNotificationService
         string recipientName,
         decimal grandTotalAmount,
         string currencyCode,
+        IReadOnlyCollection<OrderNotificationLineItem> items,
+        decimal subtotalAmount,
+        decimal shippingAmount,
         CancellationToken cancellationToken = default)
     {
         return _notificationModuleApi.SendOrderPlacedAsync(
@@ -32,7 +35,16 @@ public sealed class OrderNotificationService : IOrderNotificationService
                 recipientEmail,
                 recipientName,
                 grandTotalAmount,
-                currencyCode),
+                currencyCode,
+                items
+                    .Select(x => new NotificationLineItem(
+                        x.Name,
+                        x.Variant,
+                        x.Quantity,
+                        x.LineTotalAmount))
+                    .ToArray(),
+                subtotalAmount,
+                shippingAmount),
             cancellationToken);
     }
 

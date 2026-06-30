@@ -27,6 +27,8 @@ public static class NotificationInfrastructureServiceCollectionExtensions
             configuration.GetSection(NotificationDatabaseOptions.SectionName));
         services.Configure<NotificationEmailOptions>(
             configuration.GetSection(NotificationEmailOptions.SectionName));
+        services.Configure<NotificationBrandingOptions>(
+            configuration.GetSection(NotificationBrandingOptions.SectionName));
 
         services.AddDbContext<NotificationDbContext>((sp, options) =>
         {
@@ -54,6 +56,8 @@ public static class NotificationInfrastructureServiceCollectionExtensions
         services.AddScoped<INotificationDispatchRepository, NotificationDispatchRepository>();
         services.AddScoped<INotificationReadService, NotificationReadService>();
         services.AddScoped<ITemplateRenderer, SimpleTemplateRenderer>();
+        services.AddScoped<IEmailLayoutComposer, BrandedEmailComposer>();
+        services.AddScoped<IStoreBrandingProvider, StoreBrandingProvider>();
         services.AddScoped<MockEmailGateway>();
         services.AddScoped<ResendWebhookVerifier>();
         services.AddScoped<INotificationSender, NotificationSender>();

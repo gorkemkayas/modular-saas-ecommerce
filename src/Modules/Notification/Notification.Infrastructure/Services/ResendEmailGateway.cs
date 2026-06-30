@@ -60,7 +60,7 @@ public sealed class ResendEmailGateway : IEmailGateway
             ComposeFrom(),
             new[] { request.ToEmail },
             request.Subject,
-            BuildHtmlBody(request.Body),
+            request.HtmlBody,
             request.Body,
             string.IsNullOrWhiteSpace(_options.ReplyTo) ? null : new[] { _options.ReplyTo! });
 
@@ -102,19 +102,6 @@ public sealed class ResendEmailGateway : IEmailGateway
         return string.IsNullOrWhiteSpace(_options.FromName)
             ? _options.FromEmail.Trim()
             : $"{_options.FromName.Trim()} <{_options.FromEmail.Trim()}>";
-    }
-
-    private static string BuildHtmlBody(string body)
-    {
-        var encoded = WebUtility.HtmlEncode(body ?? string.Empty)
-            .Replace("\r\n", "\n", StringComparison.Ordinal)
-            .Replace("\n", "<br />", StringComparison.Ordinal);
-
-        return $"""
-                <div style="font-family:Arial,Helvetica,sans-serif;white-space:normal;line-height:1.6;">
-                  {encoded}
-                </div>
-                """;
     }
 
     private static ResendErrorResponse? TryDeserializeError(string content)

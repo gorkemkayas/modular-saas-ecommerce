@@ -15,6 +15,8 @@ public sealed class NotificationSender : INotificationSender
     private readonly IUnitOfWork _unitOfWork;
     private readonly ITemplateRenderer _templateRenderer;
     private readonly IEmailGateway _emailGateway;
+    private readonly IStoreBrandingProvider _storeBrandingProvider;
+    private readonly IEmailLayoutComposer _emailLayoutComposer;
     private readonly ILogger<NotificationSender> _logger;
 
     public NotificationSender(
@@ -23,6 +25,8 @@ public sealed class NotificationSender : INotificationSender
         IUnitOfWork unitOfWork,
         ITemplateRenderer templateRenderer,
         IEmailGateway emailGateway,
+        IStoreBrandingProvider storeBrandingProvider,
+        IEmailLayoutComposer emailLayoutComposer,
         ILogger<NotificationSender> logger)
     {
         _templateRepository = templateRepository;
@@ -30,6 +34,8 @@ public sealed class NotificationSender : INotificationSender
         _unitOfWork = unitOfWork;
         _templateRenderer = templateRenderer;
         _emailGateway = emailGateway;
+        _storeBrandingProvider = storeBrandingProvider;
+        _emailLayoutComposer = emailLayoutComposer;
         _logger = logger;
     }
 
@@ -100,6 +106,17 @@ public sealed class NotificationSender : INotificationSender
         dispatch.SetRenderedContent(subject, body);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        var branding = await _storeBrandingProvider.GetAsync(request.StoreId, cancellationToken);
+
+        var htmlBody = _emailLayoutComposer.ComposeHtml(new EmailComposition(
+            StoreName: branding?.Name ?? string.Empty,
+            Title: subject,
+            BodyText: body,
+            CallToAction: request.Content?.CallToAction,
+            Details: request.Content?.Details ?? Array.Empty<EmailDetailRow>(),
+            LineItems: request.Content?.LineItems ?? Array.Empty<EmailLineItem>(),
+            Totals: request.Content?.Totals ?? Array.Empty<EmailDetailRow>()));
+
         try
         {
             var sendResult = await _emailGateway.SendAsync(
@@ -108,7 +125,8 @@ public sealed class NotificationSender : INotificationSender
                     request.RecipientAddress,
                     request.RecipientName,
                     subject,
-                    body),
+                    body,
+                    htmlBody),
                 cancellationToken);
 
             if (sendResult.IsSuccess)

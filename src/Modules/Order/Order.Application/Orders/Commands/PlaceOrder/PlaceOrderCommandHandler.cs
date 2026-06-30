@@ -230,6 +230,15 @@ public sealed class PlaceOrderCommandHandler : IRequestHandler<PlaceOrderCommand
                 order.CustomerSnapshot.FullName,
                 order.Totals.GrandTotalAmount,
                 order.CurrencyCode,
+                order.Items
+                    .Select(item => new OrderNotificationLineItem(
+                        item.ProductName,
+                        item.VariantName,
+                        item.Quantity,
+                        item.LineTotalAmount))
+                    .ToArray(),
+                order.Totals.SubtotalAmount,
+                order.Totals.ShippingAmount,
                 cancellationToken);
         }
         catch (Exception notificationException)

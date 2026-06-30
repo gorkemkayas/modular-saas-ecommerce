@@ -14,7 +14,8 @@ public sealed record EmailSendRequest(
     string ToEmail,
     string? ToName,
     string Subject,
-    string Body);
+    string Body,
+    string HtmlBody);
 
 public sealed record EmailSendResult(
     bool IsSuccess,

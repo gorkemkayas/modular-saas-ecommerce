@@ -17,6 +17,29 @@ public sealed class NotificationModuleApi : INotificationModuleApi
         SendOrderPlacedNotificationRequest request,
         CancellationToken cancellationToken = default)
     {
+        var lineItems = request.Items
+            .Select(x => new EmailLineItem(
+                x.Name,
+                x.Variant,
+                x.Quantity,
+                FormatMoney(x.LineTotalAmount, request.CurrencyCode)))
+            .ToArray();
+
+        var totals = new List<EmailDetailRow>
+        {
+            new("Ara Toplam", FormatMoney(request.SubtotalAmount, request.CurrencyCode))
+        };
+
+        if (request.ShippingAmount > 0)
+            totals.Add(new EmailDetailRow("Kargo", FormatMoney(request.ShippingAmount, request.CurrencyCode)));
+
+        totals.Add(new EmailDetailRow("Toplam", FormatMoney(request.GrandTotalAmount, request.CurrencyCode)));
+
+        var content = new EmailContent(
+            CallToAction: new EmailCallToAction("Siparişi Görüntüle", $"/account/orders/{request.OrderId}"),
+            LineItems: lineItems,
+            Totals: totals);
+
         return _notificationSender.SendAsync(
             new TransactionalNotificationRequest(
                 request.StoreId,
@@ -32,9 +55,10 @@ public sealed class NotificationModuleApi : INotificationModuleApi
                 {
                     ["RecipientName"] = request.RecipientName,
                     ["OrderNumber"] = request.OrderNumber,
-                    ["GrandTotalAmount"] = request.GrandTotalAmount.ToString("0.00"),
+                    ["GrandTotalAmount"] = FormatMoney(request.GrandTotalAmount, request.CurrencyCode),
                     ["CurrencyCode"] = request.CurrencyCode
-                }),
+                },
+                content),
             cancellationToken);
     }
 
@@ -58,7 +82,16 @@ public sealed class NotificationModuleApi : INotificationModuleApi
                     ["RecipientName"] = request.RecipientName,
                     ["OrderNumber"] = request.OrderNumber,
                     ["CancellationReason"] = request.CancellationReason
-                }),
+                },
+                new EmailContent(
+                    CallToAction: new EmailCallToAction("Siparişi Görüntüle", $"/account/orders/{request.OrderId}"),
+                    Details: string.IsNullOrWhiteSpace(request.CancellationReason)
+                        ? new[] { new EmailDetailRow("Sipariş No", request.OrderNumber) }
+                        : new[]
+                        {
+                            new EmailDetailRow("Sipariş No", request.OrderNumber),
+                            new EmailDetailRow("İptal Nedeni", request.CancellationReason!)
+                        })),
             cancellationToken);
     }
 
@@ -119,10 +152,23 @@ public sealed class NotificationModuleApi : INotificationModuleApi
                 {
                     ["RecipientName"] = request.RecipientName,
                     ["OrderNumber"] = request.OrderNumber,
-                    ["PaymentAmount"] = request.Amount.ToString("0.00"),
+                    ["PaymentAmount"] = FormatMoney(request.Amount, request.CurrencyCode),
                     ["CurrencyCode"] = request.CurrencyCode,
                     ["FailureMessage"] = request.FailureMessage
-                }),
+                },
+                new EmailContent(
+                    Details: string.IsNullOrWhiteSpace(request.FailureMessage)
+                        ? new[]
+                        {
+                            new EmailDetailRow("Sipariş No", request.OrderNumber),
+                            new EmailDetailRow("Tutar", FormatMoney(request.Amount, request.CurrencyCode))
+                        }
+                        : new[]
+                        {
+                            new EmailDetailRow("Sipariş No", request.OrderNumber),
+                            new EmailDetailRow("Tutar", FormatMoney(request.Amount, request.CurrencyCode)),
+                            new EmailDetailRow("Açıklama", request.FailureMessage!)
+                        })),
             cancellationToken);
     }
 
@@ -145,9 +191,15 @@ public sealed class NotificationModuleApi : INotificationModuleApi
                 {
                     ["RecipientName"] = request.RecipientName,
                     ["OrderNumber"] = request.OrderNumber,
-                    ["RefundedAmount"] = request.RefundedAmount.ToString("0.00"),
+                    ["RefundedAmount"] = FormatMoney(request.RefundedAmount, request.CurrencyCode),
                     ["CurrencyCode"] = request.CurrencyCode
-                }),
+                },
+                new EmailContent(
+                    Details: new[]
+                    {
+                        new EmailDetailRow("Sipariş No", request.OrderNumber),
+                        new EmailDetailRow("İade Tutarı", FormatMoney(request.RefundedAmount, request.CurrencyCode))
+                    })),
             cancellationToken);
     }
 
@@ -249,6 +301,15 @@ public sealed class NotificationModuleApi : INotificationModuleApi
         NotificationTrigger trigger,
         CancellationToken cancellationToken)
     {
+        var details = new List<EmailDetailRow>
+        {
+            new("Sipariş No", orderNumber),
+            new("Tutar", FormatMoney(amount, currencyCode))
+        };
+
+        if (!string.IsNullOrWhiteSpace(paymentReference))
+            details.Add(new EmailDetailRow("Referans", paymentReference!));
+
         return _notificationSender.SendAsync(
             new TransactionalNotificationRequest(
                 storeId,
@@ -264,10 +325,11 @@ public sealed class NotificationModuleApi : INotificationModuleApi
                 {
                     ["RecipientName"] = recipientName,
                     ["OrderNumber"] = orderNumber,
-                    ["PaymentAmount"] = amount.ToString("0.00"),
+                    ["PaymentAmount"] = FormatMoney(amount, currencyCode),
                     ["CurrencyCode"] = currencyCode,
                     ["PaymentReference"] = paymentReference
-                }),
+                },
+                new EmailContent(Details: details)),
             cancellationToken);
     }
 
@@ -287,6 +349,27 @@ public sealed class NotificationModuleApi : INotificationModuleApi
         string? description,
         CancellationToken cancellationToken)
     {
+        var details = new List<EmailDetailRow>
+        {
+            new("Sipariş No", orderNumber),
+            new("Gönderi No", shipmentNumber)
+        };
+
+        if (!string.IsNullOrWhiteSpace(carrierName))
+            details.Add(new EmailDetailRow("Kargo Firması", carrierName!));
+
+        if (!string.IsNullOrWhiteSpace(trackingNumber))
+            details.Add(new EmailDetailRow("Takip No", trackingNumber!));
+
+        if (!string.IsNullOrWhiteSpace(description))
+            details.Add(new EmailDetailRow("Açıklama", description!));
+
+        var content = new EmailContent(
+            CallToAction: string.IsNullOrWhiteSpace(trackingUrl)
+                ? null
+                : new EmailCallToAction("Kargoyu Takip Et", trackingUrl!),
+            Details: details);
+
         return _notificationSender.SendAsync(
             new TransactionalNotificationRequest(
                 storeId,
@@ -307,7 +390,13 @@ public sealed class NotificationModuleApi : INotificationModuleApi
                     ["TrackingNumber"] = trackingNumber,
                     ["TrackingUrl"] = trackingUrl,
                     ["Description"] = description
-                }),
+                },
+                content),
             cancellationToken);
+    }
+
+    private static string FormatMoney(decimal amount, string currencyCode)
+    {
+        return $"{amount:#,##0.00} {currencyCode}".Trim();
     }
 }

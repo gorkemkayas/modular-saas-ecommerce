@@ -19,4 +19,5 @@ public sealed record TransactionalNotificationRequest(
     Guid? CustomerId,
     string? RecipientAddress,
     string? RecipientName,
-    IReadOnlyDictionary<string, string?> Tokens);
+    IReadOnlyDictionary<string, string?> Tokens,
+    EmailContent? Content = null);

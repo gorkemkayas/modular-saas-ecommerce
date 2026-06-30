@@ -62,128 +62,97 @@ public sealed class NotificationTemplateSeeder
         [
             new(
                 NotificationTrigger.OrderPlaced,
-                "Default Order Placed Email",
-                "Your order {{OrderNumber}} has been received",
+                "Varsayılan Sipariş Alındı E-postası",
+                "Siparişin alındı — {{OrderNumber}}",
                 """
-                Hi {{RecipientName}},
+                Merhaba {{RecipientName}},
 
-                We received your order {{OrderNumber}} successfully.
+                {{OrderNumber}} numaralı siparişini başarıyla aldık. Sipariş özetini aşağıda bulabilirsin.
 
-                Order total: {{GrandTotalAmount}} {{CurrencyCode}}
-
-                We will notify you again when your order moves forward.
+                Siparişin hazırlanmaya başlandığında seni tekrar bilgilendireceğiz.
                 """),
             new(
                 NotificationTrigger.OrderCancelled,
-                "Default Order Cancelled Email",
-                "Your order {{OrderNumber}} has been cancelled",
+                "Varsayılan Sipariş İptal E-postası",
+                "Siparişin iptal edildi — {{OrderNumber}}",
                 """
-                Hi {{RecipientName}},
+                Merhaba {{RecipientName}},
 
-                Your order {{OrderNumber}} has been cancelled.
+                {{OrderNumber}} numaralı siparişin iptal edildi.
 
-                Reason: {{CancellationReason}}
+                Bir hata olduğunu düşünüyorsan bizimle iletişime geçebilirsin.
                 """),
             new(
                 NotificationTrigger.PaymentAuthorized,
-                "Default Payment Authorized Email",
-                "Payment authorized for order {{OrderNumber}}",
+                "Varsayılan Ödeme Onayı E-postası",
+                "Ödemen onaylandı — {{OrderNumber}}",
                 """
-                Hi {{RecipientName}},
+                Merhaba {{RecipientName}},
 
-                Your payment for order {{OrderNumber}} has been authorized.
-
-                Amount: {{PaymentAmount}} {{CurrencyCode}}
-                Reference: {{PaymentReference}}
+                {{OrderNumber}} numaralı siparişin için ödemen onaylandı.
                 """),
             new(
                 NotificationTrigger.PaymentCaptured,
-                "Default Payment Captured Email",
-                "Payment captured for order {{OrderNumber}}",
+                "Varsayılan Ödeme Tahsilat E-postası",
+                "Ödemen alındı — {{OrderNumber}}",
                 """
-                Hi {{RecipientName}},
+                Merhaba {{RecipientName}},
 
-                Your payment for order {{OrderNumber}} has been captured successfully.
-
-                Amount: {{PaymentAmount}} {{CurrencyCode}}
-                Reference: {{PaymentReference}}
+                {{OrderNumber}} numaralı siparişin için ödemen başarıyla tahsil edildi.
                 """),
             new(
                 NotificationTrigger.PaymentFailed,
-                "Default Payment Failed Email",
-                "Payment failed for order {{OrderNumber}}",
+                "Varsayılan Ödeme Başarısız E-postası",
+                "Ödemen tamamlanamadı — {{OrderNumber}}",
                 """
-                Hi {{RecipientName}},
+                Merhaba {{RecipientName}},
 
-                Your payment for order {{OrderNumber}} could not be completed.
-
-                Amount: {{PaymentAmount}} {{CurrencyCode}}
-                Details: {{FailureMessage}}
+                {{OrderNumber}} numaralı siparişin için ödemen tamamlanamadı. Lütfen tekrar dener misin?
                 """),
             new(
                 NotificationTrigger.PaymentRefunded,
-                "Default Payment Refunded Email",
-                "Refund completed for order {{OrderNumber}}",
+                "Varsayılan İade E-postası",
+                "İaden tamamlandı — {{OrderNumber}}",
                 """
-                Hi {{RecipientName}},
+                Merhaba {{RecipientName}},
 
-                A refund has been completed for order {{OrderNumber}}.
-
-                Refunded amount: {{RefundedAmount}} {{CurrencyCode}}
+                {{OrderNumber}} numaralı siparişin için iaden tamamlandı.
                 """),
             new(
                 NotificationTrigger.ShipmentCreated,
-                "Default Shipment Created Email",
-                "Shipment created for order {{OrderNumber}}",
+                "Varsayılan Gönderi Oluşturuldu E-postası",
+                "Gönderin hazırlandı — {{OrderNumber}}",
                 """
-                Hi {{RecipientName}},
+                Merhaba {{RecipientName}},
 
-                A shipment has been created for your order {{OrderNumber}}.
-
-                Shipment number: {{ShipmentNumber}}
-                Carrier: {{CarrierName}}
-                Tracking number: {{TrackingNumber}}
-                Tracking URL: {{TrackingUrl}}
+                {{OrderNumber}} numaralı siparişin için bir gönderi oluşturuldu. Detayları aşağıda bulabilirsin.
                 """),
             new(
                 NotificationTrigger.ShipmentShipped,
-                "Default Shipment Shipped Email",
-                "Your order {{OrderNumber}} is on the way",
+                "Varsayılan Kargoya Verildi E-postası",
+                "Siparişin yola çıktı — {{OrderNumber}}",
                 """
-                Hi {{RecipientName}},
+                Merhaba {{RecipientName}},
 
-                Your order {{OrderNumber}} has been shipped.
-
-                Shipment number: {{ShipmentNumber}}
-                Carrier: {{CarrierName}}
-                Tracking number: {{TrackingNumber}}
-                Tracking URL: {{TrackingUrl}}
+                {{OrderNumber}} numaralı siparişin kargoya verildi ve yola çıktı.
                 """),
             new(
                 NotificationTrigger.ShipmentDelivered,
-                "Default Shipment Delivered Email",
-                "Your order {{OrderNumber}} has been delivered",
+                "Varsayılan Teslim Edildi E-postası",
+                "Siparişin teslim edildi — {{OrderNumber}}",
                 """
-                Hi {{RecipientName}},
+                Merhaba {{RecipientName}},
 
-                Your order {{OrderNumber}} has been delivered.
-
-                Shipment number: {{ShipmentNumber}}
-                Carrier: {{CarrierName}}
+                {{OrderNumber}} numaralı siparişin teslim edildi. Keyifle kullanmanı dileriz!
                 """),
             new(
                 NotificationTrigger.ShipmentDeliveryException,
-                "Default Shipment Exception Email",
-                "Delivery update for order {{OrderNumber}}",
+                "Varsayılan Teslimat Güncellemesi E-postası",
+                "Teslimat güncellemesi — {{OrderNumber}}",
                 """
-                Hi {{RecipientName}},
+                Merhaba {{RecipientName}},
 
-                There is a delivery update for your order {{OrderNumber}}.
-
-                Shipment number: {{ShipmentNumber}}
-                Carrier: {{CarrierName}}
-                Tracking number: {{TrackingNumber}}
-                Details: {{Description}}
+                {{OrderNumber}} numaralı siparişinin teslimatıyla ilgili bir güncelleme var. Detaylar aşağıda.
                 """)
         ];
     }

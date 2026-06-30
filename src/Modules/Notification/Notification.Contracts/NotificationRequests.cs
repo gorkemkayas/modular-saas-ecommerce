@@ -11,7 +11,16 @@ public sealed record SendOrderPlacedNotificationRequest(
     string RecipientName,
     decimal GrandTotalAmount,
     string CurrencyCode,
+    IReadOnlyCollection<NotificationLineItem> Items,
+    decimal SubtotalAmount,
+    decimal ShippingAmount,
     string Locale = "default");
+
+public sealed record NotificationLineItem(
+    string Name,
+    string? Variant,
+    int Quantity,
+    decimal LineTotalAmount);
 
 public sealed record SendOrderCancelledNotificationRequest(
     Guid StoreId,

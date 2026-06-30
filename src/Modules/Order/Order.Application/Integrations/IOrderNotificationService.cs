@@ -11,6 +11,9 @@ public interface IOrderNotificationService
         string recipientName,
         decimal grandTotalAmount,
         string currencyCode,
+        IReadOnlyCollection<OrderNotificationLineItem> items,
+        decimal subtotalAmount,
+        decimal shippingAmount,
         CancellationToken cancellationToken = default);
 
     Task SendOrderCancelledAsync(
@@ -23,3 +26,9 @@ public interface IOrderNotificationService
         string? cancellationReason,
         CancellationToken cancellationToken = default);
 }
+
+public sealed record OrderNotificationLineItem(
+    string Name,
+    string? Variant,
+    int Quantity,
+    decimal LineTotalAmount);

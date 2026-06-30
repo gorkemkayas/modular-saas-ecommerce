@@ -46,6 +46,8 @@ public sealed class NotificationSenderTests
             unitOfWork.Object,
             templateRenderer.Object,
             emailGateway.Object,
+            new Mock<IStoreBrandingProvider>().Object,
+            new Mock<IEmailLayoutComposer>().Object,
             NullLogger<NotificationSender>.Instance);
 
         var dispatchId = await sender.SendAsync(
@@ -109,6 +111,8 @@ public sealed class NotificationSenderTests
             unitOfWork.Object,
             templateRenderer.Object,
             emailGateway.Object,
+            new Mock<IStoreBrandingProvider>().Object,
+            new Mock<IEmailLayoutComposer>().Object,
             NullLogger<NotificationSender>.Instance);
 
         var dispatchId = await sender.SendAsync(
