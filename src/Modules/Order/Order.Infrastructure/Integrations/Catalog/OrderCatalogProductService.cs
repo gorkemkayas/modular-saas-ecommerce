@@ -29,6 +29,7 @@ public sealed class OrderCatalogProductService : IOrderCatalogProductService
                 product.ProductVariantId,
                 product.ProductName,
                 product.VariantName,
-                product.Sku);
+                product.Sku,
+                product.ImageUrl);
     }
 }

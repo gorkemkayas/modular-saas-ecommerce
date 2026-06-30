@@ -41,7 +41,8 @@ public sealed class OrderNotificationService : IOrderNotificationService
                         x.Name,
                         x.Variant,
                         x.Quantity,
-                        x.LineTotalAmount))
+                        x.LineTotalAmount,
+                        x.ImageUrl))
                     .ToArray(),
                 subtotalAmount,
                 shippingAmount),

@@ -95,6 +95,7 @@ public sealed class PlaceOrderCommandHandler : IRequestHandler<PlaceOrderCommand
         await _inventoryService.EnsureAvailabilityAsync(command.StoreId, inventoryItems, cancellationToken);
 
         var itemDrafts = new List<OrderItemDraft>(command.Items.Count);
+        var imageUrls = new Dictionary<(Guid ProductId, Guid? ProductVariantId), string?>();
         var currencyCode = command.CurrencyCode.Trim().ToUpperInvariant();
 
         foreach (var item in command.Items)
@@ -107,6 +108,8 @@ public sealed class PlaceOrderCommandHandler : IRequestHandler<PlaceOrderCommand
 
             if (sellableItem is null)
                 throw new OrderCatalogItemUnavailableException(item.ProductId, item.ProductVariantId);
+
+            imageUrls[(item.ProductId, item.ProductVariantId)] = sellableItem.ImageUrl;
 
             var resolvedPrice = await _pricingService.ResolvePriceAsync(
                 command.StoreId,
@@ -235,7 +238,10 @@ public sealed class PlaceOrderCommandHandler : IRequestHandler<PlaceOrderCommand
                         item.ProductName,
                         item.VariantName,
                         item.Quantity,
-                        item.LineTotalAmount))
+                        item.LineTotalAmount,
+                        imageUrls.TryGetValue((item.ProductId, item.ProductVariantId), out var imageUrl)
+                            ? imageUrl
+                            : null))
                     .ToArray(),
                 order.Totals.SubtotalAmount,
                 order.Totals.ShippingAmount,

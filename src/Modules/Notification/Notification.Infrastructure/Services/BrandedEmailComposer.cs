@@ -31,7 +31,7 @@ public sealed class BrandedEmailComposer : IEmailLayoutComposer
 
     public string ComposeHtml(EmailComposition composition)
     {
-        var storeName = Encode(string.IsNullOrWhiteSpace(composition.StoreName) ? "Mağaza" : composition.StoreName);
+        var storeName = Encode(string.IsNullOrWhiteSpace(composition.StoreName) ? "Store" : composition.StoreName);
         var title = Encode(composition.Title);
 
         var content = new StringBuilder();
@@ -126,11 +126,20 @@ public sealed class BrandedEmailComposer : IEmailLayoutComposer
                 ? string.Empty
                 : $"<br /><span style=\"color:{Muted};font-size:13px;\">{Encode(item.Variant!)}</span>";
 
+            var imageCell = string.IsNullOrWhiteSpace(item.ImageUrl)
+                ? string.Empty
+                : $"""
+                  <td width="68" style="padding:12px 12px 12px 0;border-bottom:1px solid {Border};vertical-align:top;">
+                    <img src="{Encode(item.ImageUrl!)}" width="56" height="56" alt="{name}" style="display:block;width:56px;height:56px;object-fit:cover;border:1px solid {Border};" />
+                  </td>
+                  """;
+
             rows.Append($"""
                 <tr>
-                  <td style="padding:12px 0;border-bottom:1px solid {Border};font-family:{SansStack};font-size:14px;color:{Ink};">
+                  {imageCell}
+                  <td style="padding:12px 0;border-bottom:1px solid {Border};font-family:{SansStack};font-size:14px;color:{Ink};vertical-align:top;">
                     {name}{variant}
-                    <br /><span style="color:{Muted};font-size:13px;">Adet: {item.Quantity}</span>
+                    <br /><span style="color:{Muted};font-size:13px;">Qty: {item.Quantity}</span>
                   </td>
                   <td style="padding:12px 0;border-bottom:1px solid {Border};font-family:{SansStack};font-size:14px;color:{Ink};text-align:right;white-space:nowrap;vertical-align:top;">{Encode(item.Amount)}</td>
                 </tr>
@@ -223,7 +232,7 @@ public sealed class BrandedEmailComposer : IEmailLayoutComposer
 
         return $"""
             {encodedStoreName}
-            <br />Bu e-postayı bir işleminiz olduğu için aldınız.
+            <br />You are receiving this email because of an action on your account.
             {link}
             """;
     }

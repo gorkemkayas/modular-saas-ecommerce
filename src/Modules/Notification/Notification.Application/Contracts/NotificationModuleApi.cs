@@ -22,21 +22,22 @@ public sealed class NotificationModuleApi : INotificationModuleApi
                 x.Name,
                 x.Variant,
                 x.Quantity,
-                FormatMoney(x.LineTotalAmount, request.CurrencyCode)))
+                FormatMoney(x.LineTotalAmount, request.CurrencyCode),
+                x.ImageUrl))
             .ToArray();
 
         var totals = new List<EmailDetailRow>
         {
-            new("Ara Toplam", FormatMoney(request.SubtotalAmount, request.CurrencyCode))
+            new("Subtotal", FormatMoney(request.SubtotalAmount, request.CurrencyCode))
         };
 
         if (request.ShippingAmount > 0)
-            totals.Add(new EmailDetailRow("Kargo", FormatMoney(request.ShippingAmount, request.CurrencyCode)));
+            totals.Add(new EmailDetailRow("Shipping", FormatMoney(request.ShippingAmount, request.CurrencyCode)));
 
-        totals.Add(new EmailDetailRow("Toplam", FormatMoney(request.GrandTotalAmount, request.CurrencyCode)));
+        totals.Add(new EmailDetailRow("Total", FormatMoney(request.GrandTotalAmount, request.CurrencyCode)));
 
         var content = new EmailContent(
-            CallToAction: new EmailCallToAction("Siparişi Görüntüle", $"/account/orders/{request.OrderId}"),
+            CallToAction: new EmailCallToAction("View Order", $"/account/orders/{request.OrderId}"),
             LineItems: lineItems,
             Totals: totals);
 
@@ -84,13 +85,13 @@ public sealed class NotificationModuleApi : INotificationModuleApi
                     ["CancellationReason"] = request.CancellationReason
                 },
                 new EmailContent(
-                    CallToAction: new EmailCallToAction("Siparişi Görüntüle", $"/account/orders/{request.OrderId}"),
+                    CallToAction: new EmailCallToAction("View Order", $"/account/orders/{request.OrderId}"),
                     Details: string.IsNullOrWhiteSpace(request.CancellationReason)
-                        ? new[] { new EmailDetailRow("Sipariş No", request.OrderNumber) }
+                        ? new[] { new EmailDetailRow("Order No", request.OrderNumber) }
                         : new[]
                         {
-                            new EmailDetailRow("Sipariş No", request.OrderNumber),
-                            new EmailDetailRow("İptal Nedeni", request.CancellationReason!)
+                            new EmailDetailRow("Order No", request.OrderNumber),
+                            new EmailDetailRow("Cancellation Reason", request.CancellationReason!)
                         })),
             cancellationToken);
     }
@@ -160,14 +161,14 @@ public sealed class NotificationModuleApi : INotificationModuleApi
                     Details: string.IsNullOrWhiteSpace(request.FailureMessage)
                         ? new[]
                         {
-                            new EmailDetailRow("Sipariş No", request.OrderNumber),
-                            new EmailDetailRow("Tutar", FormatMoney(request.Amount, request.CurrencyCode))
+                            new EmailDetailRow("Order No", request.OrderNumber),
+                            new EmailDetailRow("Amount", FormatMoney(request.Amount, request.CurrencyCode))
                         }
                         : new[]
                         {
-                            new EmailDetailRow("Sipariş No", request.OrderNumber),
-                            new EmailDetailRow("Tutar", FormatMoney(request.Amount, request.CurrencyCode)),
-                            new EmailDetailRow("Açıklama", request.FailureMessage!)
+                            new EmailDetailRow("Order No", request.OrderNumber),
+                            new EmailDetailRow("Amount", FormatMoney(request.Amount, request.CurrencyCode)),
+                            new EmailDetailRow("Details", request.FailureMessage!)
                         })),
             cancellationToken);
     }
@@ -197,8 +198,8 @@ public sealed class NotificationModuleApi : INotificationModuleApi
                 new EmailContent(
                     Details: new[]
                     {
-                        new EmailDetailRow("Sipariş No", request.OrderNumber),
-                        new EmailDetailRow("İade Tutarı", FormatMoney(request.RefundedAmount, request.CurrencyCode))
+                        new EmailDetailRow("Order No", request.OrderNumber),
+                        new EmailDetailRow("Refunded Amount", FormatMoney(request.RefundedAmount, request.CurrencyCode))
                     })),
             cancellationToken);
     }
@@ -303,12 +304,12 @@ public sealed class NotificationModuleApi : INotificationModuleApi
     {
         var details = new List<EmailDetailRow>
         {
-            new("Sipariş No", orderNumber),
-            new("Tutar", FormatMoney(amount, currencyCode))
+            new("Order No", orderNumber),
+            new("Amount", FormatMoney(amount, currencyCode))
         };
 
         if (!string.IsNullOrWhiteSpace(paymentReference))
-            details.Add(new EmailDetailRow("Referans", paymentReference!));
+            details.Add(new EmailDetailRow("Reference", paymentReference!));
 
         return _notificationSender.SendAsync(
             new TransactionalNotificationRequest(
@@ -351,23 +352,23 @@ public sealed class NotificationModuleApi : INotificationModuleApi
     {
         var details = new List<EmailDetailRow>
         {
-            new("Sipariş No", orderNumber),
-            new("Gönderi No", shipmentNumber)
+            new("Order No", orderNumber),
+            new("Shipment No", shipmentNumber)
         };
 
         if (!string.IsNullOrWhiteSpace(carrierName))
-            details.Add(new EmailDetailRow("Kargo Firması", carrierName!));
+            details.Add(new EmailDetailRow("Carrier", carrierName!));
 
         if (!string.IsNullOrWhiteSpace(trackingNumber))
-            details.Add(new EmailDetailRow("Takip No", trackingNumber!));
+            details.Add(new EmailDetailRow("Tracking No", trackingNumber!));
 
         if (!string.IsNullOrWhiteSpace(description))
-            details.Add(new EmailDetailRow("Açıklama", description!));
+            details.Add(new EmailDetailRow("Details", description!));
 
         var content = new EmailContent(
             CallToAction: string.IsNullOrWhiteSpace(trackingUrl)
                 ? null
-                : new EmailCallToAction("Kargoyu Takip Et", trackingUrl!),
+                : new EmailCallToAction("Track Shipment", trackingUrl!),
             Details: details);
 
         return _notificationSender.SendAsync(

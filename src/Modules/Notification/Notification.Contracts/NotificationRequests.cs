@@ -20,7 +20,8 @@ public sealed record NotificationLineItem(
     string Name,
     string? Variant,
     int Quantity,
-    decimal LineTotalAmount);
+    decimal LineTotalAmount,
+    string? ImageUrl = null);
 
 public sealed record SendOrderCancelledNotificationRequest(
     Guid StoreId,

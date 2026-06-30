@@ -1,4 +1,5 @@
 using Catalog.Application.Abstractions.Queries;
+using Catalog.Application.Products.DTOs;
 using Catalog.Contracts;
 using Catalog.Domain.Enums;
 namespace Catalog.Application.Contracts;
@@ -38,7 +39,8 @@ public sealed class CatalogModuleApi : ICatalogModuleApi
                 variant.Id,
                 product.Name,
                 variant.Name,
-                variant.Sku);
+                variant.Sku,
+                ResolvePrimaryImageUrl(product, variant.Id));
         }
 
         if (request.ProductVariantId.HasValue)
@@ -49,7 +51,42 @@ public sealed class CatalogModuleApi : ICatalogModuleApi
             null,
             product.Name,
             null,
-            product.Sku ?? string.Empty);
+            product.Sku ?? string.Empty,
+            ResolvePrimaryImageUrl(product, null));
+    }
+
+    private static string? ResolvePrimaryImageUrl(ProductDto product, Guid? variantId)
+    {
+        var images = product.MediaItems
+            .Where(x => x.MediaType == MediaType.Image)
+            .ToArray();
+
+        if (images.Length == 0)
+            return null;
+
+        if (variantId.HasValue)
+        {
+            var variantImage = images
+                .Where(x => x.ProductVariantId == variantId)
+                .OrderByDescending(x => x.IsMain)
+                .ThenBy(x => x.SortOrder)
+                .FirstOrDefault();
+
+            if (variantImage is not null)
+                return variantImage.Url;
+        }
+
+        var productImage = images
+            .Where(x => x.ProductVariantId is null)
+            .OrderByDescending(x => x.IsMain)
+            .ThenBy(x => x.SortOrder)
+            .FirstOrDefault();
+
+        return (productImage ?? images
+                .OrderByDescending(x => x.IsMain)
+                .ThenBy(x => x.SortOrder)
+                .First())
+            .Url;
     }
 
     public async Task<CatalogSellableItemValidationResult> ValidateSellableItemAsync(

@@ -5,4 +5,5 @@ public sealed record CatalogSellableItemResult(
     Guid? ProductVariantId,
     string ProductName,
     string? VariantName,
-    string Sku);
+    string Sku,
+    string? ImageUrl = null);

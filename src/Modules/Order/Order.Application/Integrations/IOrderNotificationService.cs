@@ -31,4 +31,5 @@ public sealed record OrderNotificationLineItem(
     string Name,
     string? Variant,
     int Quantity,
-    decimal LineTotalAmount);
+    decimal LineTotalAmount,
+    string? ImageUrl = null);

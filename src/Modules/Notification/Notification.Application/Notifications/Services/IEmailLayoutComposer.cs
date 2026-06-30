@@ -26,7 +26,8 @@ public sealed record EmailLineItem(
     string Name,
     string? Variant,
     int Quantity,
-    string Amount);
+    string Amount,
+    string? ImageUrl = null);
 
 public sealed record EmailContent(
     EmailCallToAction? CallToAction = null,
