@@ -21,7 +21,6 @@ public sealed class PlaceOrderCommandHandlerTests
         var pricingService = new Mock<IOrderPricingService>();
         var inventoryService = new Mock<IOrderInventoryService>();
         var shippingCarrierService = new Mock<IOrderShippingCarrierService>();
-        var notificationService = new Mock<IOrderNotificationService>();
         var shippingCarrierId = Guid.NewGuid();
         Order.Domain.Entities.Order? placedOrder = null;
 
@@ -80,7 +79,6 @@ public sealed class PlaceOrderCommandHandlerTests
             pricingService.Object,
             inventoryService.Object,
             shippingCarrierService.Object,
-            notificationService.Object,
             NullLogger<PlaceOrderCommandHandler>.Instance);
 
         var command = new PlaceOrderCommand(

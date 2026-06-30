@@ -17,9 +17,13 @@ namespace Store.Infrastructure.Integrations
             Guid storeId,
             CancellationToken cancellationToken = default)
         {
+            // Across modules the "store id" is the tenant id (TenantContext.TenantIdAsGuid),
+            // while the Store aggregate has its own random Id. Match on TenantId, and fall
+            // back to the aggregate Id in case a caller already holds the real store id.
             return _context.Stores
                 .AsNoTracking()
-                .Where(x => x.Id == storeId)
+                .Where(x => x.TenantId == storeId || x.Id == storeId)
+                .OrderByDescending(x => x.TenantId == storeId)
                 .Select(x => new StoreBranding(x.Id, x.Name, x.LogoUrl))
                 .FirstOrDefaultAsync(cancellationToken);
         }

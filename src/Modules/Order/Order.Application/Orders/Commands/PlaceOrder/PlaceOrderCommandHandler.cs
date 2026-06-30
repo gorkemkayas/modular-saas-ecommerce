@@ -20,7 +20,6 @@ public sealed class PlaceOrderCommandHandler : IRequestHandler<PlaceOrderCommand
     private readonly IOrderPricingService _pricingService;
     private readonly IOrderInventoryService _inventoryService;
     private readonly IOrderShippingCarrierService _shippingCarrierService;
-    private readonly IOrderNotificationService _notificationService;
     private readonly ILogger<PlaceOrderCommandHandler> _logger;
 
     public PlaceOrderCommandHandler(
@@ -32,7 +31,6 @@ public sealed class PlaceOrderCommandHandler : IRequestHandler<PlaceOrderCommand
         IOrderPricingService pricingService,
         IOrderInventoryService inventoryService,
         IOrderShippingCarrierService shippingCarrierService,
-        IOrderNotificationService notificationService,
         ILogger<PlaceOrderCommandHandler> logger)
     {
         _orderRepository = orderRepository;
@@ -43,7 +41,6 @@ public sealed class PlaceOrderCommandHandler : IRequestHandler<PlaceOrderCommand
         _pricingService = pricingService;
         _inventoryService = inventoryService;
         _shippingCarrierService = shippingCarrierService;
-        _notificationService = notificationService;
         _logger = logger;
     }
 
@@ -95,7 +92,6 @@ public sealed class PlaceOrderCommandHandler : IRequestHandler<PlaceOrderCommand
         await _inventoryService.EnsureAvailabilityAsync(command.StoreId, inventoryItems, cancellationToken);
 
         var itemDrafts = new List<OrderItemDraft>(command.Items.Count);
-        var imageUrls = new Dictionary<(Guid ProductId, Guid? ProductVariantId), string?>();
         var currencyCode = command.CurrencyCode.Trim().ToUpperInvariant();
 
         foreach (var item in command.Items)
@@ -108,8 +104,6 @@ public sealed class PlaceOrderCommandHandler : IRequestHandler<PlaceOrderCommand
 
             if (sellableItem is null)
                 throw new OrderCatalogItemUnavailableException(item.ProductId, item.ProductVariantId);
-
-            imageUrls[(item.ProductId, item.ProductVariantId)] = sellableItem.ImageUrl;
 
             var resolvedPrice = await _pricingService.ResolvePriceAsync(
                 command.StoreId,
@@ -222,40 +216,9 @@ public sealed class PlaceOrderCommandHandler : IRequestHandler<PlaceOrderCommand
             order.CustomerId,
             order.Totals.GrandTotalAmount);
 
-        try
-        {
-            await _notificationService.SendOrderPlacedAsync(
-                order.StoreId,
-                order.Id,
-                order.CustomerId,
-                order.OrderNumber.Value,
-                order.CustomerSnapshot.Email,
-                order.CustomerSnapshot.FullName,
-                order.Totals.GrandTotalAmount,
-                order.CurrencyCode,
-                order.Items
-                    .Select(item => new OrderNotificationLineItem(
-                        item.ProductName,
-                        item.VariantName,
-                        item.Quantity,
-                        item.LineTotalAmount,
-                        imageUrls.TryGetValue((item.ProductId, item.ProductVariantId), out var imageUrl)
-                            ? imageUrl
-                            : null))
-                    .ToArray(),
-                order.Totals.SubtotalAmount,
-                order.Totals.ShippingAmount,
-                cancellationToken);
-        }
-        catch (Exception notificationException)
-        {
-            _logger.LogWarning(
-                notificationException,
-                "Order placed notification failed | OrderId: {OrderId} | StoreId: {StoreId}",
-                order.Id,
-                order.StoreId);
-        }
-
+        // The order confirmation email is intentionally NOT sent here. It is sent once
+        // payment succeeds (see OrderModuleApi.MarkPaymentAuthorized/CapturedAsync), so the
+        // customer only receives a confirmation after the order is actually paid for.
         return order.Id;
     }
 }
