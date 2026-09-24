@@ -1,12 +1,14 @@
+using BuildingBlocks.Domain.Common;
 using Order.Domain.Common;
 using Order.Domain.Enums;
+using Order.Domain.Events;
 using Order.Domain.Exceptions;
 using Order.Domain.Models;
 using Order.Domain.ValueObjects;
 
 namespace Order.Domain.Entities;
 
-public sealed class Order : IAggregateRoot
+public sealed class Order : AggregateRoot, IAggregateRoot
 {
     private readonly List<OrderItem> _items = new();
 
@@ -126,10 +128,23 @@ public sealed class Order : IAggregateRoot
         if (FulfillmentStatus is FulfillmentStatus.Shipped or FulfillmentStatus.Delivered)
             throw new OrderDomainException("Shipped or delivered order cannot be cancelled.");
 
+        var occurredOnUtc = DateTime.UtcNow;
+
         Status = OrderStatus.Cancelled;
-        CancelledAtUtc = DateTime.UtcNow;
+        CancelledAtUtc = occurredOnUtc;
         CancellationReason = NormalizeOptional(reason, 500);
-        UpdatedAtUtc = CancelledAtUtc.Value;
+        UpdatedAtUtc = occurredOnUtc;
+
+        RaiseDomainEvent(new OrderCancelledDomainEvent(
+            Guid.NewGuid(),
+            occurredOnUtc,
+            Id,
+            StoreId,
+            CustomerId,
+            OrderNumber.Value,
+            CustomerSnapshot.Email,
+            CustomerSnapshot.FullName,
+            CancellationReason));
     }
 
     public void MarkPaymentAuthorized(string? paymentReference = null)
