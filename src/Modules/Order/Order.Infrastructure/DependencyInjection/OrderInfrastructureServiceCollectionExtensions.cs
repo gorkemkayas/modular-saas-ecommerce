@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Order.Application.Abstractions;
 using Order.Application.Abstractions.Queries;
 using Order.Application.Contracts;
+using Order.Application.Events;
 using Order.Application.Integrations;
 using Order.Contracts;
 using Order.Domain.Repositories;
@@ -16,6 +17,7 @@ using Order.Infrastructure.Integrations.Pricing;
 using Order.Infrastructure.Integrations.Shipment;
 using Order.Infrastructure.Options;
 using Order.Infrastructure.Persistence;
+using Order.Infrastructure.Persistence.Outbox;
 using Order.Infrastructure.Persistence.Repositories;
 using Order.Infrastructure.ReadServices;
 using Order.Infrastructure.Services;
@@ -52,6 +54,8 @@ public static class OrderInfrastructureServiceCollectionExtensions
         services.AddScoped<IOrderModuleApi, OrderModuleApi>();
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<OrderDbContext>());
         services.AddScoped<IOrderNumberGenerator, OrderNumberGenerator>();
+        services.AddScoped<IOrderDomainEventDispatcher, OrderDomainEventDispatcher>();
+        services.AddScoped<IOrderOutboxWriter, OrderOutboxWriter>();
 
         return services;
     }

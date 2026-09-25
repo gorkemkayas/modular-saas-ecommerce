@@ -5,10 +5,9 @@ using Order.Domain.Events;
 
 namespace Order.Application.Events;
 
-public sealed class OrderDomainEventDispatcher : IDomainEventDispatcher
+public sealed class OrderDomainEventDispatcher : IOrderDomainEventDispatcher
 {
     private readonly IPublisher _publisher;
-
     public OrderDomainEventDispatcher(IPublisher publisher)
     {
         _publisher = publisher;

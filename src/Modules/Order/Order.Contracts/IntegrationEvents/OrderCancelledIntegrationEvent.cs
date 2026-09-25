@@ -1,3 +1,5 @@
+using BuildingBlocks.Messaging.Abstractions.Events;
+
 namespace Order.Contracts.IntegrationEvents;
 
 public sealed record OrderCancelledIntegrationEvent(
@@ -9,7 +11,9 @@ public sealed record OrderCancelledIntegrationEvent(
     string OrderNumber,
     string RecipientEmail,
     string RecipientName,
-    string? CancellationReason)
+    string? CancellationReason) : IOrderIntegrationEvent
 {
     public const string EventType = "order.order-cancelled.v1";
+
+    string IIntegrationEvent.EventType => OrderCancelledIntegrationEvent.EventType;
 }

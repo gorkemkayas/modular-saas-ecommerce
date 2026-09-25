@@ -1,10 +1,13 @@
 using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 #nullable disable
 
 namespace Order.Infrastructure.Persistence.Migrations
 {
+    [DbContext(typeof(OrderDbContext))]
+    [Migration("20260427120000_InitialOrderSchema")]
     public partial class InitialOrderSchema : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)

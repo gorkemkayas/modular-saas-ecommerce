@@ -4,6 +4,7 @@
     <Project Path="src/BuildingBlocks/BuildingBlocks.Application/BuildingBlocks.Application.csproj" Id="f7695c99-8bd6-4bb6-b4fc-d63c95ff933d" />
     <Project Path="src/BuildingBlocks/BuildingBlocks.Domain/BuildingBlocks.Domain.csproj" Id="eb6b6448-4d35-41e1-b708-d63d532433da" />
     <Project Path="src/BuildingBlocks/BuildingBlocks.Infrastructure/BuildingBlocks.Infrastructure.csproj" Id="e63b8de0-9c1d-499b-aa56-97d90592da7f" />
+    <Project Path="src/BuildingBlocks/BuildingBlocks.Messaging/BuildingBlocks.Messaging.csproj" />
   </Folder>
   <Folder Name="/src/Host/">
     <Project Path="Host/ECommerce.API.UnitTests/ECommerce.API.UnitTests.csproj" Id="cb31cd83-3abc-4251-b6d1-3f5ce50357b6" />
@@ -65,6 +66,7 @@
   <Folder Name="/src/Modules/Order/tests/">
     <Project Path="src/Modules/Order/tests/Order.Application.UnitTests/Order.Application.UnitTests.csproj" Id="487628b3-e0eb-4f36-bd4c-37ce15f1a11b" />
     <Project Path="src/Modules/Order/tests/Order.Domain.UnitTests/Order.Domain.UnitTests.csproj" Id="6024f9c5-25f9-4353-9b4f-3d2866cd70cd" />
+    <Project Path="src/Modules/Order/tests/Order.Infrastructure.IntegrationTests/Order.Infrastructure.IntegrationTests.csproj" />
   </Folder>
   <Folder Name="/src/Modules/Pricing/tests/">
     <Project Path="src/Modules/Pricing/tests/Pricing.Application.UnitTests/Pricing.Application.UnitTests.csproj" Id="7fd02df4-a4a9-44c7-957d-f409b29878a5" />
