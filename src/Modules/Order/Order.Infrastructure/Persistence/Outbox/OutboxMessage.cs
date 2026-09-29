@@ -22,6 +22,10 @@ public sealed class OutboxMessage
         Payload = payload;
         OccurredOnUtc = occurredOnUtc;
         CreatedAtUtc = createdAtUtc;
+
+        Status = OutboxMessageStatus.Pending;
+        AttemptCount = 0;
+        NextAttemptAtUtc = createdAtUtc;
     }
 
     public Guid Id { get; private set; }
@@ -31,5 +35,13 @@ public sealed class OutboxMessage
     public string Payload { get; private set; } = default!;
     public DateTime OccurredOnUtc { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
+
+    public OutboxMessageStatus Status { get; private set; }
+    public int AttemptCount { get; private set; }
+    public DateTime NextAttemptAtUtc { get; private set; }
+    public Guid? LockId { get; private set; }
+    public DateTime? LockedUntilUtc { get; private set; }
+    public string? LastError { get; private set; }
     public DateTime? PublishedAtUtc { get; private set; }
+
 }

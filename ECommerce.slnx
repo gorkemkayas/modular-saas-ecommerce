@@ -67,6 +67,7 @@
     <Project Path="src/Modules/Order/tests/Order.Application.UnitTests/Order.Application.UnitTests.csproj" Id="487628b3-e0eb-4f36-bd4c-37ce15f1a11b" />
     <Project Path="src/Modules/Order/tests/Order.Domain.UnitTests/Order.Domain.UnitTests.csproj" Id="6024f9c5-25f9-4353-9b4f-3d2866cd70cd" />
     <Project Path="src/Modules/Order/tests/Order.Infrastructure.IntegrationTests/Order.Infrastructure.IntegrationTests.csproj" />
+    <Project Path="src/Modules/Order/tests/Order.Infrastructure.UnitTests/Order.Infrastructure.UnitTests.csproj" />
   </Folder>
   <Folder Name="/src/Modules/Pricing/tests/">
     <Project Path="src/Modules/Pricing/tests/Pricing.Application.UnitTests/Pricing.Application.UnitTests.csproj" Id="7fd02df4-a4a9-44c7-957d-f409b29878a5" />

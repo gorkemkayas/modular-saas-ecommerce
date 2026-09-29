@@ -37,13 +37,40 @@ public sealed class OutboxMessageConfiguration
         builder.Property(x => x.CreatedAtUtc)
             .IsRequired();
 
+        builder.Property(x => x.Status)
+            .HasConversion<int>()
+            .IsRequired();
+
+        builder.Property(x => x.AttemptCount)
+            .IsRequired();
+
+        builder.Property(x => x.NextAttemptAtUtc)
+            .IsRequired();
+
+        builder.Property(x => x.LockId);
+
+        builder.Property(x => x.LockedUntilUtc);
+
+        builder.Property(x => x.LastError)
+            .HasMaxLength(2000);
+
         builder.Property(x => x.PublishedAtUtc);
 
         builder.HasIndex(x => new
         {
-            x.PublishedAtUtc,
+            x.NextAttemptAtUtc,
             x.CreatedAtUtc
-        });
+        })
+        .HasFilter(
+            $"\"Status\" = {(int)OutboxMessageStatus.Pending}");
+
+        builder.HasIndex(x => new
+        {
+            x.LockedUntilUtc,
+            x.CreatedAtUtc
+        })
+        .HasFilter(
+            $"\"Status\" = {(int)OutboxMessageStatus.Processing}");
 
         builder.HasIndex(x => new
         {

@@ -1,4 +1,3 @@
-using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Order.Application.Abstractions;
@@ -35,6 +34,10 @@ internal static class OrderIntegrationTestHost
         services.AddScoped<
             IOrderOutboxWriter,
             OrderOutboxWriter>();
+
+        services.AddScoped<
+            IOrderOutboxStore,
+            OrderOutboxStore>();
 
         return services.BuildServiceProvider(
             new ServiceProviderOptions
