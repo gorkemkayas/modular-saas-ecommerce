@@ -1,6 +1,7 @@
 using BuildingBlocks.Application.Behaviors;
 using BuildingBlocks.Infrastructure.Extensions.Authentication;
 using BuildingBlocks.Infrastructure.Extensions.Middleware;
+using BuildingBlocks.Messaging.RabbitMQ.DependencyInjection;
 using ECommerce.API.ExceptionHandlers;
 using ECommerce.API.Extensions;
 using ECommerce.API.Options;
@@ -86,6 +87,7 @@ try
     builder.Services.AddRequestContexts();
     builder.Services.AddAuthServiceIntegration(builder.Configuration);
     builder.Services.AddMediaStorage(builder.Configuration);
+    builder.Services.AddRabbitMqMessaging(builder.Configuration);
     builder.Services.AddCatalogModule(builder.Configuration);
     builder.Services.AddCustomerModule(builder.Configuration);
     builder.Services.AddInventoryModule(builder.Configuration);

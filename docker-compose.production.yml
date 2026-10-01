@@ -18,6 +18,27 @@ services:
       timeout: 5s
       retries: 10
 
+  ecommerce-rabbitmq:
+    image: rabbitmq:4.2.9-alpine
+    container_name: ecommerce-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST}
+    volumes:
+      - ecommerce_rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test:
+        - CMD
+        - rabbitmq-diagnostics
+        - -q
+        - ping
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
   ecommerce-api:
     build:
       context: .
@@ -26,6 +47,8 @@ services:
     restart: unless-stopped
     depends_on:
       ecommerce-db:
+        condition: service_healthy
+      ecommerce-rabbitmq:
         condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
@@ -82,6 +105,17 @@ services:
       Modules__Subscription__Iyzico__CallbackUrl: ${SUBSCRIPTION_IYZICO_CALLBACK_URL}
       Modules__Subscription__Iyzico__Locale: tr
       Modules__Subscription__Iyzico__DefaultBuyerIdentityNumber: ${IYZICO_DEFAULT_BUYER_IDENTITY_NUMBER}
+      Messaging__RabbitMq__HostName: ecommerce-rabbitmq
+      Messaging__RabbitMq__Port: "5672"
+      Messaging__RabbitMq__UserName: ${RABBITMQ_USER}
+      Messaging__RabbitMq__Password: ${RABBITMQ_PASSWORD}
+      Messaging__RabbitMq__VirtualHost: ${RABBITMQ_VHOST}
+      Messaging__RabbitMq__ClientProvidedName: ecommerce-api-publisher
+      Messaging__RabbitMq__ExchangeName: ecommerce.events
+      Messaging__RabbitMq__RequestedHeartbeat: "00:00:30"
+      Messaging__RabbitMq__NetworkRecoveryInterval: "00:00:05"
+      Messaging__RabbitMq__ConnectionTimeout: "00:00:10"
+      Messaging__RabbitMq__PublishTimeout: "00:00:10"
     volumes:
       - ecommerce_dp_keys:${DATA_PROTECTION_KEYS_PATH}
       - ecommerce_api_logs:/app/Logs
@@ -138,5 +172,6 @@ services:
 
 volumes:
   ecommerce_postgres_data:
+  ecommerce_rabbitmq_data:
   ecommerce_dp_keys:
   ecommerce_api_logs:

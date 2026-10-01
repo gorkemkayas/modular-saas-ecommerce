@@ -4,7 +4,11 @@
     <Project Path="src/BuildingBlocks/BuildingBlocks.Application/BuildingBlocks.Application.csproj" Id="f7695c99-8bd6-4bb6-b4fc-d63c95ff933d" />
     <Project Path="src/BuildingBlocks/BuildingBlocks.Domain/BuildingBlocks.Domain.csproj" Id="eb6b6448-4d35-41e1-b708-d63d532433da" />
     <Project Path="src/BuildingBlocks/BuildingBlocks.Infrastructure/BuildingBlocks.Infrastructure.csproj" Id="e63b8de0-9c1d-499b-aa56-97d90592da7f" />
+    <Project Path="src/BuildingBlocks/BuildingBlocks.Messaging.RabbitMQ/BuildingBlocks.Messaging.RabbitMQ.csproj" />
     <Project Path="src/BuildingBlocks/BuildingBlocks.Messaging/BuildingBlocks.Messaging.csproj" />
+  </Folder>
+  <Folder Name="/src/BuildingBlocks/tests/">
+    <Project Path="src/BuildingBlocks/tests/BuildingBlocks.Messaging.RabbitMQ.IntegrationTests/BuildingBlocks.Messaging.RabbitMQ.IntegrationTests.csproj" />
   </Folder>
   <Folder Name="/src/Host/">
     <Project Path="Host/ECommerce.API.UnitTests/ECommerce.API.UnitTests.csproj" Id="cb31cd83-3abc-4251-b6d1-3f5ce50357b6" />
