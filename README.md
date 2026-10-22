@@ -197,6 +197,7 @@ Additional design notes are available in:
 - [docs/OrderModuleDesign.md](docs/OrderModuleDesign.md)
 - [docs/PricingModuleDesign.md](docs/PricingModuleDesign.md)
 - [docs/NotificationModuleDesign.md](docs/NotificationModuleDesign.md)
+- [docs/NotificationMessagingArchitecture.md](docs/NotificationMessagingArchitecture.md)
 - [docs/ShipmentModuleDesign.md](docs/ShipmentModuleDesign.md)
 
 ## Roadmap
