@@ -1,5 +1,10 @@
 # Notification Module Design
 
+> The current asynchronous RabbitMQ, Inbox, retry, and dead-letter architecture is
+> documented in [Notification Messaging Architecture](NotificationMessagingArchitecture.md).
+> Some MVP recommendations below describe the original synchronous design and are
+> retained as historical design context.
+
 ## Purpose
 
 `Notification` should be the module responsible for:
