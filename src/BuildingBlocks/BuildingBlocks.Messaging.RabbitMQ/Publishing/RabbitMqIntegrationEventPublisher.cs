@@ -7,7 +7,10 @@ using RabbitMQ.Client;
 
 namespace BuildingBlocks.Messaging.RabbitMQ.Publishing;
 
-public sealed class RabbitMqIntegrationEventPublisher : IIntegrationEventPublisher, IAsyncDisposable
+public sealed class RabbitMqIntegrationEventPublisher<TPublisherIdentity>
+    : IIntegrationEventPublisher<TPublisherIdentity>,
+      IAsyncDisposable
+    where TPublisherIdentity : class
 {
     private static readonly CreateChannelOptions ChannelOptions =
     new(
@@ -119,7 +122,9 @@ public sealed class RabbitMqIntegrationEventPublisher : IIntegrationEventPublish
         }
 
         IConnection connection = await _connectionProvider
-                                    .GetConnectionAsync(cancellationToken);
+                                    .GetConnectionAsync(
+                                        RabbitMqConnectionRole.Publishing,
+                                        cancellationToken);
 
         _channel = await connection.CreateChannelAsync(
             ChannelOptions,

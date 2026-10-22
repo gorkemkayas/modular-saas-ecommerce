@@ -9,14 +9,14 @@ namespace Order.Infrastructure.Outbox;
 public sealed class OrderOutboxProcessor
 {
     private readonly IOrderOutboxStore _orderOutboxStore;
-    private readonly IIntegrationEventPublisher _integrationEventPublisher;
+    private readonly IIntegrationEventPublisher<OrderOutboxPublisherIdentity> _integrationEventPublisher;
     private readonly OrderOutboxOptions _orderOutboxOptions;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<OrderOutboxProcessor> _logger;
 
     public OrderOutboxProcessor(
         IOrderOutboxStore orderOutboxStore,
-        IIntegrationEventPublisher integrationEventPublisher,
+        IIntegrationEventPublisher<OrderOutboxPublisherIdentity> integrationEventPublisher,
         IOptions<OrderOutboxOptions> orderOutboxOptions,
         TimeProvider timeProvider,
         ILogger<OrderOutboxProcessor> logger)

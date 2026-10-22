@@ -3,6 +3,7 @@ using BuildingBlocks.Messaging.Abstractions.Publishing;
 using BuildingBlocks.Messaging.RabbitMQ.Connections;
 using BuildingBlocks.Messaging.RabbitMQ.Options;
 using BuildingBlocks.Messaging.RabbitMQ.Publishing;
+using BuildingBlocks.Messaging.RabbitMQ.Retry;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -48,8 +49,13 @@ public static class RabbitMqServiceCollectionExtensions
             .Validate(
                 options =>
                     !string.IsNullOrWhiteSpace(
-                        options.ClientProvidedName),
-                "RabbitMQ client-provided name is required.")
+                        options.PublishingClientProvidedName),
+                "RabbitMQ publishing client-provided name is required.")
+            .Validate(
+                options =>
+                    !string.IsNullOrWhiteSpace(
+                        options.ConsumingClientProvidedName),
+                "RabbitMQ consuming client-provided name is required.")
             .Validate(
                 options =>
                     !string.IsNullOrWhiteSpace(
@@ -81,9 +87,13 @@ public static class RabbitMqServiceCollectionExtensions
             IRabbitMqConnectionProvider,
             RabbitMqConnectionProvider>();
 
-        services.AddSingleton<
-            IIntegrationEventPublisher,
-            RabbitMqIntegrationEventPublisher>();
+        services.AddSingleton(
+            typeof(IIntegrationEventPublisher<>),
+            typeof(RabbitMqIntegrationEventPublisher<>));
+
+        services.AddSingleton(
+            typeof(IRabbitMqFailureMessagePublisher<>),
+            typeof(RabbitMqFailureMessagePublisher<>));
 
         return services;
     }

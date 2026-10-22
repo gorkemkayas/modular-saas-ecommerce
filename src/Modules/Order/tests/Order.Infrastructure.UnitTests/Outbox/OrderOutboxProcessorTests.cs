@@ -62,8 +62,9 @@ public sealed class OrderOutboxProcessorTests
         IntegrationMessage? publishedMessage = null;
 
         var publisher =
-            new Mock<IIntegrationEventPublisher>(
-                MockBehavior.Strict);
+            new Mock<
+                IIntegrationEventPublisher<OrderOutboxPublisherIdentity>>(
+                    MockBehavior.Strict);
 
         publisher
             .Setup(currentPublisher =>
@@ -195,8 +196,9 @@ public sealed class OrderOutboxProcessorTests
             .ReturnsAsync(true);
 
         var publisher =
-            new Mock<IIntegrationEventPublisher>(
-                MockBehavior.Strict);
+            new Mock<
+                IIntegrationEventPublisher<OrderOutboxPublisherIdentity>>(
+                    MockBehavior.Strict);
 
         publisher
             .Setup(currentPublisher =>
@@ -302,8 +304,9 @@ public sealed class OrderOutboxProcessorTests
             .ReturnsAsync(true);
 
         var publisher =
-            new Mock<IIntegrationEventPublisher>(
-                MockBehavior.Strict);
+            new Mock<
+                IIntegrationEventPublisher<OrderOutboxPublisherIdentity>>(
+                    MockBehavior.Strict);
 
         publisher
             .Setup(currentPublisher =>
@@ -400,8 +403,9 @@ public sealed class OrderOutboxProcessorTests
             .ReturnsAsync(new[] { claimedMessage });
 
         var publisher =
-            new Mock<IIntegrationEventPublisher>(
-                MockBehavior.Strict);
+            new Mock<
+                IIntegrationEventPublisher<OrderOutboxPublisherIdentity>>(
+                    MockBehavior.Strict);
 
         publisher
             .Setup(currentPublisher =>
@@ -530,8 +534,9 @@ public sealed class OrderOutboxProcessorTests
             .ReturnsAsync(true);
 
         var publisher =
-            new Mock<IIntegrationEventPublisher>(
-                MockBehavior.Strict);
+            new Mock<
+                IIntegrationEventPublisher<OrderOutboxPublisherIdentity>>(
+                    MockBehavior.Strict);
 
         publisher
             .Setup(currentPublisher =>

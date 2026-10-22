@@ -110,7 +110,8 @@ services:
       Messaging__RabbitMq__UserName: ${RABBITMQ_USER}
       Messaging__RabbitMq__Password: ${RABBITMQ_PASSWORD}
       Messaging__RabbitMq__VirtualHost: ${RABBITMQ_VHOST}
-      Messaging__RabbitMq__ClientProvidedName: ecommerce-api-publisher
+      Messaging__RabbitMq__PublishingClientProvidedName: ecommerce-api-publishing
+      Messaging__RabbitMq__ConsumingClientProvidedName: ecommerce-api-consuming
       Messaging__RabbitMq__ExchangeName: ecommerce.events
       Messaging__RabbitMq__RequestedHeartbeat: "00:00:30"
       Messaging__RabbitMq__NetworkRecoveryInterval: "00:00:05"

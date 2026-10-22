@@ -53,9 +53,9 @@ public sealed class RabbitMqIntegrationEventPublisherTests
         await using var connectionProvider =
             new RabbitMqConnectionProvider(OptionsFactory.Create(options));
         await using var publisher =
-            new RabbitMqIntegrationEventPublisher(
-                connectionProvider,
-                OptionsFactory.Create(options));
+            new RabbitMqIntegrationEventPublisher<TestPublisherIdentity>(
+            connectionProvider,
+            OptionsFactory.Create(options));
 
         var occurredOnUtc = new DateTime(
             2026,
@@ -105,9 +105,9 @@ public sealed class RabbitMqIntegrationEventPublisherTests
         await using var connectionProvider =
             new RabbitMqConnectionProvider(OptionsFactory.Create(options));
         await using var publisher =
-            new RabbitMqIntegrationEventPublisher(
-                connectionProvider,
-                OptionsFactory.Create(options));
+            new RabbitMqIntegrationEventPublisher<TestPublisherIdentity>(
+            connectionProvider,
+            OptionsFactory.Create(options));
 
         var message = new IntegrationMessage(
             Guid.NewGuid(),
@@ -133,7 +133,8 @@ public sealed class RabbitMqIntegrationEventPublisherTests
             UserName = "unused",
             Password = "unused",
             VirtualHost = "/",
-            ClientProvidedName = "unavailable-broker-test",
+            PublishingClientProvidedName = "unavailable-broker-test-publishing",
+            ConsumingClientProvidedName = "unavailable-broker-test-consuming",
             ExchangeName = CreateUniqueName("exchange"),
             RequestedHeartbeat = TimeSpan.FromSeconds(1),
             NetworkRecoveryInterval = TimeSpan.FromSeconds(1),
@@ -144,9 +145,9 @@ public sealed class RabbitMqIntegrationEventPublisherTests
         await using var connectionProvider =
             new RabbitMqConnectionProvider(OptionsFactory.Create(options));
         await using var publisher =
-            new RabbitMqIntegrationEventPublisher(
-                connectionProvider,
-                OptionsFactory.Create(options));
+            new RabbitMqIntegrationEventPublisher<TestPublisherIdentity>(
+            connectionProvider,
+            OptionsFactory.Create(options));
 
         var message = new IntegrationMessage(
             Guid.NewGuid(),
@@ -171,9 +172,9 @@ public sealed class RabbitMqIntegrationEventPublisherTests
         await using var connectionProvider =
             new HangingConnectionProvider();
         await using var publisher =
-            new RabbitMqIntegrationEventPublisher(
-                connectionProvider,
-                OptionsFactory.Create(options));
+            new RabbitMqIntegrationEventPublisher<TestPublisherIdentity>(
+            connectionProvider,
+            OptionsFactory.Create(options));
 
         var message = new IntegrationMessage(
             Guid.NewGuid(),
@@ -231,19 +232,23 @@ public sealed class RabbitMqIntegrationEventPublisherTests
     private sealed class HangingConnectionProvider : IRabbitMqConnectionProvider
     {
         public async ValueTask<IConnection> GetConnectionAsync(
+            RabbitMqConnectionRole role,
             CancellationToken cancellationToken = default)
         {
             await Task.Delay(
-                TimeSpan.FromSeconds(1),
+                Timeout.InfiniteTimeSpan,
                 cancellationToken);
 
             throw new InvalidOperationException(
-                "The simulated connection operation should be cancelled.");
+                "The unreachable continuation was executed.");
         }
 
         public ValueTask DisposeAsync()
         {
             return ValueTask.CompletedTask;
         }
+    }
+    private sealed class TestPublisherIdentity
+    {
     }
 }

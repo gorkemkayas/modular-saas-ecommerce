@@ -8,7 +8,8 @@ public sealed class RabbitMqOptions
     public string UserName { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
     public string VirtualHost { get; set; } = "/";
-    public string ClientProvidedName { get; set; } = "ecommerce-api-publisher";
+    public string PublishingClientProvidedName { get; set; } = "ecommerce-api-publishing";
+    public string ConsumingClientProvidedName { get; set; } = "ecommerce-api-consuming";
     public string ExchangeName { get; set; } = "ecommerce.events";
     public TimeSpan RequestedHeartbeat { get; set; } = TimeSpan.FromSeconds(30);
     public TimeSpan NetworkRecoveryInterval { get; set; } = TimeSpan.FromSeconds(5);
