@@ -36,8 +36,7 @@ public sealed class NotificationTemplateSeeder
             if (exists)
                 continue;
 
-            var template = NotificationTemplate.Create(
-                DefaultStoreId,
+            var template = NotificationTemplate.CreateDefault(
                 definition.Name,
                 definition.Trigger,
                 NotificationChannel.Email,

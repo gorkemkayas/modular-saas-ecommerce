@@ -299,5 +299,8 @@ Domain Event
 Phase 7 adds claim-based delivery, email-provider idempotency, retry scheduling,
 attempt history, and terminal failure handling. See
 [Notification Dispatch Delivery](NotificationDispatchDelivery.md) for its diagrams
-and recovery policy. Activation of the full host pipeline and migration of direct
-notification calls remain the next rollout phase.
+and recovery policy. Phase 8 wires the full pipeline into the API host, enables
+the Notification workers in development, and removes the direct cancellation
+notification call. Other notification flows retain their existing direct APIs.
+See [Phase 8 verification](Phase8MessagingVerification.md) for the live test,
+regression coverage, and remaining deployment requirements.

@@ -15,16 +15,6 @@ public interface IOrderNotificationService
         decimal subtotalAmount,
         decimal shippingAmount,
         CancellationToken cancellationToken = default);
-
-    Task SendOrderCancelledAsync(
-        Guid storeId,
-        Guid orderId,
-        Guid customerId,
-        string orderNumber,
-        string recipientEmail,
-        string recipientName,
-        string? cancellationReason,
-        CancellationToken cancellationToken = default);
 }
 
 public sealed record OrderNotificationLineItem(

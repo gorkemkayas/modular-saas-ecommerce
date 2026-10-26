@@ -44,7 +44,6 @@ public sealed class CancelOrderCommandHandlerTests
         var unitOfWork = new Mock<IUnitOfWork>();
         var customerContextService = new Mock<IOrderCustomerContextService>();
         var inventoryService = new Mock<IOrderInventoryService>();
-        var notificationService = new Mock<IOrderNotificationService>();
 
         customerContextService
             .Setup(x => x.GetCustomerIdentityAsync(storeId, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
@@ -67,7 +66,6 @@ public sealed class CancelOrderCommandHandlerTests
             unitOfWork.Object,
             customerContextService.Object,
             inventoryService.Object,
-            notificationService.Object,
             NullLogger<CancelOrderCommandHandler>.Instance);
 
         await handler.Handle(new CancelOrderCommand(storeId, Guid.NewGuid(), order.Id, "Customer changed mind"), CancellationToken.None);
@@ -111,7 +109,6 @@ public sealed class CancelOrderCommandHandlerTests
         var unitOfWork = new Mock<IUnitOfWork>();
         var customerContextService = new Mock<IOrderCustomerContextService>();
         var inventoryService = new Mock<IOrderInventoryService>();
-        var notificationService = new Mock<IOrderNotificationService>();
 
         customerContextService
             .Setup(x => x.GetCustomerIdentityAsync(storeId, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
@@ -126,7 +123,6 @@ public sealed class CancelOrderCommandHandlerTests
             unitOfWork.Object,
             customerContextService.Object,
             inventoryService.Object,
-            notificationService.Object,
             NullLogger<CancelOrderCommandHandler>.Instance);
 
         await Assert.ThrowsExactlyAsync<OrderDomainException>(() =>
@@ -134,15 +130,6 @@ public sealed class CancelOrderCommandHandlerTests
 
         unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
         inventoryService.Verify(x => x.ReleaseReservationAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
-        notificationService.Verify(x => x.SendOrderCancelledAsync(
-            It.IsAny<Guid>(),
-            It.IsAny<Guid>(),
-            It.IsAny<Guid>(),
-            It.IsAny<string>(),
-            It.IsAny<string>(),
-            It.IsAny<string>(),
-            It.IsAny<string?>(),
-            It.IsAny<CancellationToken>()), Times.Never);
     }
 
     private static OrderAddressSnapshot CreateAddress(string title)

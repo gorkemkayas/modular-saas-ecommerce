@@ -1,7 +1,8 @@
 # Notification Dispatch Delivery
 
 Phase 7 adds asynchronous email delivery for dispatches created by Inbox handlers.
-The existing synchronous sender continues to own its own dispatches; the worker
+The existing synchronous sender continues to own dispatches for other notification
+flows; OrderCancelled uses the event pipeline exclusively after Phase 8. The worker
 only processes dispatches explicitly added to the durable delivery queue.
 
 ## Delivery pipeline
@@ -113,7 +114,8 @@ expired windows stop automatic retry.
 
 ## Configuration and rollout
 
-Settings live under `Modules:Notification:DispatchProcessor`:
+Settings live under `Modules:Notification:DispatchProcessor`. The table lists
+option-class defaults; checked-in development settings enable the worker:
 
 | Setting | Default |
 | --- | --- |
@@ -133,8 +135,15 @@ timeout and a delivery window shorter than provider idempotency retention.
 
 Migration `AddNotificationDispatchDelivery` creates the delivery table and claim
 indexes without enqueuing existing synchronous dispatches. Apply the Notification
-migration before enabling the worker. Phase 8 covers activation of the complete
-host pipeline and migration of the remaining direct notification calls.
+migration before enabling the worker. Phase 8 activates the complete development
+host pipeline and removes the direct order-cancellation notification call.
+Other direct notifications retain their existing behavior. Production activation
+requires explicit environment configuration and a verified sender domain.
+
+Default templates use `StoreId = Guid.Empty` as the existing global fallback.
+`NotificationTemplate.CreateDefault` creates these explicitly; `Create` still
+requires a nonempty store ID for tenant-specific templates. The startup seeder
+creates missing defaults and can run repeatedly without duplicating them.
 
 ## Verification
 
@@ -144,3 +153,6 @@ payloads, transient/permanent outcomes, retry timing, timeouts, shutdown, safe-w
 expiry, outcome persistence rollback, legacy sender isolation, and the
 Inbox-to-dispatch-to-gateway flow. Resend HTTP behavior is tested with a local
 stub handler; no real emails are sent by these tests.
+
+The separate Phase 8 live smoke test used real PostgreSQL, RabbitMQ, and Resend.
+See [Phase 8 verification](Phase8MessagingVerification.md) for results and scope.

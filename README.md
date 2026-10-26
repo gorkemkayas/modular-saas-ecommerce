@@ -352,18 +352,28 @@ sharing the consumer channel.
 
 ### Runtime status
 
-The messaging components and integration tests are present. The default host
-configuration still reflects an incremental migration:
+The OrderCancelled pipeline is wired into the API host and enabled in the
+checked-in development configuration:
 
-- `AddOrderOutboxProcessing(configuration)` exists, but the API host does not currently call it. The Outbox polling service must be registered before host-based publishing runs.
-- Notification `IntegrationEventConsumer.Enabled`, `InboxProcessor.Enabled`, and `DispatchProcessor.Enabled` are `false` in the checked-in development settings.
-- Existing direct notification calls remain in commerce workflows.
-- The Inbox path creates a dispatch and a delivery queue row atomically. Its claim-based sender is implemented; host activation and migration of direct calls are the next rollout step.
+- `AddOrderModule(configuration)` registers Order infrastructure and its Outbox polling service.
+- Notification `IntegrationEventConsumer.Enabled`, `InboxProcessor.Enabled`, and `DispatchProcessor.Enabled` are `true` in development. Their option-class defaults remain `false`; production activation is a separate deployment choice.
+- Order cancellation uses the event pipeline exclusively; the command handler no longer calls the synchronous notification sender.
+- Other commerce notification flows still use their existing direct APIs. Their migration is outside this rollout.
+- The Inbox path creates a dispatch and a delivery queue row atomically. The dispatch worker sends outside the database transaction and persists the outcome with attempt history.
+
+Real PostgreSQL, RabbitMQ, and Resend verification covered successful cancellation
+delivery, permanent provider rejection, and duplicate event delivery without a
+second email. The recipient confirmed receipt. This exercised a domain-created
+test order; browser checkout and HTTP cancellation were not part of that run.
+The configured sender domain must be verified before normal email delivery;
+the live test used a temporary Resend test sender.
 
 See [Notification Messaging Architecture](docs/NotificationMessagingArchitecture.md)
 for the detailed delivery, ACK, retry, and processing diagrams.
 See [Notification Dispatch Delivery](docs/NotificationDispatchDelivery.md) for
 provider request snapshots, retry policy, and the bounded idempotency window.
+See [Phase 8 verification](docs/Phase8MessagingVerification.md) for the rollout
+checks, test commands, and remaining operational work.
 
 ## Technology
 
@@ -676,8 +686,8 @@ active service configuration.
 | --- | --- | --- |
 | Commerce | Store, catalog, customer, pricing, orders, inventory, payments, and shipment workflows | Broader end-to-end validation and operational hardening |
 | Web application | Storefront, account, checkout, and merchant routes exist | Continue UX and integration refinement |
-| Messaging | OrderCancelled Outbox → RabbitMQ → Notification Inbox components and tests | Complete host activation and migrate selected synchronous calls |
-| Notification delivery | Direct sender plus claim-based dispatch delivery, persisted retry/attempt history, and provider idempotency | Activate the asynchronous pipeline and migrate direct calls |
+| Messaging | OrderCancelled host pipeline enabled in development and verified against real infrastructure | Operational visibility, safe replay, and gradual rollout to other events |
+| Notification delivery | Order cancellation uses queued delivery; other workflows retain the direct sender | Verify deployment sender domain and add operational tooling |
 | Cross-module reliability | Contracts, explicit orchestration, compensation, and initial event pipeline | Expand event coverage and introduce process managers where workflows need them |
 | Product expansion | Ten current business modules | Consider Cart, Promotion, Return, and Review after the core flows mature |
 
@@ -687,6 +697,7 @@ active service configuration.
 | --- | --- |
 | [Notification messaging architecture](docs/NotificationMessagingArchitecture.md) | Detailed consumer, Inbox, retry, ACK, DLQ, and handler diagrams |
 | [Notification dispatch delivery](docs/NotificationDispatchDelivery.md) | Dispatch worker, durable delivery queue, provider idempotency, retries, and crash recovery |
+| [Phase 8 verification](docs/Phase8MessagingVerification.md) | Host activation, regression coverage, real email verification, and rollout boundaries |
 | [Order module design](docs/OrderModuleDesign.md) | Order ownership, snapshots, and lifecycle |
 | [Pricing module design](docs/PricingModuleDesign.md) | Price lists and price-resolution design |
 | [Notification module design](docs/NotificationModuleDesign.md) | Original module design and links to its asynchronous evolution |

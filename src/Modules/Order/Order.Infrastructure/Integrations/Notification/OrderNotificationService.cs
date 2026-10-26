@@ -48,26 +48,4 @@ public sealed class OrderNotificationService : IOrderNotificationService
                 shippingAmount),
             cancellationToken);
     }
-
-    public Task SendOrderCancelledAsync(
-        Guid storeId,
-        Guid orderId,
-        Guid customerId,
-        string orderNumber,
-        string recipientEmail,
-        string recipientName,
-        string? cancellationReason,
-        CancellationToken cancellationToken = default)
-    {
-        return _notificationModuleApi.SendOrderCancelledAsync(
-            new SendOrderCancelledNotificationRequest(
-                storeId,
-                orderId,
-                customerId,
-                orderNumber,
-                recipientEmail,
-                recipientName,
-                cancellationReason),
-            cancellationToken);
-    }
 }

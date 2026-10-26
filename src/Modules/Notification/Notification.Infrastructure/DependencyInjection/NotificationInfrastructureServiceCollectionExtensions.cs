@@ -36,9 +36,23 @@ public static class NotificationInfrastructureServiceCollectionExtensions
         services.Configure<NotificationBrandingOptions>(
             configuration.GetSection(NotificationBrandingOptions.SectionName));
         services.AddOptions<NotificationIntegrationEventConsumerOptions>()
-            .Bind(
-                configuration.GetSection(
-                    NotificationIntegrationEventConsumerOptions.SectionName))
+            .Configure(options =>
+            {
+                IConfigurationSection section =
+                    configuration.GetSection(
+                        NotificationIntegrationEventConsumerOptions.SectionName);
+
+                section.Bind(options);
+
+                TimeSpan[]? configuredDelays = section
+                    .GetSection("Retry:Delays")
+                    .Get<TimeSpan[]>();
+
+                if (configuredDelays is not null)
+                {
+                    options.Retry.Delays = configuredDelays;
+                }
+            })
             .Validate(
                 options =>
                     !string.IsNullOrWhiteSpace(
