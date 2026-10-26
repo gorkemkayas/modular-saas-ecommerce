@@ -67,7 +67,6 @@ namespace Notification.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Notification.Domain.Entities.NotificationAttempt", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<int>("AttemptNumber")
@@ -278,6 +277,52 @@ namespace Notification.Infrastructure.Persistence.Migrations
                     b.ToTable("NotificationTemplates", (string)null);
                 });
 
+            modelBuilder.Entity("Notification.Infrastructure.Persistence.Dispatch.NotificationDispatchDelivery", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<Guid?>("LockId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("LockedUntilUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("NextAttemptAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Payload")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("PreparedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ProviderName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Status", "LockedUntilUtc");
+
+                    b.HasIndex("Status", "NextAttemptAtUtc", "CreatedAtUtc");
+
+                    b.ToTable("NotificationDispatchDeliveries", (string)null);
+                });
+
             modelBuilder.Entity("Notification.Infrastructure.Persistence.Inbox.InboxMessage", b =>
                 {
                     b.Property<Guid>("Id")
@@ -344,6 +389,15 @@ namespace Notification.Infrastructure.Persistence.Migrations
                     b.HasOne("Notification.Domain.Entities.NotificationDispatch", null)
                         .WithMany("Attempts")
                         .HasForeignKey("NotificationDispatchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Notification.Infrastructure.Persistence.Dispatch.NotificationDispatchDelivery", b =>
+                {
+                    b.HasOne("Notification.Domain.Entities.NotificationDispatch", null)
+                        .WithOne()
+                        .HasForeignKey("Notification.Infrastructure.Persistence.Dispatch.NotificationDispatchDelivery", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

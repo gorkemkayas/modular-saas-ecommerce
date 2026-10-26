@@ -145,14 +145,27 @@ public sealed class NotificationDispatch : IAggregateRoot
         string? failureCode,
         string? failureMessage)
     {
+        RecordFailedAttempt(
+            providerName,
+            providerRequestReference,
+            failureCode,
+            failureMessage);
+
+        Status = NotificationStatus.Failed;
+    }
+
+    public void RecordFailedAttempt(
+        string providerName,
+        string? providerRequestReference,
+        string? failureCode,
+        string? failureMessage)
+    {
         EnsurePending();
 
         ProviderName = NormalizeRequired(providerName, "Provider name", 100);
         FailureCode = NormalizeOptional(failureCode, 100);
         FailureMessage = NormalizeOptional(failureMessage, 1000);
         LastAttemptAtUtc = DateTime.UtcNow;
-        Status = NotificationStatus.Failed;
-
         _attempts.Add(NotificationAttempt.CreateFailed(
             Id,
             _attempts.Count + 1,

@@ -5,6 +5,7 @@ using Notification.Domain.Enums;
 using Notification.Domain.Repositories;
 using Notification.Infrastructure.Persistence.Inbox;
 using Order.Contracts.IntegrationEvents;
+using Notification.Infrastructure.Persistence.Dispatch;
 
 namespace Notification.Infrastructure.Messaging.Inbox;
 
@@ -24,11 +25,15 @@ public sealed class OrderCancelledInboxMessageHandler
         _templateRepository;
 
     private readonly ITemplateRenderer _templateRenderer;
+    private readonly INotificationDispatchStore _dispatchStore;
+    private readonly TimeProvider _timeProvider;
 
     public OrderCancelledInboxMessageHandler(
         INotificationDispatchRepository dispatchRepository,
         INotificationTemplateRepository templateRepository,
-        ITemplateRenderer templateRenderer)
+        ITemplateRenderer templateRenderer,
+        INotificationDispatchStore dispatchStore,
+        TimeProvider timeProvider)
     {
         ArgumentNullException.ThrowIfNull(
             dispatchRepository);
@@ -42,6 +47,10 @@ public sealed class OrderCancelledInboxMessageHandler
         _dispatchRepository = dispatchRepository;
         _templateRepository = templateRepository;
         _templateRenderer = templateRenderer;
+        ArgumentNullException.ThrowIfNull(dispatchStore);
+        ArgumentNullException.ThrowIfNull(timeProvider);
+        _dispatchStore = dispatchStore;
+        _timeProvider = timeProvider;
     }
 
     public string EventType =>
@@ -155,6 +164,11 @@ public sealed class OrderCancelledInboxMessageHandler
 
         await _dispatchRepository.AddAsync(
             dispatch,
+            cancellationToken);
+
+        await _dispatchStore.EnqueueAsync(
+            dispatch.Id,
+            _timeProvider.GetUtcNow().UtcDateTime,
             cancellationToken);
     }
 

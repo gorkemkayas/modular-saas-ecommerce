@@ -8,6 +8,8 @@ using Notification.Infrastructure.Persistence;
 using Notification.Infrastructure.Persistence.Inbox;
 using Notification.Infrastructure.Persistence.Repositories;
 using Notification.Infrastructure.Services;
+using Notification.Infrastructure.Persistence.Dispatch;
+using Notification.Infrastructure.Messaging.Dispatch;
 
 namespace Notification.Infrastructure.IntegrationTests;
 
@@ -16,7 +18,8 @@ internal static class NotificationIntegrationTestHost
     public static ServiceProvider CreateServiceProvider(
         Action<IServiceCollection>? configureServices = null,
         NotificationInboxOptions? inboxOptions = null,
-        TimeProvider? timeProvider = null)
+        TimeProvider? timeProvider = null,
+        NotificationDispatchOptions? dispatchOptions = null)
     {
         var services = new ServiceCollection();
 
@@ -55,6 +58,17 @@ internal static class NotificationIntegrationTestHost
         services.AddScoped<
             NotificationInboxMessageHandlerResolver>();
 
+        services.AddScoped<INotificationDispatchStore, NotificationDispatchStore>();
+        services.AddSingleton<NotificationDispatchProcessor>();
+        services.AddSingleton(Microsoft.Extensions.Options.Options.Create(
+            dispatchOptions ?? new NotificationDispatchOptions()));
+        services.AddSingleton(Microsoft.Extensions.Options.Options.Create(
+            new NotificationEmailOptions { FromEmail = "sender@example.com" }));
+        services.AddScoped<IEmailGateway, MockEmailGateway>();
+        services.AddScoped<IEmailLayoutComposer, BrandedEmailComposer>();
+        services.AddSingleton(Microsoft.Extensions.Options.Options.Create(new NotificationBrandingOptions()));
+        services.AddScoped<IStoreBrandingProvider, TestStoreBrandingProvider>();
+
         services.AddSingleton(
             Microsoft.Extensions.Options.Options.Create(
                 inboxOptions ?? new NotificationInboxOptions()));
@@ -71,5 +85,11 @@ internal static class NotificationIntegrationTestHost
             {
                 ValidateScopes = true,
             });
+    }
+
+    private sealed class TestStoreBrandingProvider : IStoreBrandingProvider
+    {
+        public Task<StoreBrandingInfo?> GetAsync(Guid storeId, CancellationToken cancellationToken = default)
+            => Task.FromResult<StoreBrandingInfo?>(null);
     }
 }

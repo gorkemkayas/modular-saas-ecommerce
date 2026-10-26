@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Notification.Application.Notifications.Services;
@@ -43,7 +44,9 @@ public sealed class ResendEmailGateway : IEmailGateway
                 "Resend API key is missing.");
         }
 
-        if (string.IsNullOrWhiteSpace(_options.FromEmail))
+        if (request.Sender is null
+            ? string.IsNullOrWhiteSpace(_options.FromEmail)
+            : string.IsNullOrWhiteSpace(request.Sender.From))
         {
             return new EmailSendResult(
                 false,
@@ -55,14 +58,18 @@ public sealed class ResendEmailGateway : IEmailGateway
 
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, "emails");
         httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _options.ApiKey);
+        if (!string.IsNullOrWhiteSpace(request.IdempotencyKey))
+            httpRequest.Headers.Add("Idempotency-Key", request.IdempotencyKey);
+
+        string? replyTo = request.Sender is null ? _options.ReplyTo : request.Sender.ReplyTo;
 
         var payload = new ResendSendEmailRequest(
-            ComposeFrom(),
+            request.Sender?.From ?? ComposeFrom(),
             new[] { request.ToEmail },
             request.Subject,
             request.HtmlBody,
             request.Body,
-            string.IsNullOrWhiteSpace(_options.ReplyTo) ? null : new[] { _options.ReplyTo! });
+            string.IsNullOrWhiteSpace(replyTo) ? null : new[] { replyTo });
 
         httpRequest.Content = JsonContent.Create(payload, options: JsonOptions);
 
@@ -71,7 +78,19 @@ public sealed class ResendEmailGateway : IEmailGateway
 
         if (response.IsSuccessStatusCode)
         {
-            var success = JsonSerializer.Deserialize<ResendSendEmailResponse>(responseContent, JsonOptions);
+            ResendSendEmailResponse? success;
+            try
+            {
+                success = JsonSerializer.Deserialize<ResendSendEmailResponse>(responseContent, JsonOptions);
+            }
+            catch (JsonException)
+            {
+                return new EmailSendResult(false, null, null,
+                    "invalid_provider_response", "Resend returned an invalid success response.", IsTransientFailure: true);
+            }
+            if (string.IsNullOrWhiteSpace(success?.Id))
+                return new EmailSendResult(false, null, null,
+                    "invalid_provider_response", "Resend returned no message id.", IsTransientFailure: true);
 
             return new EmailSendResult(
                 true,
@@ -94,7 +113,25 @@ public sealed class ResendEmailGateway : IEmailGateway
             null,
             null,
             error?.Name ?? $"http_{(int)response.StatusCode}",
-            error?.Message ?? "Resend email send failed.");
+            error?.Message ?? "Resend email send failed.",
+            IsTransientFailure: response.StatusCode is HttpStatusCode.RequestTimeout
+                or HttpStatusCode.TooManyRequests || (int)response.StatusCode >= 500 ||
+                (response.StatusCode == HttpStatusCode.Conflict &&
+                 error?.Name == "concurrent_idempotent_requests"),
+            RetryAfter: GetRetryAfter(response));
+    }
+
+    private static TimeSpan? GetRetryAfter(HttpResponseMessage response)
+    {
+        var retryAfter = response.Headers.RetryAfter;
+        if (retryAfter?.Delta is { } delta)
+            return delta > TimeSpan.Zero ? delta : null;
+        if (retryAfter?.Date is { } date)
+        {
+            TimeSpan delay = date - DateTimeOffset.UtcNow;
+            return delay > TimeSpan.Zero ? delay : null;
+        }
+        return null;
     }
 
     private string ComposeFrom()
@@ -125,7 +162,7 @@ public sealed class ResendEmailGateway : IEmailGateway
         string Subject,
         string Html,
         string Text,
-        string[]? ReplyTo);
+        [property: JsonPropertyName("reply_to")] string[]? ReplyTo);
 
     private sealed record ResendSendEmailResponse(string Id);
 

@@ -252,22 +252,23 @@ flowchart TD
         INBOX[("InboxMessages<br/>Unique MessageId")]
         PROCESSOR["Inbox worker<br/>Claim → resolve EventType handler"]
         DISPATCH[("NotificationDispatch<br/>Rendered content or suppression")]
+        DELIVERY_QUEUE[("NotificationDispatchDeliveries<br/>Lease + frozen provider request")]
         INBOX --> PROCESSOR --> DISPATCH
+        DISPATCH --> DELIVERY_QUEUE
     end
 
-    NEXT["Next phase<br/>Dispatch delivery worker → email provider"]
+    SENDER["Dispatch worker<br/>Claim → prepare → send → persist outcome"]
+    PROVIDER["Email provider<br/>Stable idempotency key"]
 
     CANCEL --> EVENT
     EVENT --> ORDER
     EVENT --> OUTBOX
     OUTBOX --> WORKER --> BROKER --> QUEUE --> CONSUMER
     CONSUMER -->|"Persist and commit before ACK"| INBOX
-    DISPATCH -.-> NEXT
+    DELIVERY_QUEUE --> SENDER --> PROVIDER
 
     classDef durable fill:#ecfdf5,stroke:#059669,color:#064e3b
-    classDef planned fill:#f8fafc,stroke:#64748b,color:#334155,stroke-dasharray:5 5
-    class ORDER,OUTBOX,INBOX,DISPATCH durable
-    class NEXT planned
+    class ORDER,OUTBOX,INBOX,DISPATCH,DELIVERY_QUEUE durable
 ```
 
 **Implemented guarantees and boundaries:**
@@ -278,6 +279,7 @@ flowchart TD
 | Outbox → broker | Publisher confirmations, mandatory publishing, timeout, and persisted retry state |
 | Broker → Inbox | Validate and persist before ACK; duplicate `MessageId` returns an idempotent result |
 | Inbox → dispatch | Dispatch changes and Inbox `Processed` transition commit in one transaction |
+| Dispatch → email provider | Explicit delivery queue, stable provider request/idempotency key, persisted attempts and retry scheduling |
 | Worker ownership | PostgreSQL `FOR UPDATE SKIP LOCKED`, expiring leases, and ownership-checked updates |
 | Delivery semantics | At-least-once delivery; duplicates are expected and handled through idempotency |
 | Processing concurrency | Current batches are processed sequentially; claim stores support multiple workers/instances |
@@ -354,12 +356,14 @@ The messaging components and integration tests are present. The default host
 configuration still reflects an incremental migration:
 
 - `AddOrderOutboxProcessing(configuration)` exists, but the API host does not currently call it. The Outbox polling service must be registered before host-based publishing runs.
-- Notification `IntegrationEventConsumer.Enabled` and `InboxProcessor.Enabled` are `false` in the checked-in development settings.
+- Notification `IntegrationEventConsumer.Enabled`, `InboxProcessor.Enabled`, and `DispatchProcessor.Enabled` are `false` in the checked-in development settings.
 - Existing direct notification calls remain in commerce workflows.
-- The new Inbox path creates a dispatch; a claim-based background sender for those dispatches is the next implementation step.
+- The Inbox path creates a dispatch and a delivery queue row atomically. Its claim-based sender is implemented; host activation and migration of direct calls are the next rollout step.
 
 See [Notification Messaging Architecture](docs/NotificationMessagingArchitecture.md)
 for the detailed delivery, ACK, retry, and processing diagrams.
+See [Notification Dispatch Delivery](docs/NotificationDispatchDelivery.md) for
+provider request snapshots, retry policy, and the bounded idempotency window.
 
 ## Technology
 
@@ -673,7 +677,7 @@ active service configuration.
 | Commerce | Store, catalog, customer, pricing, orders, inventory, payments, and shipment workflows | Broader end-to-end validation and operational hardening |
 | Web application | Storefront, account, checkout, and merchant routes exist | Continue UX and integration refinement |
 | Messaging | OrderCancelled Outbox → RabbitMQ → Notification Inbox components and tests | Complete host activation and migrate selected synchronous calls |
-| Notification delivery | Existing direct sender plus Inbox-to-dispatch processing | Add a claim-based dispatch sender with persisted retry handling |
+| Notification delivery | Direct sender plus claim-based dispatch delivery, persisted retry/attempt history, and provider idempotency | Activate the asynchronous pipeline and migrate direct calls |
 | Cross-module reliability | Contracts, explicit orchestration, compensation, and initial event pipeline | Expand event coverage and introduce process managers where workflows need them |
 | Product expansion | Ten current business modules | Consider Cart, Promotion, Return, and Review after the core flows mature |
 
@@ -682,6 +686,7 @@ active service configuration.
 | Document | Contents |
 | --- | --- |
 | [Notification messaging architecture](docs/NotificationMessagingArchitecture.md) | Detailed consumer, Inbox, retry, ACK, DLQ, and handler diagrams |
+| [Notification dispatch delivery](docs/NotificationDispatchDelivery.md) | Dispatch worker, durable delivery queue, provider idempotency, retries, and crash recovery |
 | [Order module design](docs/OrderModuleDesign.md) | Order ownership, snapshots, and lifecycle |
 | [Pricing module design](docs/PricingModuleDesign.md) | Price lists and price-resolution design |
 | [Notification module design](docs/NotificationModuleDesign.md) | Original module design and links to its asynchronous evolution |

@@ -191,7 +191,7 @@ flowchart TD
     A[Notification Inbox Background Service]
     --> B[Notification Inbox Processor]
     B --> C[Claim pending Inbox records]
-    C --> D[Assign ClaimToken and ClaimedUntilUtc]
+    C --> D[Assign LockId and LockedUntilUtc]
     D --> E[Commit short claim transaction]
 
     E --> F[Create one scope per claimed message]
@@ -202,14 +202,14 @@ flowchart TD
     H -->|Unknown event| J[Unsupported event failure]
 
     I --> K[Deserialize payload]
-    K --> L[Create NotificationDispatch]
-    L --> M[Mark Inbox as Processed]
-    M --> N[SaveChanges]
-    N --> O[Commit transaction]
+    K --> L[Create dispatch and delivery queue row]
+    L --> N[SaveChanges persists both rows]
+    N --> M[Mark Inbox as Processed with SQL]
+    M --> O[Commit transaction]
 ```
 
-Creating the `NotificationDispatch` and marking the Inbox record as `Processed`
-happen in the same transaction. If either operation fails, both are rolled back.
+Creating the `NotificationDispatch`, its delivery queue row, and marking the Inbox
+record as `Processed` happen in the same transaction. Any failure rolls them back.
 
 ## Inbox State Transitions
 
@@ -221,7 +221,7 @@ stateDiagram-v2
     Processing --> Pending: Transient failure and attempts remain
     Processing --> Failed: Permanent failure
     Processing --> Failed: Maximum attempts reached
-    Processing --> Pending: Claim lease expires
+    Processing --> Processing: Expired lease reclaimed with a new owner
 ```
 
 When transient processing fails, the processor calculates `NextAttemptAtUtc` using
@@ -252,7 +252,7 @@ The architecture has separate retry mechanisms for separate reliability boundari
 | --- | --- | --- |
 | RabbitMQ retry queues | Broker to Inbox | Failure to persist a delivery in the Inbox |
 | Inbox database retry | Inbox to dispatch | Failure to transform an Inbox message into a dispatch |
-| Dispatch retry (next phase) | Dispatch to provider | Failure to send through the email provider |
+| Dispatch database retry | Dispatch to provider | Failure to send through the email provider |
 
 ```mermaid
 flowchart LR
@@ -280,7 +280,7 @@ flowchart LR
 
 ## Current Boundary
 
-The implemented pipeline currently ends after a `NotificationDispatch` is created:
+The implemented components now extend through provider delivery:
 
 ```text
 Domain Event
@@ -291,7 +291,13 @@ Domain Event
     -> Claim-based Inbox processing
     -> Event-specific handler
     -> NotificationDispatch
+    -> NotificationDispatchDelivery queue
+    -> Claim-based dispatch worker
+    -> Email gateway
 ```
 
-The next phase will add claim-based `NotificationDispatch` delivery, email-provider
-integration, retry scheduling, and terminal failure handling.
+Phase 7 adds claim-based delivery, email-provider idempotency, retry scheduling,
+attempt history, and terminal failure handling. See
+[Notification Dispatch Delivery](NotificationDispatchDelivery.md) for its diagrams
+and recovery policy. Activation of the full host pipeline and migration of direct
+notification calls remain the next rollout phase.
