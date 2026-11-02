@@ -16,6 +16,10 @@ public sealed class PaymentRefundConfiguration : IEntityTypeConfiguration<Paymen
         builder.Property(x => x.Amount).HasPrecision(18, 2).IsRequired();
         builder.Property(x => x.Reason).HasMaxLength(500).IsRequired();
         builder.Property(x => x.ProviderRefundReference).HasMaxLength(200);
+        builder.Property(x => x.IdempotencyKey).HasMaxLength(120);
+        builder.HasIndex(x => x.PaymentId);
+        builder.HasIndex(x => new { x.PaymentId, x.IdempotencyKey }).IsUnique()
+            .HasFilter("\"IdempotencyKey\" IS NOT NULL");
         builder.Property(x => x.CreatedAtUtc).IsRequired();
     }
 }

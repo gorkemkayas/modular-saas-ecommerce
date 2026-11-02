@@ -22,6 +22,67 @@ namespace Order.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("BuildingBlocks.Infrastructure.Messaging.Inbox.InboxMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<Guid?>("LockId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("LockedUntilUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("NextAttemptAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("OccurredOnUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTime?>("ProcessedOnUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ReceivedOnUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RoutingKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProcessedOnUtc")
+                        .HasFilter("\"Status\" = 2");
+
+                    b.HasIndex("LockedUntilUtc", "ReceivedOnUtc")
+                        .HasFilter("\"Status\" = 1");
+
+                    b.HasIndex("NextAttemptAtUtc", "ReceivedOnUtc")
+                        .HasFilter("\"Status\" = 0");
+
+                    b.ToTable("InboxMessages", (string)null);
+                });
+
             modelBuilder.Entity("Order.Domain.Entities.Order", b =>
                 {
                     b.Property<Guid>("Id")
@@ -46,6 +107,15 @@ namespace Order.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<int>("FulfillmentStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("LastFulfillmentRevision")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid?>("LastFulfillmentShipmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("LastShipmentFulfillmentState")
                         .HasColumnType("integer");
 
                     b.Property<string>("PaymentReference")
@@ -75,6 +145,12 @@ namespace Order.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("StoreId", "CustomerId", "CreatedAtUtc");
@@ -88,6 +164,10 @@ namespace Order.Infrastructure.Persistence.Migrations
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
 
                     b.Property<decimal>("LineDiscountAmount")
                         .HasPrecision(18, 2)

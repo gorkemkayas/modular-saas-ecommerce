@@ -76,6 +76,11 @@ services:
       Modules__Shipment__Database__ConnectionString: Host=ecommerce-db;Port=5432;Database=${SHIPMENT_DB_NAME};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
       Modules__Subscription__Database__ConnectionString: Host=ecommerce-db;Port=5432;Database=${SUBSCRIPTION_DB_NAME};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
       Modules__Notification__Email__Provider: Resend
+      Modules__Notification__IntegrationEventConsumer__Enabled: ${NOTIFICATION_CONSUMER_ENABLED:-true}
+      Modules__Order__IntegrationEventConsumer__Enabled: ${ORDER_CONSUMER_ENABLED:-true}
+      Modules__Order__InboxProcessor__Enabled: ${ORDER_INBOX_ENABLED:-true}
+      Modules__Notification__InboxProcessor__Enabled: ${NOTIFICATION_INBOX_ENABLED:-true}
+      Modules__Notification__DispatchProcessor__Enabled: ${NOTIFICATION_DISPATCH_ENABLED:-true}
       Modules__Notification__Email__ApiKey: ${RESEND_API_KEY}
       Modules__Notification__Email__BaseUrl: https://api.resend.com
       Modules__Notification__Email__WebhookSecret: ${RESEND_WEBHOOK_SECRET}

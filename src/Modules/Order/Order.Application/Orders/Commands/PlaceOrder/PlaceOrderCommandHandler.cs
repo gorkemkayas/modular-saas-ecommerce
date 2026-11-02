@@ -127,7 +127,7 @@ public sealed class PlaceOrderCommandHandler : IRequestHandler<PlaceOrderCommand
                     resolvedPrice.CurrencyCode,
                     resolvedPrice.CompareAtAmount,
                     resolvedPrice.PriceListId,
-                    resolvedPrice.PriceEntryId)));
+                    resolvedPrice.PriceEntryId), sellableItem.ImageUrl));
         }
 
         var orderNumber = OrderNumber.Create(await _orderNumberGenerator.GenerateAsync(command.StoreId, cancellationToken));
@@ -216,9 +216,8 @@ public sealed class PlaceOrderCommandHandler : IRequestHandler<PlaceOrderCommand
             order.CustomerId,
             order.Totals.GrandTotalAmount);
 
-        // The order confirmation email is intentionally NOT sent here. It is sent once
-        // payment succeeds (see OrderModuleApi.MarkPaymentAuthorized/CapturedAsync), so the
-        // customer only receives a confirmation after the order is actually paid for.
+        // The first authorized/captured payment transition raises OrderPlaced for the
+        // transactional Outbox. Creating an unpaid order does not send confirmation.
         return order.Id;
     }
 }

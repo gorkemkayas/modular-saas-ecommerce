@@ -12,14 +12,13 @@ namespace Payment.Application.UnitTests.Payments.Commands.CapturePayment;
 public sealed class CapturePaymentCommandHandlerTests
 {
     [TestMethod]
-    public async Task Handle_WhenGatewayReturnsCaptured_SavesBeforeSyncsAndNotifiesLast()
+    public async Task Handle_WhenGatewayReturnsCaptured_SavesBeforeSyncsAndEnsuresShipment()
     {
         var repository = new Mock<IPaymentRepository>();
         var unitOfWork = new Mock<IUnitOfWork>();
         var orderContextService = new Mock<IOrderPaymentContextService>();
         var orderSyncService = new Mock<IOrderPaymentSyncService>();
         var inventoryService = new Mock<IInventoryPaymentService>();
-        var notificationService = new Mock<IPaymentNotificationService>();
         var shipmentService = new Mock<IShipmentPaymentService>();
         var paymentGateway = new Mock<IPaymentGateway>();
 
@@ -115,30 +114,12 @@ public sealed class CapturePaymentCommandHandlerTests
             })
             .Returns(Task.CompletedTask);
 
-        notificationService
-            .Setup(x => x.SendPaymentCapturedAsync(
-                payment.StoreId,
-                payment.Id,
-                payment.OrderId,
-                payment.CustomerId,
-                payment.OrderNumber,
-                "customer@example.com",
-                "Jane Doe",
-                payment.Amount,
-                payment.CurrencyCode,
-                "pay-ref-2",
-                It.IsAny<CancellationToken>()))
-            .Callback(() => Assert.IsTrue(shipmentCreated))
-            .Returns(Task.CompletedTask);
-
         var handler = new CapturePaymentCommandHandler(
             repository.Object,
             unitOfWork.Object,
             orderContextService.Object,
             orderSyncService.Object,
-            inventoryService.Object,
-            notificationService.Object,
-            shipmentService.Object,
+            inventoryService.Object,            shipmentService.Object,
             paymentGateway.Object,
             NullLogger<CapturePaymentCommandHandler>.Instance);
 
@@ -152,18 +133,6 @@ public sealed class CapturePaymentCommandHandlerTests
         orderSyncService.Verify(x => x.MarkCapturedAsync(payment.StoreId, payment.OrderId, "pay-ref-2", It.IsAny<CancellationToken>()), Times.Once);
         inventoryService.Verify(x => x.ConfirmDeductionAsync(payment.StoreId, "res-2", "Payment captured.", It.IsAny<CancellationToken>()), Times.Once);
         shipmentService.Verify(x => x.EnsureShipmentCreatedForCapturedOrderAsync(payment.StoreId, payment.OrderId, It.IsAny<CancellationToken>()), Times.Once);
-        notificationService.Verify(x => x.SendPaymentCapturedAsync(
-            payment.StoreId,
-            payment.Id,
-            payment.OrderId,
-            payment.CustomerId,
-            payment.OrderNumber,
-            "customer@example.com",
-            "Jane Doe",
-            payment.Amount,
-            payment.CurrencyCode,
-            "pay-ref-2",
-            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [TestMethod]
@@ -174,7 +143,6 @@ public sealed class CapturePaymentCommandHandlerTests
         var orderContextService = new Mock<IOrderPaymentContextService>();
         var orderSyncService = new Mock<IOrderPaymentSyncService>();
         var inventoryService = new Mock<IInventoryPaymentService>();
-        var notificationService = new Mock<IPaymentNotificationService>();
         var shipmentService = new Mock<IShipmentPaymentService>();
         var paymentGateway = new Mock<IPaymentGateway>();
 
@@ -218,9 +186,7 @@ public sealed class CapturePaymentCommandHandlerTests
             unitOfWork.Object,
             orderContextService.Object,
             orderSyncService.Object,
-            inventoryService.Object,
-            notificationService.Object,
-            shipmentService.Object,
+            inventoryService.Object,            shipmentService.Object,
             paymentGateway.Object,
             NullLogger<CapturePaymentCommandHandler>.Instance);
 

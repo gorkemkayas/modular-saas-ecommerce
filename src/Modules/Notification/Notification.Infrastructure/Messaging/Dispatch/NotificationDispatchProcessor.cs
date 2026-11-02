@@ -124,7 +124,7 @@ public sealed class NotificationDispatchProcessor
                 EmailSendRequest request;
                 if (delivery.Payload is null)
                 {
-                    request = await PrepareRequestAsync(scope.ServiceProvider, dispatch, timeout.Token);
+                    request = await PrepareRequestAsync(scope.ServiceProvider, dispatch, delivery.Content, timeout.Token);
                     preparedAtUtc = UtcNow();
                     bool prepared = await store.PrepareAsync(
                         delivery.Id, delivery.LockId, JsonSerializer.Serialize(request, JsonOptions),
@@ -165,7 +165,7 @@ public sealed class NotificationDispatchProcessor
     }
 
     private async Task<EmailSendRequest> PrepareRequestAsync(
-        IServiceProvider services, NotificationDispatch dispatch, CancellationToken cancellationToken)
+        IServiceProvider services, NotificationDispatch dispatch, string? contentJson, CancellationToken cancellationToken)
     {
         if (dispatch.Channel != NotificationChannel.Email ||
             !MailAddress.TryCreate(dispatch.RecipientAddress, out _) ||
@@ -176,10 +176,12 @@ public sealed class NotificationDispatchProcessor
         var composer = services.GetRequiredService<IEmailLayoutComposer>();
         var emailOptions = services.GetRequiredService<IOptions<NotificationEmailOptions>>().Value;
         var branding = await brandingProvider.GetAsync(dispatch.StoreId, cancellationToken);
+        var content = contentJson is null ? null : JsonSerializer.Deserialize<EmailContent>(contentJson, JsonOptions);
         string html = composer.ComposeHtml(new EmailComposition(
             branding?.Name ?? string.Empty, dispatch.Subject, dispatch.Body,
-            null, Array.Empty<EmailDetailRow>(), Array.Empty<EmailLineItem>(),
-            Array.Empty<EmailDetailRow>(), "Order Update"));
+            content?.CallToAction, content?.Details ?? Array.Empty<EmailDetailRow>(),
+            content?.LineItems ?? Array.Empty<EmailLineItem>(), content?.Totals ?? Array.Empty<EmailDetailRow>(),
+            dispatch.Trigger.ToString()));
 
         string from = string.IsNullOrWhiteSpace(emailOptions.FromName)
             ? emailOptions.FromEmail.Trim()

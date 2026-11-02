@@ -19,7 +19,6 @@ public sealed class AuthorizePaymentCommandHandlerTests
         var orderContextService = new Mock<IOrderPaymentContextService>();
         var orderSyncService = new Mock<IOrderPaymentSyncService>();
         var inventoryService = new Mock<IInventoryPaymentService>();
-        var notificationService = new Mock<IPaymentNotificationService>();
         var shipmentService = new Mock<IShipmentPaymentService>();
         var paymentGateway = new Mock<IPaymentGateway>();
 
@@ -85,9 +84,7 @@ public sealed class AuthorizePaymentCommandHandlerTests
             unitOfWork.Object,
             orderContextService.Object,
             orderSyncService.Object,
-            inventoryService.Object,
-            notificationService.Object,
-            shipmentService.Object,
+            inventoryService.Object,            shipmentService.Object,
             paymentGateway.Object,
             NullLogger<AuthorizePaymentCommandHandler>.Instance);
 
@@ -109,7 +106,6 @@ public sealed class AuthorizePaymentCommandHandlerTests
         var orderContextService = new Mock<IOrderPaymentContextService>();
         var orderSyncService = new Mock<IOrderPaymentSyncService>();
         var inventoryService = new Mock<IInventoryPaymentService>();
-        var notificationService = new Mock<IPaymentNotificationService>();
         var shipmentService = new Mock<IShipmentPaymentService>();
         var paymentGateway = new Mock<IPaymentGateway>();
 
@@ -199,30 +195,12 @@ public sealed class AuthorizePaymentCommandHandlerTests
             })
             .Returns(Task.CompletedTask);
 
-        notificationService
-            .Setup(x => x.SendPaymentCapturedAsync(
-                payment.StoreId,
-                payment.Id,
-                payment.OrderId,
-                payment.CustomerId,
-                payment.OrderNumber,
-                "customer@example.com",
-                "Jane Doe",
-                payment.Amount,
-                payment.CurrencyCode,
-                "pay-ref-2",
-                It.IsAny<CancellationToken>()))
-            .Callback(() => Assert.IsTrue(shipmentCreated))
-            .Returns(Task.CompletedTask);
-
         var handler = new AuthorizePaymentCommandHandler(
             repository.Object,
             unitOfWork.Object,
             orderContextService.Object,
             orderSyncService.Object,
-            inventoryService.Object,
-            notificationService.Object,
-            shipmentService.Object,
+            inventoryService.Object,            shipmentService.Object,
             paymentGateway.Object,
             NullLogger<AuthorizePaymentCommandHandler>.Instance);
 
@@ -246,7 +224,6 @@ public sealed class AuthorizePaymentCommandHandlerTests
         var orderContextService = new Mock<IOrderPaymentContextService>();
         var orderSyncService = new Mock<IOrderPaymentSyncService>();
         var inventoryService = new Mock<IInventoryPaymentService>();
-        var notificationService = new Mock<IPaymentNotificationService>();
         var shipmentService = new Mock<IShipmentPaymentService>();
         var paymentGateway = new Mock<IPaymentGateway>();
 
@@ -286,9 +263,7 @@ public sealed class AuthorizePaymentCommandHandlerTests
             unitOfWork.Object,
             orderContextService.Object,
             orderSyncService.Object,
-            inventoryService.Object,
-            notificationService.Object,
-            shipmentService.Object,
+            inventoryService.Object,            shipmentService.Object,
             paymentGateway.Object,
             NullLogger<AuthorizePaymentCommandHandler>.Instance);
 

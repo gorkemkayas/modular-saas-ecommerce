@@ -62,7 +62,8 @@ public sealed class Order : AggregateRoot, IAggregateRoot
                 item.VariantName,
                 item.Sku,
                 item.Quantity,
-                item.UnitPriceSnapshot));
+                item.UnitPriceSnapshot,
+                item.ImageUrl));
         }
 
         Totals = OrderTotals.FromItems(_items);
@@ -87,6 +88,9 @@ public sealed class Order : AggregateRoot, IAggregateRoot
     public string? ReservationReference { get; private set; }
     public string? PaymentReference { get; private set; }
     public string? ShipmentReference { get; private set; }
+    public Guid? LastFulfillmentShipmentId { get; private set; }
+    public long LastFulfillmentRevision { get; private set; }
+    public ShipmentFulfillmentState? LastShipmentFulfillmentState { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
     public DateTime UpdatedAtUtc { get; private set; }
 
@@ -147,20 +151,34 @@ public sealed class Order : AggregateRoot, IAggregateRoot
             CancellationReason));
     }
 
+    private void RaiseOrderPlacedEvent()
+    {
+        RaiseDomainEvent(new OrderPlacedDomainEvent(
+            Guid.NewGuid(), DateTime.UtcNow, Id, StoreId, CustomerId, OrderNumber.Value,
+            CustomerSnapshot.Email, CustomerSnapshot.FullName, CurrencyCode,
+            Totals.SubtotalAmount, Totals.ShippingAmount, Totals.GrandTotalAmount,
+            Items.Select(x => new OrderPlacedLine(x.ProductId, x.ProductVariantId,
+                x.ProductName, x.VariantName, x.Quantity, x.LineTotalAmount, x.ImageUrl)).ToArray()));
+    }
+
     public void MarkPaymentAuthorized(string? paymentReference = null)
     {
         EnsureNotCancelled();
+        var notify = PaymentStatus is not PaymentStatus.Authorized and not PaymentStatus.Captured;
         PaymentStatus = PaymentStatus.Authorized;
         PaymentReference = NormalizeOptional(paymentReference, 200);
         UpdatedAtUtc = DateTime.UtcNow;
+        if (notify) RaiseOrderPlacedEvent();
     }
 
     public void MarkPaymentCaptured(string? paymentReference = null)
     {
         EnsureNotCancelled();
+        var notify = PaymentStatus is not PaymentStatus.Authorized and not PaymentStatus.Captured;
         PaymentStatus = PaymentStatus.Captured;
         PaymentReference = NormalizeOptional(paymentReference, 200);
         UpdatedAtUtc = DateTime.UtcNow;
+        if (notify) RaiseOrderPlacedEvent();
     }
 
     public void MarkPaymentFailed(string? paymentReference = null)
@@ -179,49 +197,55 @@ public sealed class Order : AggregateRoot, IAggregateRoot
         UpdatedAtUtc = DateTime.UtcNow;
     }
 
-    public void MarkShipmentCreated(string shipmentReference)
+    public bool ApplyShipmentFulfillment(Guid shipmentId, string shipmentNumber,
+        ShipmentFulfillmentState shipmentState, long revision)
     {
+        if (shipmentId == Guid.Empty || revision <= 0 || !Enum.IsDefined(shipmentState))
+            throw new OrderDomainException("Shipment identity, positive revision and known status are required.");
+        string reference = NormalizeRequired(shipmentNumber, "Shipment number");
+        if (reference.Length > 200)
+            throw new OrderDomainException("Shipment number cannot exceed 200 characters.");
+        if (revision <= LastFulfillmentRevision)
+            return false;
+
         EnsureNotCancelled();
-        var normalizedReference = NormalizeRequired(shipmentReference, "Shipment reference");
+        if (Status == OrderStatus.Completed && shipmentState != ShipmentFulfillmentState.Delivered)
+            throw new OrderDomainException("Completed order fulfillment cannot move to an earlier state.");
+        if (FulfillmentStatus == FulfillmentStatus.Returned)
+            throw new OrderDomainException("Returned order fulfillment cannot be overwritten by shipment updates.");
 
-        if (!string.IsNullOrWhiteSpace(ShipmentReference) && !string.Equals(ShipmentReference, normalizedReference, StringComparison.Ordinal))
-            throw new OrderDomainException("Order already has a different shipment reference.");
-
-        ShipmentReference = normalizedReference;
-        UpdatedAtUtc = DateTime.UtcNow;
-    }
-
-    public void MarkShipped(string shipmentReference)
-    {
-        EnsureNotCancelled();
-        ShipmentReference = NormalizeRequired(shipmentReference, "Shipment reference");
-        FulfillmentStatus = FulfillmentStatus.Shipped;
-        UpdatedAtUtc = DateTime.UtcNow;
-    }
-
-    public void MarkDelivered(string shipmentReference)
-    {
-        EnsureNotCancelled();
-        ShipmentReference = NormalizeRequired(shipmentReference, "Shipment reference");
-        FulfillmentStatus = FulfillmentStatus.Delivered;
-        UpdatedAtUtc = DateTime.UtcNow;
-    }
-
-    public void MarkShipmentCancelled(string shipmentReference)
-    {
-        EnsureNotCancelled();
-
-        var normalizedReference = NormalizeRequired(shipmentReference, "Shipment reference");
-
-        if (!string.Equals(ShipmentReference, normalizedReference, StringComparison.Ordinal))
-            throw new OrderDomainException("Shipment reference does not match the order.");
+        bool sameShipment = LastFulfillmentShipmentId == shipmentId;
+        if (sameShipment && (LastShipmentFulfillmentState is
+            ShipmentFulfillmentState.Delivered or ShipmentFulfillmentState.Cancelled) &&
+            LastShipmentFulfillmentState != shipmentState)
+            throw new OrderDomainException("A terminal shipment cannot change its fulfillment state.");
 
         if (FulfillmentStatus is FulfillmentStatus.Shipped or FulfillmentStatus.Delivered)
-            throw new OrderDomainException("Shipped or delivered order shipment cannot be cancelled.");
+        {
+            if (LastFulfillmentShipmentId.HasValue && !sameShipment)
+                throw new OrderDomainException("A shipped order cannot switch to a replacement shipment.");
+            if (shipmentState is ShipmentFulfillmentState.Draft or ShipmentFulfillmentState.ReadyForDispatch or ShipmentFulfillmentState.Cancelled)
+                throw new OrderDomainException("Shipped order fulfillment cannot move back to unfulfilled.");
+            if (FulfillmentStatus == FulfillmentStatus.Delivered && shipmentState != ShipmentFulfillmentState.Delivered)
+                throw new OrderDomainException("Delivered order fulfillment cannot move backwards.");
+        }
 
-        ShipmentReference = null;
-        FulfillmentStatus = FulfillmentStatus.Unfulfilled;
+        if (sameShipment && ShipmentReference is not null &&
+            !string.Equals(ShipmentReference, reference, StringComparison.Ordinal))
+            throw new OrderDomainException("Shipment number cannot change for the same shipment.");
+
+        FulfillmentStatus = shipmentState switch
+        {
+            ShipmentFulfillmentState.Shipped or ShipmentFulfillmentState.DeliveryException => FulfillmentStatus.Shipped,
+            ShipmentFulfillmentState.Delivered => FulfillmentStatus.Delivered,
+            _ => FulfillmentStatus.Unfulfilled
+        };
+        ShipmentReference = shipmentState == ShipmentFulfillmentState.Cancelled ? null : reference;
+        LastFulfillmentShipmentId = shipmentId;
+        LastShipmentFulfillmentState = shipmentState;
+        LastFulfillmentRevision = revision;
         UpdatedAtUtc = DateTime.UtcNow;
+        return true;
     }
 
     public void Complete()

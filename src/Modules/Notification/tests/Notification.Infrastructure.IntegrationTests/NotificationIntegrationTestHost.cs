@@ -1,3 +1,4 @@
+using Notification.Application.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Notification.Application.Notifications.Services;
@@ -54,6 +55,12 @@ internal static class NotificationIntegrationTestHost
         services.AddScoped<
             INotificationInboxMessageHandler,
             OrderCancelledInboxMessageHandler>();
+        services.AddScoped<QueuedNotificationSender>();
+        services.AddScoped<IOrderRecipientReader, NoLegacyRecipientReader>();
+        services.AddScoped<NotificationRecipientResolver>();
+        services.AddScoped<INotificationInboxMessageHandler, OrderPlacedInboxMessageHandler>();
+        services.AddScoped<INotificationInboxMessageHandler, PaymentStatusChangedInboxMessageHandler>();
+        services.AddScoped<INotificationInboxMessageHandler, ShipmentStatusChangedInboxMessageHandler>();
 
         services.AddScoped<
             NotificationInboxMessageHandlerResolver>();
@@ -85,6 +92,12 @@ internal static class NotificationIntegrationTestHost
             {
                 ValidateScopes = true,
             });
+    }
+
+    private sealed class NoLegacyRecipientReader : IOrderRecipientReader
+    {
+        public Task<OrderNotificationRecipient?> GetAsync(Guid storeId, Guid orderId, CancellationToken cancellationToken = default)
+            => throw new InvalidOperationException("Unexpected legacy recipient lookup in test.");
     }
 
     private sealed class TestStoreBrandingProvider : IStoreBrandingProvider

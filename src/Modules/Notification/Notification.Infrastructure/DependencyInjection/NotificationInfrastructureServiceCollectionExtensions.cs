@@ -168,6 +168,12 @@ public static class NotificationInfrastructureServiceCollectionExtensions
         services.AddScoped<IInboxMessageWriter, InboxMessageWriter>();
         services.AddScoped<INotificationInboxStore, NotificationInboxStore>();
         services.AddScoped<INotificationInboxMessageHandler, OrderCancelledInboxMessageHandler>();
+        services.AddScoped<QueuedNotificationSender>();
+        services.AddScoped<IOrderRecipientReader, OrderRecipientReader>();
+        services.AddScoped<NotificationRecipientResolver>();
+        services.AddScoped<INotificationInboxMessageHandler, OrderPlacedInboxMessageHandler>();
+        services.AddScoped<INotificationInboxMessageHandler, PaymentStatusChangedInboxMessageHandler>();
+        services.AddScoped<INotificationInboxMessageHandler, ShipmentStatusChangedInboxMessageHandler>();
         services.AddScoped<NotificationInboxMessageHandlerResolver>();
         services.AddSingleton<NotificationInboxProcessor>();
         services.AddScoped<INotificationDispatchStore, NotificationDispatchStore>();

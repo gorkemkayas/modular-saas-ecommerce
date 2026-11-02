@@ -9,6 +9,9 @@ public sealed class ShipmentConfiguration : IEntityTypeConfiguration<Shipment.Do
     public void Configure(EntityTypeBuilder<Shipment.Domain.Entities.Shipment> builder)
     {
         builder.ToTable("Shipments");
+        builder.Ignore(x => x.DomainEvents);
+        builder.Property(x => x.CustomerEmail).HasMaxLength(320);
+        builder.Property(x => x.CustomerFullName).HasMaxLength(200);
 
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedNever();
@@ -25,6 +28,7 @@ public sealed class ShipmentConfiguration : IEntityTypeConfiguration<Shipment.Do
         builder.Property(x => x.InternalNote).HasMaxLength(1000);
         builder.Property(x => x.CancellationReason).HasMaxLength(500);
         builder.Property(x => x.Status).IsRequired();
+        builder.Property<uint>("Version").IsRowVersion();
 
         builder.OwnsOne(x => x.DestinationAddress, owned =>
         {
@@ -49,7 +53,9 @@ public sealed class ShipmentConfiguration : IEntityTypeConfiguration<Shipment.Do
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(x => new { x.StoreId, x.ShipmentNumber }).IsUnique();
-        builder.HasIndex(x => new { x.StoreId, x.OrderId });
+        builder.HasIndex(x => new { x.StoreId, x.OrderId })
+            .IsUnique()
+            .HasFilter($"\"Status\" <> {((int)global::Shipment.Domain.Enums.ShipmentStatus.Cancelled)}");
         builder.HasIndex(x => new { x.StoreId, x.Status, x.CreatedAtUtc });
     }
 }

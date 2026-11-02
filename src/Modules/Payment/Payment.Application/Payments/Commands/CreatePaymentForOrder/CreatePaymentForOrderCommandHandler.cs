@@ -62,7 +62,9 @@ public sealed class CreatePaymentForOrderCommandHandler : IRequestHandler<Create
             orderContext.GrandTotalAmount,
             orderContext.CurrencyCode,
             _paymentGateway.Provider,
-            command.MethodType);
+            command.MethodType,
+            orderContext.Customer.Email,
+            orderContext.Customer.FullName);
 
         await _paymentRepository.AddAsync(payment, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

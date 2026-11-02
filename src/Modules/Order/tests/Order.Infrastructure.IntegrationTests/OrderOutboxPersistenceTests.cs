@@ -14,6 +14,28 @@ namespace Order.Infrastructure.IntegrationTests;
 public sealed class OrderOutboxPersistenceTests
 {
     [TestMethod]
+    public async Task SaveChangesAsync_PaymentConfirmationIsPersistedOnceAcrossBothTransitions()
+    {
+        await using var provider = OrderIntegrationTestHost.CreateServiceProvider();
+        await using var scope = provider.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<OrderDbContext>();
+        await db.Database.MigrateAsync();
+        Assert.IsFalse(db.Database.HasPendingModelChanges());
+        var order = CreateOrder();
+        db.Orders.Add(order);
+        await db.SaveChangesAsync();
+        order.MarkPaymentAuthorized("PAY-1");
+        await db.SaveChangesAsync();
+        order.MarkPaymentCaptured("PAY-1");
+        await db.SaveChangesAsync();
+
+        var messages = await db.OutboxMessages.Where(x => x.StoreId == order.StoreId).ToArrayAsync();
+        Assert.HasCount(1, messages);
+        Assert.AreEqual(OrderPlacedIntegrationEvent.EventType, messages[0].EventType);
+        Assert.HasCount(0, order.DomainEvents);
+    }
+
+    [TestMethod]
     public async Task SaveChangesAsync_WhenOrderIsCancelled_PersistsOrderAndOutboxMessage()
     {
         await using var serviceProvider =

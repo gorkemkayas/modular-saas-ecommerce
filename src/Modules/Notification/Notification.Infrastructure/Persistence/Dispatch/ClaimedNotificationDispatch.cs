@@ -6,4 +6,5 @@ public sealed record ClaimedNotificationDispatch(
     int AttemptCount,
     string? Payload,
     string? ProviderName,
-    DateTime? PreparedAtUtc);
+    DateTime? PreparedAtUtc,
+    string? Content = null);

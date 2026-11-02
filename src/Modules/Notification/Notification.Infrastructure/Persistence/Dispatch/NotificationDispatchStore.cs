@@ -25,7 +25,7 @@ public sealed class NotificationDispatchStore : INotificationDispatchStore
         FROM candidates
         WHERE delivery."Id" = candidates."Id"
         RETURNING delivery."Id", delivery."AttemptCount", delivery."Payload",
-                  delivery."ProviderName", delivery."PreparedAtUtc";
+                  delivery."ProviderName", delivery."PreparedAtUtc", delivery."Content";
         """;
 
     private readonly NotificationDbContext _dbContext;
@@ -37,10 +37,10 @@ public sealed class NotificationDispatchStore : INotificationDispatchStore
     }
 
     public Task EnqueueAsync(Guid dispatchId, DateTime nowUtc,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default, string? content = null)
     {
         return _dbContext.NotificationDispatchDeliveries.AddAsync(
-            new NotificationDispatchDelivery(dispatchId, nowUtc), cancellationToken).AsTask();
+            new NotificationDispatchDelivery(dispatchId, nowUtc, content), cancellationToken).AsTask();
     }
 
     public async Task<IReadOnlyList<ClaimedNotificationDispatch>> ClaimAsync(
@@ -72,7 +72,8 @@ public sealed class NotificationDispatchStore : INotificationDispatchStore
                     reader.GetGuid(0), lockId, reader.GetInt32(1),
                     reader.IsDBNull(2) ? null : reader.GetString(2),
                     reader.IsDBNull(3) ? null : reader.GetString(3),
-                    reader.IsDBNull(4) ? null : reader.GetDateTime(4)));
+                    reader.IsDBNull(4) ? null : reader.GetDateTime(4),
+                    reader.IsDBNull(5) ? null : reader.GetString(5)));
             }
             return deliveries;
         }

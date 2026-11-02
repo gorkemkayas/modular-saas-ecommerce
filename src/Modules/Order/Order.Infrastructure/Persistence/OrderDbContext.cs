@@ -4,6 +4,7 @@ using Order.Application.Abstractions;
 using Order.Application.Events;
 using Order.Infrastructure.Persistence.Outbox;
 using OrderEntity = Order.Domain.Entities.Order;
+using BuildingBlocks.Infrastructure.Messaging.Inbox;
 
 namespace Order.Infrastructure.Persistence;
 
@@ -22,6 +23,7 @@ public sealed class OrderDbContext : DbContext, IUnitOfWork
     public DbSet<OrderEntity> Orders => Set<OrderEntity>();
     public DbSet<Order.Domain.Entities.OrderItem> OrderItems => Set<Order.Domain.Entities.OrderItem>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+    public DbSet<InboxMessage> InboxMessages => Set<InboxMessage>();
     public override int SaveChanges()
     {
         throw new InvalidOperationException(
@@ -113,6 +115,7 @@ public sealed class OrderDbContext : DbContext, IUnitOfWork
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(OrderDbContext).Assembly);
+        modelBuilder.ApplyConfiguration(new InboxMessageConfiguration());
 
         base.OnModelCreating(modelBuilder);
     }

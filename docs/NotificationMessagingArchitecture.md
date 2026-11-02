@@ -7,6 +7,10 @@ and asynchronous Inbox processing.
 
 ## End-to-End Flow
 
+The diagrams use OrderCancelled as the detailed example. The same consumer,
+Inbox, and Dispatch pipeline now handles all existing commerce notifications;
+see [Commerce messaging rollout](CommerceMessagingRollout.md) for the complete map.
+
 ```mermaid
 flowchart TD
     A[Order.Cancel] --> B[OrderCancelledDomainEvent]
@@ -301,6 +305,7 @@ attempt history, and terminal failure handling. See
 [Notification Dispatch Delivery](NotificationDispatchDelivery.md) for its diagrams
 and recovery policy. Phase 8 wires the full pipeline into the API host, enables
 the Notification workers in development, and removes the direct cancellation
-notification call. Other notification flows retain their existing direct APIs.
+notification call. The subsequent [commerce rollout](CommerceMessagingRollout.md)
+migrates all other existing commerce notification producers as well.
 See [Phase 8 verification](Phase8MessagingVerification.md) for the live test,
 regression coverage, and remaining deployment requirements.

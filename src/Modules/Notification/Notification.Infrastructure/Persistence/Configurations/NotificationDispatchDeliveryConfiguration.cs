@@ -12,6 +12,7 @@ public sealed class NotificationDispatchDeliveryConfiguration
     {
         builder.ToTable("NotificationDispatchDeliveries");
         builder.HasKey(x => x.Id);
+        builder.Property(x => x.Content).HasColumnType("jsonb");
         builder.Property(x => x.ProviderName).HasMaxLength(100);
         builder.Property(x => x.LastError).HasMaxLength(2000);
         builder.HasOne<NotificationDispatch>()

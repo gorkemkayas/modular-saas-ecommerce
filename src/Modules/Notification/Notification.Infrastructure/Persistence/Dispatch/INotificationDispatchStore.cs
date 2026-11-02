@@ -2,7 +2,7 @@ namespace Notification.Infrastructure.Persistence.Dispatch;
 
 public interface INotificationDispatchStore
 {
-    Task EnqueueAsync(Guid dispatchId, DateTime nowUtc, CancellationToken cancellationToken = default);
+    Task EnqueueAsync(Guid dispatchId, DateTime nowUtc, CancellationToken cancellationToken = default, string? content = null);
 
     Task<IReadOnlyList<ClaimedNotificationDispatch>> ClaimAsync(
         Guid lockId, DateTime nowUtc, DateTime lockedUntilUtc, int batchSize,

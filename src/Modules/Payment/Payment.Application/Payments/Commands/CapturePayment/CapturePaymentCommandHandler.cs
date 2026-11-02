@@ -16,7 +16,6 @@ public sealed class CapturePaymentCommandHandler : IRequestHandler<CapturePaymen
     private readonly IOrderPaymentContextService _orderPaymentContextService;
     private readonly IOrderPaymentSyncService _orderPaymentSyncService;
     private readonly IInventoryPaymentService _inventoryPaymentService;
-    private readonly IPaymentNotificationService _paymentNotificationService;
     private readonly IShipmentPaymentService _shipmentPaymentService;
     private readonly IPaymentGateway _paymentGateway;
     private readonly ILogger<CapturePaymentCommandHandler> _logger;
@@ -27,7 +26,6 @@ public sealed class CapturePaymentCommandHandler : IRequestHandler<CapturePaymen
         IOrderPaymentContextService orderPaymentContextService,
         IOrderPaymentSyncService orderPaymentSyncService,
         IInventoryPaymentService inventoryPaymentService,
-        IPaymentNotificationService paymentNotificationService,
         IShipmentPaymentService shipmentPaymentService,
         IPaymentGateway paymentGateway,
         ILogger<CapturePaymentCommandHandler> logger)
@@ -37,7 +35,6 @@ public sealed class CapturePaymentCommandHandler : IRequestHandler<CapturePaymen
         _orderPaymentContextService = orderPaymentContextService;
         _orderPaymentSyncService = orderPaymentSyncService;
         _inventoryPaymentService = inventoryPaymentService;
-        _paymentNotificationService = paymentNotificationService;
         _shipmentPaymentService = shipmentPaymentService;
         _paymentGateway = paymentGateway;
         _logger = logger;
@@ -130,49 +127,6 @@ public sealed class CapturePaymentCommandHandler : IRequestHandler<CapturePaymen
                 payment.OrderId,
                 payment.ExternalPaymentReference,
                 cancellationToken);
-        }
-
-        try
-        {
-            if (gatewayResult.Outcome == PaymentGatewayOutcome.Captured)
-            {
-                await _paymentNotificationService.SendPaymentCapturedAsync(
-                    payment.StoreId,
-                    payment.Id,
-                    payment.OrderId,
-                    payment.CustomerId,
-                    orderContext.OrderNumber,
-                    orderContext.Customer.Email,
-                    orderContext.Customer.FullName,
-                    payment.Amount,
-                    payment.CurrencyCode,
-                    payment.ExternalPaymentReference,
-                    cancellationToken);
-            }
-            else
-            {
-                await _paymentNotificationService.SendPaymentFailedAsync(
-                    payment.StoreId,
-                    payment.Id,
-                    payment.OrderId,
-                    payment.CustomerId,
-                    orderContext.OrderNumber,
-                    orderContext.Customer.Email,
-                    orderContext.Customer.FullName,
-                    payment.Amount,
-                    payment.CurrencyCode,
-                    gatewayResult.FailureMessage,
-                    cancellationToken);
-            }
-        }
-        catch (Exception notificationException)
-        {
-            _logger.LogWarning(
-                notificationException,
-                "Payment notification failed | PaymentId: {PaymentId} | OrderId: {OrderId} | Outcome: {Outcome}",
-                payment.Id,
-                payment.OrderId,
-                gatewayResult.Outcome);
         }
 
         _logger.LogInformation(

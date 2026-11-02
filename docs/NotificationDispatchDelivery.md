@@ -1,9 +1,10 @@
 # Notification Dispatch Delivery
 
 Phase 7 adds asynchronous email delivery for dispatches created by Inbox handlers.
-The existing synchronous sender continues to own dispatches for other notification
-flows; OrderCancelled uses the event pipeline exclusively after Phase 8. The worker
-only processes dispatches explicitly added to the durable delivery queue.
+All existing commerce notification producers now use the event pipeline. The
+synchronous sender remains a compatibility component. The worker only processes
+dispatches explicitly added to the durable delivery queue. See the
+[commerce rollout](CommerceMessagingRollout.md) for coverage and migrations.
 
 ## Delivery pipeline
 
@@ -137,8 +138,8 @@ Migration `AddNotificationDispatchDelivery` creates the delivery table and claim
 indexes without enqueuing existing synchronous dispatches. Apply the Notification
 migration before enabling the worker. Phase 8 activates the complete development
 host pipeline and removes the direct order-cancellation notification call.
-Other direct notifications retain their existing behavior. Production activation
-requires explicit environment configuration and a verified sender domain.
+The subsequent commerce rollout moves the other nine outcomes onto this pipeline.
+Production activation requires environment configuration and a verified sender domain.
 
 Default templates use `StoreId = Guid.Empty` as the existing global fallback.
 `NotificationTemplate.CreateDefault` creates these explicitly; `Create` still

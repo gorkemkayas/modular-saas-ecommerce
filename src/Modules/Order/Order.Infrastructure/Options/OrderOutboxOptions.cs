@@ -3,6 +3,7 @@ namespace Order.Infrastructure.Options;
 public sealed class OrderOutboxOptions
 {
     public const string SectionName = "Modules:Order:Outbox";
+    public double RetryJitterFactor { get; set; } = 0.2;
     public int BatchSize { get; set; } = 20;
     public TimeSpan PollingInterval { get; set; } = TimeSpan.FromSeconds(5);
     public TimeSpan ClaimDuration { get; set; } = TimeSpan.FromMinutes(2);

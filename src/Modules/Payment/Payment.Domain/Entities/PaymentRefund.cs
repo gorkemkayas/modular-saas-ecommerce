@@ -13,7 +13,8 @@ public sealed class PaymentRefund
         Guid paymentId,
         decimal amount,
         string reason,
-        string? providerRefundReference)
+        string? providerRefundReference,
+        string? idempotencyKey)
     {
         if (paymentId == Guid.Empty)
             throw new PaymentDomainException("Payment id is required.");
@@ -26,6 +27,7 @@ public sealed class PaymentRefund
         Amount = decimal.Round(amount, 2, MidpointRounding.AwayFromZero);
         Reason = NormalizeRequired(reason, "Refund reason", 500);
         ProviderRefundReference = NormalizeOptional(providerRefundReference, 200);
+        IdempotencyKey = NormalizeOptional(idempotencyKey, 120);
         CreatedAtUtc = DateTime.UtcNow;
     }
 
@@ -34,20 +36,23 @@ public sealed class PaymentRefund
     public decimal Amount { get; private set; }
     public string Reason { get; private set; } = default!;
     public string? ProviderRefundReference { get; private set; }
+    public string? IdempotencyKey { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
 
     public static PaymentRefund Create(
         Guid paymentId,
         decimal amount,
         string reason,
-        string? providerRefundReference)
+        string? providerRefundReference,
+        string? idempotencyKey = null)
     {
         return new PaymentRefund(
             Guid.NewGuid(),
             paymentId,
             amount,
             reason,
-            providerRefundReference);
+            providerRefundReference,
+            idempotencyKey);
     }
 
     private static string NormalizeRequired(string value, string fieldName, int maxLength)

@@ -1,3 +1,5 @@
+using BuildingBlocks.Domain.Common;
+using Shipment.Domain.Events;
 using Shipment.Domain.Common;
 using Shipment.Domain.Enums;
 using Shipment.Domain.Exceptions;
@@ -5,7 +7,7 @@ using Shipment.Domain.ValueObjects;
 
 namespace Shipment.Domain.Entities;
 
-public sealed class Shipment : IAggregateRoot
+public sealed class Shipment : AggregateRoot, IAggregateRoot
 {
     private readonly List<ShipmentLine> _lines = new();
     private readonly List<ShipmentPackage> _packages = new();
@@ -24,7 +26,10 @@ public sealed class Shipment : IAggregateRoot
         string recipientPhoneNumber,
         ShipmentAddress destinationAddress,
         IReadOnlyCollection<ShipmentLineDraft> lines,
-        string? internalNote)
+        string? internalNote,
+        Guid? customerId,
+        string? customerEmail,
+        string? customerFullName)
     {
         if (storeId == Guid.Empty)
             throw new ShipmentDomainException("Store id is required.");
@@ -44,6 +49,11 @@ public sealed class Shipment : IAggregateRoot
         RecipientPhoneNumber = NormalizeRequired(recipientPhoneNumber, "Recipient phone number", 50);
         DestinationAddress = destinationAddress ?? throw new ArgumentNullException(nameof(destinationAddress));
         InternalNote = NormalizeOptional(internalNote, 1000);
+        if (customerId == Guid.Empty)
+            throw new ShipmentDomainException("Customer id cannot be empty.");
+        CustomerId = customerId;
+        CustomerEmail = NormalizeOptional(customerEmail, 320);
+        CustomerFullName = NormalizeOptional(customerFullName, 200);
         Status = ShipmentStatus.Draft;
         CreatedAtUtc = DateTime.UtcNow;
         UpdatedAtUtc = CreatedAtUtc;
@@ -65,6 +75,9 @@ public sealed class Shipment : IAggregateRoot
     public Guid Id { get; private set; }
     public Guid StoreId { get; private set; }
     public Guid OrderId { get; private set; }
+    public Guid? CustomerId { get; private set; }
+    public string? CustomerEmail { get; private set; }
+    public string? CustomerFullName { get; private set; }
     public string OrderNumber { get; private set; } = default!;
     public string ShipmentNumber { get; private set; } = default!;
     public ShipmentStatus Status { get; private set; }
@@ -97,9 +110,12 @@ public sealed class Shipment : IAggregateRoot
         string recipientPhoneNumber,
         ShipmentAddress destinationAddress,
         IReadOnlyCollection<ShipmentLineDraft> lines,
-        string? internalNote = null)
+        string? internalNote = null,
+        Guid? customerId = null,
+        string? customerEmail = null,
+        string? customerFullName = null)
     {
-        return new Shipment(
+        var shipment = new Shipment(
             Guid.NewGuid(),
             storeId,
             orderId,
@@ -109,7 +125,13 @@ public sealed class Shipment : IAggregateRoot
             recipientPhoneNumber,
             destinationAddress,
             lines,
-            internalNote);
+            internalNote,
+            customerId,
+            customerEmail,
+            customerFullName);
+        shipment.RaiseStatusEvent(ShipmentEventKind.Created);
+        shipment.RaiseFulfillmentEvent();
+        return shipment;
     }
 
     public void AssignCarrier(
@@ -163,6 +185,9 @@ public sealed class Shipment : IAggregateRoot
     {
         EnsureNotTerminal();
 
+        if (Status == ShipmentStatus.ReadyForDispatch)
+            return;
+
         if (Status is ShipmentStatus.Shipped or ShipmentStatus.Delivered or ShipmentStatus.DeliveryException)
             throw new ShipmentDomainException("Shipped shipment cannot move back to ready for dispatch.");
 
@@ -172,11 +197,15 @@ public sealed class Shipment : IAggregateRoot
         Status = ShipmentStatus.ReadyForDispatch;
         ReadyForDispatchAtUtc ??= DateTime.UtcNow;
         Touch();
+        RaiseFulfillmentEvent();
     }
 
     public void MarkShipped(DateTime? shippedAtUtc = null)
     {
         EnsureNotCancelled();
+
+        if (Status == ShipmentStatus.Shipped)
+            return;
 
         if (_packages.Count == 0)
             throw new ShipmentDomainException("Shipment must contain at least one package before shipping.");
@@ -206,6 +235,8 @@ public sealed class Shipment : IAggregateRoot
         ReadyForDispatchAtUtc ??= effectiveShippedAt;
         ShippedAtUtc = effectiveShippedAt;
         Touch();
+        RaiseStatusEvent(ShipmentEventKind.Shipped);
+        RaiseFulfillmentEvent();
     }
 
     public void RegisterTrackingEvent(
@@ -235,6 +266,9 @@ public sealed class Shipment : IAggregateRoot
     {
         EnsureNotCancelled();
 
+        if (Status == ShipmentStatus.Delivered)
+            return;
+
         if (Status is not ShipmentStatus.Shipped and not ShipmentStatus.DeliveryException)
             throw new ShipmentDomainException("Only shipped shipment can be delivered.");
 
@@ -257,6 +291,8 @@ public sealed class Shipment : IAggregateRoot
         Status = ShipmentStatus.Delivered;
         DeliveredAtUtc = effectiveDeliveredAt;
         Touch();
+        RaiseStatusEvent(ShipmentEventKind.Delivered);
+        RaiseFulfillmentEvent();
     }
 
     public void MarkDeliveryException(
@@ -286,6 +322,8 @@ public sealed class Shipment : IAggregateRoot
 
         Status = ShipmentStatus.DeliveryException;
         Touch();
+        RaiseStatusEvent(ShipmentEventKind.DeliveryException, description);
+        RaiseFulfillmentEvent();
     }
 
     public void Cancel(string? reason)
@@ -300,6 +338,19 @@ public sealed class Shipment : IAggregateRoot
         CancellationReason = NormalizeOptional(reason, 500);
         CancelledAtUtc = DateTime.UtcNow;
         Touch();
+        RaiseFulfillmentEvent();
+    }
+
+    private void RaiseFulfillmentEvent()
+    {
+        RaiseDomainEvent(new ShipmentFulfillmentChangedDomainEvent(
+            Guid.NewGuid(), DateTime.UtcNow, StoreId, OrderId, Id, ShipmentNumber, Status));
+    }
+
+    private void RaiseStatusEvent(ShipmentEventKind kind, string? description = null)
+    {
+        RaiseDomainEvent(new ShipmentStatusChangedDomainEvent(
+            Guid.NewGuid(), DateTime.UtcNow, Id, StoreId, OrderId, kind, description));
     }
 
     private ShipmentPackage FindPackage(Guid packageId)

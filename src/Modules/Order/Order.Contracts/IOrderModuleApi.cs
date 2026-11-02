@@ -33,20 +33,4 @@ public interface IOrderModuleApi
     Task<OrderShipmentContextResult?> GetStoreOrderShipmentContextAsync(
         GetStoreOrderShipmentContextRequest request,
         CancellationToken cancellationToken = default);
-
-    Task MarkShipmentCreatedAsync(
-        UpdateOrderShipmentStatusRequest request,
-        CancellationToken cancellationToken = default);
-
-    Task MarkShippedAsync(
-        UpdateOrderShipmentStatusRequest request,
-        CancellationToken cancellationToken = default);
-
-    Task MarkDeliveredAsync(
-        UpdateOrderShipmentStatusRequest request,
-        CancellationToken cancellationToken = default);
-
-    Task MarkShipmentCancelledAsync(
-        UpdateOrderShipmentStatusRequest request,
-        CancellationToken cancellationToken = default);
 }

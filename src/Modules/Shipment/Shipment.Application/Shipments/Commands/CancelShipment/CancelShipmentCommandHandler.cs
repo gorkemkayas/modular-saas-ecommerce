@@ -10,16 +10,13 @@ public sealed class CancelShipmentCommandHandler : IRequestHandler<CancelShipmen
 {
     private readonly IShipmentRepository _shipmentRepository;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IOrderShipmentSyncService _orderShipmentSyncService;
 
     public CancelShipmentCommandHandler(
         IShipmentRepository shipmentRepository,
-        IUnitOfWork unitOfWork,
-        IOrderShipmentSyncService orderShipmentSyncService)
+        IUnitOfWork unitOfWork)
     {
         _shipmentRepository = shipmentRepository;
         _unitOfWork = unitOfWork;
-        _orderShipmentSyncService = orderShipmentSyncService;
     }
 
     public async Task Handle(CancelShipmentCommand command, CancellationToken cancellationToken)
@@ -29,11 +26,5 @@ public sealed class CancelShipmentCommandHandler : IRequestHandler<CancelShipmen
 
         shipment.Cancel(command.Reason);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        await _orderShipmentSyncService.MarkShipmentCancelledAsync(
-            shipment.StoreId,
-            shipment.OrderId,
-            shipment.ShipmentNumber,
-            cancellationToken);
     }
 }

@@ -1,5 +1,8 @@
 # Phase 8: Order Cancellation Messaging Verification
 
+This document records the Phase 8 milestone. For the subsequent application-wide
+rollout and current event coverage, see [Commerce messaging rollout](CommerceMessagingRollout.md).
+
 Phase 8 activates the first complete asynchronous notification flow in development.
 It covers OrderCancelled; it does not migrate every notification trigger or activate
 production workers automatically.
