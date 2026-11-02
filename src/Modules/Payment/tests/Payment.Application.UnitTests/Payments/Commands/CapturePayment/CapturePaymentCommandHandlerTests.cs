@@ -119,8 +119,10 @@ public sealed class CapturePaymentCommandHandlerTests
             unitOfWork.Object,
             orderContextService.Object,
             orderSyncService.Object,
-            inventoryService.Object,            shipmentService.Object,
+            inventoryService.Object,
+            shipmentService.Object,
             paymentGateway.Object,
+            Mock.Of<IOrderPaymentOperationLock>(),
             NullLogger<CapturePaymentCommandHandler>.Instance);
 
         var result = await handler.Handle(
@@ -129,7 +131,7 @@ public sealed class CapturePaymentCommandHandlerTests
 
         Assert.AreEqual(Payment.Domain.Enums.PaymentStatus.Captured, payment.Status);
         Assert.AreEqual(Payment.Domain.Enums.PaymentStatus.Captured, result.Status);
-        unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
         orderSyncService.Verify(x => x.MarkCapturedAsync(payment.StoreId, payment.OrderId, "pay-ref-2", It.IsAny<CancellationToken>()), Times.Once);
         inventoryService.Verify(x => x.ConfirmDeductionAsync(payment.StoreId, "res-2", "Payment captured.", It.IsAny<CancellationToken>()), Times.Once);
         shipmentService.Verify(x => x.EnsureShipmentCreatedForCapturedOrderAsync(payment.StoreId, payment.OrderId, It.IsAny<CancellationToken>()), Times.Once);
@@ -186,8 +188,10 @@ public sealed class CapturePaymentCommandHandlerTests
             unitOfWork.Object,
             orderContextService.Object,
             orderSyncService.Object,
-            inventoryService.Object,            shipmentService.Object,
+            inventoryService.Object,
+            shipmentService.Object,
             paymentGateway.Object,
+            Mock.Of<IOrderPaymentOperationLock>(),
             NullLogger<CapturePaymentCommandHandler>.Instance);
 
         await Assert.ThrowsExactlyAsync<Payment.Application.Exceptions.PaymentValidationException>(() =>

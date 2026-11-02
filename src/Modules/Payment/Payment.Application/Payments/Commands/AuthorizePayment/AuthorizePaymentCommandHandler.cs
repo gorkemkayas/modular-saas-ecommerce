@@ -18,6 +18,7 @@ public sealed class AuthorizePaymentCommandHandler : IRequestHandler<AuthorizePa
     private readonly IInventoryPaymentService _inventoryPaymentService;
     private readonly IShipmentPaymentService _shipmentPaymentService;
     private readonly IPaymentGateway _paymentGateway;
+    private readonly IOrderPaymentOperationLock _orderOperationLock;
     private readonly ILogger<AuthorizePaymentCommandHandler> _logger;
 
     public AuthorizePaymentCommandHandler(
@@ -28,6 +29,7 @@ public sealed class AuthorizePaymentCommandHandler : IRequestHandler<AuthorizePa
         IInventoryPaymentService inventoryPaymentService,
         IShipmentPaymentService shipmentPaymentService,
         IPaymentGateway paymentGateway,
+        IOrderPaymentOperationLock orderOperationLock,
         ILogger<AuthorizePaymentCommandHandler> logger)
     {
         _paymentRepository = paymentRepository;
@@ -37,6 +39,7 @@ public sealed class AuthorizePaymentCommandHandler : IRequestHandler<AuthorizePa
         _inventoryPaymentService = inventoryPaymentService;
         _shipmentPaymentService = shipmentPaymentService;
         _paymentGateway = paymentGateway;
+        _orderOperationLock = orderOperationLock;
         _logger = logger;
     }
 
@@ -47,6 +50,9 @@ public sealed class AuthorizePaymentCommandHandler : IRequestHandler<AuthorizePa
 
         if (string.IsNullOrWhiteSpace(command.IdempotencyKey))
             throw new PaymentValidationException("IdempotencyKey is required.");
+
+        await using var operationLease = await _orderOperationLock.AcquireAsync(
+            command.StoreId, command.OrderId, cancellationToken);
 
         var orderContext = await _orderPaymentContextService.GetCustomerOrderContextAsync(
             command.StoreId,
@@ -62,6 +68,10 @@ public sealed class AuthorizePaymentCommandHandler : IRequestHandler<AuthorizePa
         var payment = await _paymentRepository.GetByOrderIdAsync(command.StoreId, command.OrderId, cancellationToken)
             ?? throw new PaymentValidationException("Payment must be created before authorization.");
 
+        // Persist uncertainty before crossing the provider boundary; cancellation must not
+        // mistake an interrupted attempt for an untouched Pending payment.
+        if (payment.RecordProviderAttemptStarted())
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         var gatewayResult = await _paymentGateway.AuthorizeAsync(
             new PaymentGatewayAuthorizeRequest(
                 payment.Id,

@@ -17,6 +17,7 @@ using Order.Infrastructure.Integrations.Catalog;
 using Order.Infrastructure.Integrations.Customer;
 using Order.Infrastructure.Integrations.Inventory;
 using Order.Infrastructure.Integrations.Pricing;
+using Order.Infrastructure.Integrations.Payment;
 using Order.Infrastructure.Integrations.Shipment;
 using Order.Infrastructure.Options;
 using Order.Infrastructure.Persistence;
@@ -50,6 +51,8 @@ public static class OrderInfrastructureServiceCollectionExtensions
         services.AddScoped<IOrderCatalogProductService, OrderCatalogProductService>();
         services.AddScoped<IOrderPricingService, OrderPricingService>();
         services.AddScoped<IOrderInventoryService, OrderInventoryService>();
+        services.AddScoped<IOrderOperationLock, PostgreSqlOrderOperationLock>();
+        services.AddScoped<IOrderCancellationPaymentGuard, OrderCancellationPaymentGuard>();
         services.AddScoped<IOrderShippingCarrierService, OrderShippingCarrierService>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IOrderReadService, OrderReadService>();

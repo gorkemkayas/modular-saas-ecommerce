@@ -49,6 +49,7 @@ public static class PaymentInfrastructureServiceCollectionExtensions
         services.AddHttpClient<IyzicoPaymentGateway>();
 
         services.AddScoped<IOrderPaymentContextService, OrderPaymentContextService>();
+        services.AddScoped<IOrderPaymentOperationLock, OrderPaymentOperationLock>();
         services.AddScoped<IOrderPaymentSyncService, OrderPaymentSyncService>();
         services.AddScoped<IInventoryPaymentService, PaymentInventoryService>();
         services.AddScoped<IShipmentPaymentService, PaymentShipmentService>();

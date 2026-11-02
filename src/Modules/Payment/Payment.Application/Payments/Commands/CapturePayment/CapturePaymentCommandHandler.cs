@@ -18,6 +18,7 @@ public sealed class CapturePaymentCommandHandler : IRequestHandler<CapturePaymen
     private readonly IInventoryPaymentService _inventoryPaymentService;
     private readonly IShipmentPaymentService _shipmentPaymentService;
     private readonly IPaymentGateway _paymentGateway;
+    private readonly IOrderPaymentOperationLock _orderOperationLock;
     private readonly ILogger<CapturePaymentCommandHandler> _logger;
 
     public CapturePaymentCommandHandler(
@@ -28,6 +29,7 @@ public sealed class CapturePaymentCommandHandler : IRequestHandler<CapturePaymen
         IInventoryPaymentService inventoryPaymentService,
         IShipmentPaymentService shipmentPaymentService,
         IPaymentGateway paymentGateway,
+        IOrderPaymentOperationLock orderOperationLock,
         ILogger<CapturePaymentCommandHandler> logger)
     {
         _paymentRepository = paymentRepository;
@@ -37,6 +39,7 @@ public sealed class CapturePaymentCommandHandler : IRequestHandler<CapturePaymen
         _inventoryPaymentService = inventoryPaymentService;
         _shipmentPaymentService = shipmentPaymentService;
         _paymentGateway = paymentGateway;
+        _orderOperationLock = orderOperationLock;
         _logger = logger;
     }
 
@@ -51,6 +54,9 @@ public sealed class CapturePaymentCommandHandler : IRequestHandler<CapturePaymen
         var payment = await _paymentRepository.GetByIdAsync(command.StoreId, command.PaymentId, cancellationToken)
             ?? throw new PaymentNotFoundException(command.PaymentId);
 
+        await using var operationLease = await _orderOperationLock.AcquireAsync(
+            payment.StoreId, payment.OrderId, cancellationToken);
+
         var orderContext = await _orderPaymentContextService.GetStoreOrderContextAsync(
             payment.StoreId,
             payment.OrderId,
@@ -61,6 +67,8 @@ public sealed class CapturePaymentCommandHandler : IRequestHandler<CapturePaymen
 
         PaymentOrderStateGuard.EnsureCanCapturePayment(orderContext);
 
+        if (payment.RecordProviderAttemptStarted())
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         var gatewayResult = await _paymentGateway.CaptureAsync(
             new PaymentGatewayCaptureRequest(
                 payment.Id,

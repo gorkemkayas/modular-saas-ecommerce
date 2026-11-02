@@ -21,6 +21,11 @@ see [Shipment to Order fulfillment](ShipmentOrderFulfillmentMessaging.md).
 | Shipment | Delivered | `shipment.status-changed.v1`, Delivered | ShipmentDelivered |
 | Shipment | Delivery exception | `shipment.status-changed.v1`, DeliveryException | ShipmentDeliveryException |
 
+Business follow-ups additionally include Shipment fulfillment -> Order and Order
+reservation cancellation -> Inventory. See [fulfillment](ShipmentOrderFulfillmentMessaging.md)
+and [reservation cancellation](OrderInventoryReservationCancellation.md) for their
+transaction boundaries, ordering and payment-safety rules.
+
 An unpaid order does not emit OrderPlaced. Authorization followed by capture emits
 one confirmation in the normal lifecycle; the Notification business key also
 prevents another confirmation if a later transition emits the same business outcome.
@@ -98,7 +103,7 @@ they are not invoked by these commerce flows.
 | --- | --- |
 | Catalog and Pricing lookups | Checkout needs a validated sellable item and price immediately |
 | Customer/address/tenant context | Commands need ownership and address validation before accepting work |
-| Inventory reservation and compensation | Existing checkout/payment coordination needs the operation result |
+| Inventory reservation and failed-checkout compensation | Existing checkout/payment coordination needs the operation result; Order cancellation release now uses Inventory Inbox |
 | Payment gateway authorization/capture/refund | The command or callback needs the provider result |
 | Payment-to-Order status synchronization | Existing business coordination remains in place |
 | Payment-to-Shipment creation | Existing captured-order workflow remains in place |

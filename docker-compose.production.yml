@@ -79,6 +79,8 @@ services:
       Modules__Notification__IntegrationEventConsumer__Enabled: ${NOTIFICATION_CONSUMER_ENABLED:-true}
       Modules__Order__IntegrationEventConsumer__Enabled: ${ORDER_CONSUMER_ENABLED:-true}
       Modules__Order__InboxProcessor__Enabled: ${ORDER_INBOX_ENABLED:-true}
+      Modules__Inventory__IntegrationEventConsumer__Enabled: ${INVENTORY_CONSUMER_ENABLED:-true}
+      Modules__Inventory__InboxProcessor__Enabled: ${INVENTORY_INBOX_ENABLED:-true}
       Modules__Notification__InboxProcessor__Enabled: ${NOTIFICATION_INBOX_ENABLED:-true}
       Modules__Notification__DispatchProcessor__Enabled: ${NOTIFICATION_DISPATCH_ENABLED:-true}
       Modules__Notification__Email__ApiKey: ${RESEND_API_KEY}

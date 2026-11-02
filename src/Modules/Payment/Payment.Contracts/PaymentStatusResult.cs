@@ -9,4 +9,5 @@ public sealed record PaymentStatusResult(
     decimal Amount,
     string CurrencyCode,
     string? ExternalPaymentReference,
-    string? ExternalConversationId);
+    string? ExternalConversationId,
+    bool HasProviderAttempt = true);

@@ -61,6 +61,7 @@ public sealed class CreatePaymentForOrderCommandHandlerTests
             unitOfWork.Object,
             orderContextService.Object,
             paymentGateway.Object,
+            Mock.Of<IOrderPaymentOperationLock>(),
             NullLogger<CreatePaymentForOrderCommandHandler>.Instance);
 
         var result = await handler.Handle(
@@ -110,6 +111,7 @@ public sealed class CreatePaymentForOrderCommandHandlerTests
             unitOfWork.Object,
             orderContextService.Object,
             paymentGateway.Object,
+            Mock.Of<IOrderPaymentOperationLock>(),
             NullLogger<CreatePaymentForOrderCommandHandler>.Instance);
 
         await Assert.ThrowsExactlyAsync<Payment.Application.Exceptions.PaymentValidationException>(() =>

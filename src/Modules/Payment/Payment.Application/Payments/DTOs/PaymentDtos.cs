@@ -56,7 +56,8 @@ public sealed record PaymentDto(
     DateTime CreatedAtUtc,
     DateTime UpdatedAtUtc,
     IReadOnlyCollection<PaymentAttemptDto> Attempts,
-    IReadOnlyCollection<PaymentRefundDto> Refunds);
+    IReadOnlyCollection<PaymentRefundDto> Refunds,
+    bool HasProviderAttempt = true);
 
 public sealed record PaymentSummaryDto(
     Guid Id,

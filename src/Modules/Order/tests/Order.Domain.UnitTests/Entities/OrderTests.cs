@@ -92,6 +92,16 @@ public sealed class OrderTests
     }
 
     [TestMethod]
+    public void Cancel_WhenPaymentAuthorized_RequiresPaymentCancellationFirst()
+    {
+        var order = CreateOrder();
+        order.MarkPaymentAuthorized("PAY-1");
+        order.ClearDomainEvents();
+        Assert.ThrowsExactly<OrderDomainException>(() => order.Cancel("Cancel order"));
+        Assert.HasCount(0, order.DomainEvents);
+    }
+
+    [TestMethod]
     public void Cancel_WhenOrderCanBeCancelled_RaisesOrderCancelledDomainEvent()
     {
         var order = CreateOrder();

@@ -126,8 +126,8 @@ public sealed class Order : AggregateRoot, IAggregateRoot
         if (Status == OrderStatus.Completed)
             throw new OrderDomainException("Completed order cannot be cancelled.");
 
-        if (PaymentStatus is PaymentStatus.Captured or PaymentStatus.Refunded)
-            throw new OrderDomainException("Captured or refunded order cannot be cancelled.");
+        if (PaymentStatus is PaymentStatus.Authorized or PaymentStatus.Captured or PaymentStatus.Refunded)
+            throw new OrderDomainException("Authorized payment must be cancelled first; captured or refunded orders cannot be cancelled.");
 
         if (FulfillmentStatus is FulfillmentStatus.Shipped or FulfillmentStatus.Delivered)
             throw new OrderDomainException("Shipped or delivered order cannot be cancelled.");
@@ -149,6 +149,9 @@ public sealed class Order : AggregateRoot, IAggregateRoot
             CustomerSnapshot.Email,
             CustomerSnapshot.FullName,
             CancellationReason));
+        if (!string.IsNullOrWhiteSpace(ReservationReference))
+            RaiseDomainEvent(new OrderReservationCancelledDomainEvent(Guid.NewGuid(), occurredOnUtc,
+                StoreId, Id, ReservationReference, CancellationReason));
     }
 
     private void RaiseOrderPlacedEvent()

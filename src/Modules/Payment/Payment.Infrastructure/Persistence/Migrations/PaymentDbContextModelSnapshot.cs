@@ -141,6 +141,9 @@ namespace Payment.Infrastructure.Persistence.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<bool>("HasProviderAttempt")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("MethodType")
                         .HasColumnType("integer");
 

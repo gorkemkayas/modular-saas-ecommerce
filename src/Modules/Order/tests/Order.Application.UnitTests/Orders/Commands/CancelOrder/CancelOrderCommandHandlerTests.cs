@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Order.Application.Abstractions;
+using Order.Contracts;
+using Order.Domain.Events;
 using Order.Application.Integrations;
 using Order.Application.Orders.Commands.CancelOrder;
 using Order.Domain.Exceptions;
@@ -15,7 +17,7 @@ namespace Order.Application.UnitTests.Orders.Commands.CancelOrder;
 public sealed class CancelOrderCommandHandlerTests
 {
     [TestMethod]
-    public async Task Handle_WhenOrderHasReservation_ReleasesInventoryReservation()
+    public async Task Handle_WhenOrderHasReservation_PersistsReservationCancellationEvent()
     {
         var storeId = Guid.NewGuid();
         var customerId = Guid.NewGuid();
@@ -43,7 +45,6 @@ public sealed class CancelOrderCommandHandlerTests
         var orderRepository = new Mock<IOrderRepository>();
         var unitOfWork = new Mock<IUnitOfWork>();
         var customerContextService = new Mock<IOrderCustomerContextService>();
-        var inventoryService = new Mock<IOrderInventoryService>();
 
         customerContextService
             .Setup(x => x.GetCustomerIdentityAsync(storeId, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
@@ -53,29 +54,19 @@ public sealed class CancelOrderCommandHandlerTests
             .Setup(x => x.GetByIdAsync(storeId, order.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(order);
 
-        inventoryService
-            .Setup(x => x.ReleaseReservationAsync(
-                storeId,
-                "ord-res-1",
-                It.IsAny<string>(),
-                It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
 
         var handler = new CancelOrderCommandHandler(
             orderRepository.Object,
             unitOfWork.Object,
             customerContextService.Object,
-            inventoryService.Object,
+            Mock.Of<IOrderOperationLock>(),
+            Mock.Of<IOrderCancellationPaymentGuard>(),
             NullLogger<CancelOrderCommandHandler>.Instance);
 
         await handler.Handle(new CancelOrderCommand(storeId, Guid.NewGuid(), order.Id, "Customer changed mind"), CancellationToken.None);
 
         unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-        inventoryService.Verify(x => x.ReleaseReservationAsync(
-            storeId,
-            "ord-res-1",
-            "Customer changed mind",
-            It.IsAny<CancellationToken>()), Times.Once);
+        Assert.AreEqual("ord-res-1", order.DomainEvents.OfType<OrderReservationCancelledDomainEvent>().Single().ReservationReference);
     }
 
     [TestMethod]
@@ -108,7 +99,6 @@ public sealed class CancelOrderCommandHandlerTests
         var orderRepository = new Mock<IOrderRepository>();
         var unitOfWork = new Mock<IUnitOfWork>();
         var customerContextService = new Mock<IOrderCustomerContextService>();
-        var inventoryService = new Mock<IOrderInventoryService>();
 
         customerContextService
             .Setup(x => x.GetCustomerIdentityAsync(storeId, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
@@ -122,14 +112,14 @@ public sealed class CancelOrderCommandHandlerTests
             orderRepository.Object,
             unitOfWork.Object,
             customerContextService.Object,
-            inventoryService.Object,
+            Mock.Of<IOrderOperationLock>(),
+            Mock.Of<IOrderCancellationPaymentGuard>(),
             NullLogger<CancelOrderCommandHandler>.Instance);
 
         await Assert.ThrowsExactlyAsync<OrderDomainException>(() =>
             handler.Handle(new CancelOrderCommand(storeId, Guid.NewGuid(), order.Id, "Customer changed mind"), CancellationToken.None));
 
         unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-        inventoryService.Verify(x => x.ReleaseReservationAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     private static OrderAddressSnapshot CreateAddress(string title)

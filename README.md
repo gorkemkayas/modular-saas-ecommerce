@@ -362,6 +362,7 @@ checked-in development configuration:
 - Notification `IntegrationEventConsumer.Enabled`, `InboxProcessor.Enabled`, and `DispatchProcessor.Enabled` are `true` in development. Their option-class defaults remain `false`; production activation is a separate deployment choice.
 - All ten existing commerce notification outcomes use Outbox/Inbox delivery: order confirmation/cancellation, four payment outcomes, and four shipment outcomes.
 - Shipment fulfillment changes update Order through a separate queue and Inbox, with order-wide revisions and optimistic concurrency.
+- Order cancellation releases Inventory reservations through its own queue and Inbox, with payment admission guards and atomic stock updates.
 - Price/context reads, inventory operations, payment gateway calls, and Payment business coordination remain synchronous.
 - The Inbox path creates a dispatch and a delivery queue row atomically. The dispatch worker sends outside the database transaction and persists the outcome with attempt history.
 
@@ -382,6 +383,8 @@ See [Commerce messaging rollout](docs/CommerceMessagingRollout.md) for all migra
 outcomes, additive migrations, configuration, and the preserved synchronous calls.
 See [Shipment to Order fulfillment](docs/ShipmentOrderFulfillmentMessaging.md) for
 the complete event path, revision rules, consumer wiring and guide to adding an event.
+See [Order cancellation to Inventory](docs/OrderInventoryReservationCancellation.md)
+for reservation release, payment/cancellation safety, retries and deployment steps.
 
 ## Technology
 

@@ -66,6 +66,7 @@ public sealed class Payment : AggregateRoot, IAggregateRoot
     public decimal Amount { get; private set; }
     public string CurrencyCode { get; private set; } = default!;
     public PaymentStatus Status { get; private set; }
+    public bool HasProviderAttempt { get; private set; }
     public PaymentProvider Provider { get; private set; }
     public Guid? ProviderAccountId { get; private set; }
     public PaymentMethodType MethodType { get; private set; }
@@ -120,6 +121,15 @@ public sealed class Payment : AggregateRoot, IAggregateRoot
 
         ProviderAccountId = providerAccountId;
         Touch();
+    }
+
+    public bool RecordProviderAttemptStarted()
+    {
+        EnsureNotTerminalForPaymentOperation();
+        if (HasProviderAttempt) return false;
+        HasProviderAttempt = true;
+        Touch();
+        return true;
     }
 
     public void MarkRequiresAction(

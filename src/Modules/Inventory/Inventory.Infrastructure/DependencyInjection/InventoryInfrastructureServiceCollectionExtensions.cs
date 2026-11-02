@@ -13,6 +13,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using BuildingBlocks.Infrastructure.Messaging.Inbox;
+using BuildingBlocks.Messaging.RabbitMQ.DependencyInjection;
+using Inventory.Infrastructure.Messaging.Order;
+using Order.Contracts.IntegrationEvents;
 
 namespace Inventory.Infrastructure.DependencyInjection;
 
@@ -41,6 +45,10 @@ public static class InventoryInfrastructureServiceCollectionExtensions
         services.AddScoped<IInventoryModuleApi, InventoryModuleApi>();
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<InventoryDbContext>());
 
-        return services;
+        services.AddScoped<IModuleInboxMessageHandler<InventoryReservationConsumerIdentity>, OrderReservationCancelledInboxHandler>();
+        services.AddModuleInbox<InventoryDbContext, InventoryReservationConsumerIdentity>(
+            configuration, "Modules:Inventory:InboxProcessor");
+        return services.AddRabbitMqConsumer<InventoryReservationConsumerIdentity>(
+            configuration, "Modules:Inventory:IntegrationEventConsumer", OrderReservationCancelledIntegrationEvent.EventType);
     }
 }
