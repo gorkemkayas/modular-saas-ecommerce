@@ -24,6 +24,8 @@ public sealed class OrderConfiguration : IEntityTypeConfiguration<OrderEntity>
         builder.Property(x => x.ReservationReference).HasMaxLength(200);
         builder.Property(x => x.PaymentReference).HasMaxLength(200);
         builder.Property(x => x.ShipmentReference).HasMaxLength(200);
+        builder.Property<uint>("Version").IsRowVersion();
+        builder.Property(x => x.LastFulfillmentRevision).IsRequired();
         builder.Property(x => x.PlacedAtUtc).IsRequired();
         builder.Property(x => x.CreatedAtUtc).IsRequired();
         builder.Property(x => x.UpdatedAtUtc).IsRequired();

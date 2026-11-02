@@ -8,6 +8,19 @@ namespace Notification.Infrastructure.IntegrationTests;
 public sealed class NotificationMigrationTests
 {
     [TestMethod]
+    public async Task MigrateAsync_DeliveryModelMatchesLatestSnapshot()
+    {
+        await using var serviceProvider = NotificationIntegrationTestHost.CreateServiceProvider();
+        await using var scope = serviceProvider.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<NotificationDbContext>();
+
+        await dbContext.Database.MigrateAsync();
+
+        Assert.IsFalse(dbContext.Database.HasPendingModelChanges());
+        _ = await dbContext.NotificationDispatchDeliveries.CountAsync();
+    }
+
+    [TestMethod]
     public async Task MigrateAsync_CreatesInboxMessagesTable()
     {
         await using var serviceProvider =

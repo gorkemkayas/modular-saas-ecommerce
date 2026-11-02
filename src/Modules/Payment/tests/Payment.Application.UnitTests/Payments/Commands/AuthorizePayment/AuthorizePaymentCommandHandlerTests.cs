@@ -19,7 +19,6 @@ public sealed class AuthorizePaymentCommandHandlerTests
         var orderContextService = new Mock<IOrderPaymentContextService>();
         var orderSyncService = new Mock<IOrderPaymentSyncService>();
         var inventoryService = new Mock<IInventoryPaymentService>();
-        var notificationService = new Mock<IPaymentNotificationService>();
         var shipmentService = new Mock<IShipmentPaymentService>();
         var paymentGateway = new Mock<IPaymentGateway>();
 
@@ -86,9 +85,9 @@ public sealed class AuthorizePaymentCommandHandlerTests
             orderContextService.Object,
             orderSyncService.Object,
             inventoryService.Object,
-            notificationService.Object,
             shipmentService.Object,
             paymentGateway.Object,
+            Mock.Of<IOrderPaymentOperationLock>(),
             NullLogger<AuthorizePaymentCommandHandler>.Instance);
 
         var result = await handler.Handle(
@@ -98,7 +97,7 @@ public sealed class AuthorizePaymentCommandHandlerTests
         Assert.AreEqual(Payment.Domain.Enums.PaymentStatus.Authorized, payment.Status);
         Assert.AreEqual(Payment.Domain.Enums.PaymentStatus.Authorized, result.Status);
         orderSyncService.Verify(x => x.MarkAuthorizedAsync(payment.StoreId, payment.OrderId, "pay-ref-1", It.IsAny<CancellationToken>()), Times.Once);
-        unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
     }
 
     [TestMethod]
@@ -109,7 +108,6 @@ public sealed class AuthorizePaymentCommandHandlerTests
         var orderContextService = new Mock<IOrderPaymentContextService>();
         var orderSyncService = new Mock<IOrderPaymentSyncService>();
         var inventoryService = new Mock<IInventoryPaymentService>();
-        var notificationService = new Mock<IPaymentNotificationService>();
         var shipmentService = new Mock<IShipmentPaymentService>();
         var paymentGateway = new Mock<IPaymentGateway>();
 
@@ -199,31 +197,15 @@ public sealed class AuthorizePaymentCommandHandlerTests
             })
             .Returns(Task.CompletedTask);
 
-        notificationService
-            .Setup(x => x.SendPaymentCapturedAsync(
-                payment.StoreId,
-                payment.Id,
-                payment.OrderId,
-                payment.CustomerId,
-                payment.OrderNumber,
-                "customer@example.com",
-                "Jane Doe",
-                payment.Amount,
-                payment.CurrencyCode,
-                "pay-ref-2",
-                It.IsAny<CancellationToken>()))
-            .Callback(() => Assert.IsTrue(shipmentCreated))
-            .Returns(Task.CompletedTask);
-
         var handler = new AuthorizePaymentCommandHandler(
             repository.Object,
             unitOfWork.Object,
             orderContextService.Object,
             orderSyncService.Object,
             inventoryService.Object,
-            notificationService.Object,
             shipmentService.Object,
             paymentGateway.Object,
+            Mock.Of<IOrderPaymentOperationLock>(),
             NullLogger<AuthorizePaymentCommandHandler>.Instance);
 
         var result = await handler.Handle(
@@ -235,7 +217,7 @@ public sealed class AuthorizePaymentCommandHandlerTests
         orderSyncService.Verify(x => x.MarkCapturedAsync(payment.StoreId, payment.OrderId, "pay-ref-2", It.IsAny<CancellationToken>()), Times.Once);
         inventoryService.Verify(x => x.ConfirmDeductionAsync(payment.StoreId, "res-2", "Payment captured.", It.IsAny<CancellationToken>()), Times.Once);
         shipmentService.Verify(x => x.EnsureShipmentCreatedForCapturedOrderAsync(payment.StoreId, payment.OrderId, It.IsAny<CancellationToken>()), Times.Once);
-        unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
     }
 
     [TestMethod]
@@ -246,7 +228,6 @@ public sealed class AuthorizePaymentCommandHandlerTests
         var orderContextService = new Mock<IOrderPaymentContextService>();
         var orderSyncService = new Mock<IOrderPaymentSyncService>();
         var inventoryService = new Mock<IInventoryPaymentService>();
-        var notificationService = new Mock<IPaymentNotificationService>();
         var shipmentService = new Mock<IShipmentPaymentService>();
         var paymentGateway = new Mock<IPaymentGateway>();
 
@@ -287,9 +268,9 @@ public sealed class AuthorizePaymentCommandHandlerTests
             orderContextService.Object,
             orderSyncService.Object,
             inventoryService.Object,
-            notificationService.Object,
             shipmentService.Object,
             paymentGateway.Object,
+            Mock.Of<IOrderPaymentOperationLock>(),
             NullLogger<AuthorizePaymentCommandHandler>.Instance);
 
         await Assert.ThrowsExactlyAsync<Payment.Application.Exceptions.PaymentValidationException>(() =>

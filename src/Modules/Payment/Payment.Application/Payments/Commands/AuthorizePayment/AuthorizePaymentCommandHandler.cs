@@ -16,9 +16,9 @@ public sealed class AuthorizePaymentCommandHandler : IRequestHandler<AuthorizePa
     private readonly IOrderPaymentContextService _orderPaymentContextService;
     private readonly IOrderPaymentSyncService _orderPaymentSyncService;
     private readonly IInventoryPaymentService _inventoryPaymentService;
-    private readonly IPaymentNotificationService _paymentNotificationService;
     private readonly IShipmentPaymentService _shipmentPaymentService;
     private readonly IPaymentGateway _paymentGateway;
+    private readonly IOrderPaymentOperationLock _orderOperationLock;
     private readonly ILogger<AuthorizePaymentCommandHandler> _logger;
 
     public AuthorizePaymentCommandHandler(
@@ -27,9 +27,9 @@ public sealed class AuthorizePaymentCommandHandler : IRequestHandler<AuthorizePa
         IOrderPaymentContextService orderPaymentContextService,
         IOrderPaymentSyncService orderPaymentSyncService,
         IInventoryPaymentService inventoryPaymentService,
-        IPaymentNotificationService paymentNotificationService,
         IShipmentPaymentService shipmentPaymentService,
         IPaymentGateway paymentGateway,
+        IOrderPaymentOperationLock orderOperationLock,
         ILogger<AuthorizePaymentCommandHandler> logger)
     {
         _paymentRepository = paymentRepository;
@@ -37,9 +37,9 @@ public sealed class AuthorizePaymentCommandHandler : IRequestHandler<AuthorizePa
         _orderPaymentContextService = orderPaymentContextService;
         _orderPaymentSyncService = orderPaymentSyncService;
         _inventoryPaymentService = inventoryPaymentService;
-        _paymentNotificationService = paymentNotificationService;
         _shipmentPaymentService = shipmentPaymentService;
         _paymentGateway = paymentGateway;
+        _orderOperationLock = orderOperationLock;
         _logger = logger;
     }
 
@@ -50,6 +50,9 @@ public sealed class AuthorizePaymentCommandHandler : IRequestHandler<AuthorizePa
 
         if (string.IsNullOrWhiteSpace(command.IdempotencyKey))
             throw new PaymentValidationException("IdempotencyKey is required.");
+
+        await using var operationLease = await _orderOperationLock.AcquireAsync(
+            command.StoreId, command.OrderId, cancellationToken);
 
         var orderContext = await _orderPaymentContextService.GetCustomerOrderContextAsync(
             command.StoreId,
@@ -65,6 +68,10 @@ public sealed class AuthorizePaymentCommandHandler : IRequestHandler<AuthorizePa
         var payment = await _paymentRepository.GetByOrderIdAsync(command.StoreId, command.OrderId, cancellationToken)
             ?? throw new PaymentValidationException("Payment must be created before authorization.");
 
+        // Persist uncertainty before crossing the provider boundary; cancellation must not
+        // mistake an interrupted attempt for an untouched Pending payment.
+        if (payment.RecordProviderAttemptStarted())
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         var gatewayResult = await _paymentGateway.AuthorizeAsync(
             new PaymentGatewayAuthorizeRequest(
                 payment.Id,
@@ -197,66 +204,6 @@ public sealed class AuthorizePaymentCommandHandler : IRequestHandler<AuthorizePa
                     payment.ExternalPaymentReference,
                     cancellationToken);
                 break;
-        }
-
-        try
-        {
-            switch (gatewayResult.Outcome)
-            {
-                case PaymentGatewayOutcome.Authorized:
-                    await _paymentNotificationService.SendPaymentAuthorizedAsync(
-                        payment.StoreId,
-                        payment.Id,
-                        payment.OrderId,
-                        payment.CustomerId,
-                        orderContext.OrderNumber,
-                        orderContext.Customer.Email,
-                        orderContext.Customer.FullName,
-                        payment.Amount,
-                        payment.CurrencyCode,
-                        payment.ExternalPaymentReference,
-                        cancellationToken);
-                    break;
-
-                case PaymentGatewayOutcome.Captured:
-                    await _paymentNotificationService.SendPaymentCapturedAsync(
-                        payment.StoreId,
-                        payment.Id,
-                        payment.OrderId,
-                        payment.CustomerId,
-                        orderContext.OrderNumber,
-                        orderContext.Customer.Email,
-                        orderContext.Customer.FullName,
-                        payment.Amount,
-                        payment.CurrencyCode,
-                        payment.ExternalPaymentReference,
-                        cancellationToken);
-                    break;
-
-                case PaymentGatewayOutcome.Failed:
-                    await _paymentNotificationService.SendPaymentFailedAsync(
-                        payment.StoreId,
-                        payment.Id,
-                        payment.OrderId,
-                        payment.CustomerId,
-                        orderContext.OrderNumber,
-                        orderContext.Customer.Email,
-                        orderContext.Customer.FullName,
-                        payment.Amount,
-                        payment.CurrencyCode,
-                        gatewayResult.FailureMessage,
-                        cancellationToken);
-                    break;
-            }
-        }
-        catch (Exception notificationException)
-        {
-            _logger.LogWarning(
-                notificationException,
-                "Payment notification failed | PaymentId: {PaymentId} | OrderId: {OrderId} | Outcome: {Outcome}",
-                payment.Id,
-                payment.OrderId,
-                gatewayResult.Outcome);
         }
 
         _logger.LogInformation(

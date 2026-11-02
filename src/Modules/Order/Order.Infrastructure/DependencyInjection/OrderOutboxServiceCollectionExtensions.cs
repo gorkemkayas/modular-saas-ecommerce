@@ -46,6 +46,8 @@ public static class OrderOutboxServiceCollectionExtensions
                     options.InitialRetryDelay,
                 "Order Outbox maximum retry delay must be greater than " +
                 "or equal to the initial retry delay.")
+            .Validate(options => options.RetryJitterFactor is >= 0 and <= 1,
+                "Order Outbox retry jitter factor must be between 0 and 1.")
             .ValidateOnStart();
 
         services.TryAddSingleton<TimeProvider>(TimeProvider.System);

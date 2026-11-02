@@ -1,4 +1,5 @@
 using System;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -6,6 +7,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Shipment.Infrastructure.Persistence.Migrations
 {
     /// <inheritdoc />
+    [DbContext(typeof(ShipmentDbContext))]
+    [Migration("20260501142000_InitialShipmentSchema")]
     public partial class InitialShipmentSchema : Migration
     {
         /// <inheritdoc />

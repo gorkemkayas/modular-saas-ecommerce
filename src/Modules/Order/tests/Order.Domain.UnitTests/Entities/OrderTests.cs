@@ -11,6 +11,21 @@ namespace Order.Domain.UnitTests.Entities;
 public sealed class OrderTests
 {
     [TestMethod]
+    public void PaymentAuthorizedThenCaptured_RaisesOneOrderConfirmation()
+    {
+        var order = CreateOrder();
+        Assert.HasCount(0, order.DomainEvents);
+        order.MarkPaymentAuthorized("PAY-1");
+        order.MarkPaymentCaptured("PAY-1");
+
+        var e = order.DomainEvents.OfType<OrderPlacedDomainEvent>().Single();
+        Assert.AreEqual(order.Id, e.OrderId);
+        Assert.AreEqual(order.CustomerSnapshot.Email, e.RecipientEmail);
+        Assert.AreEqual(order.Totals.GrandTotalAmount, e.GrandTotalAmount);
+        Assert.HasCount(order.Items.Count, e.Items);
+    }
+
+    [TestMethod]
     public void Place_WithValidInputs_CreatesConfirmedOrder()
     {
         var order = Order.Domain.Entities.Order.Place(
@@ -44,7 +59,7 @@ public sealed class OrderTests
     public void Cancel_WhenOrderAlreadyShipped_ThrowsOrderDomainException()
     {
         var order = CreateOrder();
-        order.MarkShipped("SHIP-1");
+        order.ApplyShipmentFulfillment(Guid.NewGuid(), "SHIP-1", ShipmentFulfillmentState.Shipped, 1);
 
         Assert.ThrowsExactly<OrderDomainException>(() => order.Cancel("Customer changed mind"));
 
@@ -56,6 +71,7 @@ public sealed class OrderTests
     {
         var order = CreateOrder();
         order.MarkPaymentCaptured("PAY-1");
+        order.ClearDomainEvents();
 
         Assert.ThrowsExactly<OrderDomainException>(() => order.Cancel("Customer changed mind"));
 
@@ -68,9 +84,20 @@ public sealed class OrderTests
         var order = CreateOrder();
         order.MarkPaymentCaptured("PAY-1");
         order.MarkPaymentRefunded("PAY-1");
+        order.ClearDomainEvents();
 
         Assert.ThrowsExactly<OrderDomainException>(() => order.Cancel("Customer changed mind"));
 
+        Assert.HasCount(0, order.DomainEvents);
+    }
+
+    [TestMethod]
+    public void Cancel_WhenPaymentAuthorized_RequiresPaymentCancellationFirst()
+    {
+        var order = CreateOrder();
+        order.MarkPaymentAuthorized("PAY-1");
+        order.ClearDomainEvents();
+        Assert.ThrowsExactly<OrderDomainException>(() => order.Cancel("Cancel order"));
         Assert.HasCount(0, order.DomainEvents);
     }
 

@@ -20,9 +20,6 @@ public sealed class NotificationTemplate : IAggregateRoot
         string subjectTemplate,
         string bodyTemplate)
     {
-        if (storeId == Guid.Empty)
-            throw new NotificationDomainException("Store id is required.");
-
         Id = id;
         StoreId = storeId;
         Name = NormalizeRequired(name, "Template name", 200);
@@ -57,9 +54,31 @@ public sealed class NotificationTemplate : IAggregateRoot
         string subjectTemplate,
         string bodyTemplate)
     {
+        if (storeId == Guid.Empty)
+            throw new NotificationDomainException("Store id is required.");
+
         return new NotificationTemplate(
             Guid.NewGuid(),
             storeId,
+            name,
+            trigger,
+            channel,
+            locale,
+            subjectTemplate,
+            bodyTemplate);
+    }
+
+    public static NotificationTemplate CreateDefault(
+        string name,
+        NotificationTrigger trigger,
+        NotificationChannel channel,
+        string locale,
+        string subjectTemplate,
+        string bodyTemplate)
+    {
+        return new NotificationTemplate(
+            Guid.NewGuid(),
+            Guid.Empty,
             name,
             trigger,
             channel,

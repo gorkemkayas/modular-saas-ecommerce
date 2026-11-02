@@ -252,22 +252,23 @@ flowchart TD
         INBOX[("InboxMessages<br/>Unique MessageId")]
         PROCESSOR["Inbox worker<br/>Claim → resolve EventType handler"]
         DISPATCH[("NotificationDispatch<br/>Rendered content or suppression")]
+        DELIVERY_QUEUE[("NotificationDispatchDeliveries<br/>Lease + frozen provider request")]
         INBOX --> PROCESSOR --> DISPATCH
+        DISPATCH --> DELIVERY_QUEUE
     end
 
-    NEXT["Next phase<br/>Dispatch delivery worker → email provider"]
+    SENDER["Dispatch worker<br/>Claim → prepare → send → persist outcome"]
+    PROVIDER["Email provider<br/>Stable idempotency key"]
 
     CANCEL --> EVENT
     EVENT --> ORDER
     EVENT --> OUTBOX
     OUTBOX --> WORKER --> BROKER --> QUEUE --> CONSUMER
     CONSUMER -->|"Persist and commit before ACK"| INBOX
-    DISPATCH -.-> NEXT
+    DELIVERY_QUEUE --> SENDER --> PROVIDER
 
     classDef durable fill:#ecfdf5,stroke:#059669,color:#064e3b
-    classDef planned fill:#f8fafc,stroke:#64748b,color:#334155,stroke-dasharray:5 5
-    class ORDER,OUTBOX,INBOX,DISPATCH durable
-    class NEXT planned
+    class ORDER,OUTBOX,INBOX,DISPATCH,DELIVERY_QUEUE durable
 ```
 
 **Implemented guarantees and boundaries:**
@@ -278,7 +279,10 @@ flowchart TD
 | Outbox → broker | Publisher confirmations, mandatory publishing, timeout, and persisted retry state |
 | Broker → Inbox | Validate and persist before ACK; duplicate `MessageId` returns an idempotent result |
 | Inbox → dispatch | Dispatch changes and Inbox `Processed` transition commit in one transaction |
+| Dispatch → email provider | Explicit delivery queue, stable provider request/idempotency key, persisted attempts and retry scheduling |
 | Worker ownership | PostgreSQL `FOR UPDATE SKIP LOCKED`, expiring leases, and ownership-checked updates |
+| Producer isolation | Payment/Shipment persist contact snapshots; no cross-module reads inside their save paths |
+| Refund safety | Stable operation keys, per-payment concurrency guard, failed refund attempts preserve payment state |
 | Delivery semantics | At-least-once delivery; duplicates are expected and handled through idempotency |
 | Processing concurrency | Current batches are processed sequentially; claim stores support multiple workers/instances |
 
@@ -350,16 +354,37 @@ sharing the consumer channel.
 
 ### Runtime status
 
-The messaging components and integration tests are present. The default host
-configuration still reflects an incremental migration:
+The commerce notification pipeline is wired into the API host and enabled in the
+checked-in development configuration:
 
-- `AddOrderOutboxProcessing(configuration)` exists, but the API host does not currently call it. The Outbox polling service must be registered before host-based publishing runs.
-- Notification `IntegrationEventConsumer.Enabled` and `InboxProcessor.Enabled` are `false` in the checked-in development settings.
-- Existing direct notification calls remain in commerce workflows.
-- The new Inbox path creates a dispatch; a claim-based background sender for those dispatches is the next implementation step.
+- `AddOrderModule(configuration)` registers Order infrastructure and its Outbox polling service.
+- Payment and Shipment also register independent Outbox stores/workers and module-specific publishers.
+- Notification `IntegrationEventConsumer.Enabled`, `InboxProcessor.Enabled`, and `DispatchProcessor.Enabled` are `true` in development. Their option-class defaults remain `false`; production activation is a separate deployment choice.
+- All ten existing commerce notification outcomes use Outbox/Inbox delivery: order confirmation/cancellation, four payment outcomes, and four shipment outcomes.
+- Shipment fulfillment changes update Order through a separate queue and Inbox, with order-wide revisions and optimistic concurrency.
+- Order cancellation releases Inventory reservations through its own queue and Inbox, with payment admission guards and atomic stock updates.
+- Price/context reads, inventory operations, payment gateway calls, and Payment business coordination remain synchronous.
+- The Inbox path creates a dispatch and a delivery queue row atomically. The dispatch worker sends outside the database transaction and persists the outcome with attempt history.
+
+Real PostgreSQL, RabbitMQ, and Resend verification covered successful cancellation
+delivery, permanent provider rejection, and duplicate event delivery without a
+second email. The recipient confirmed receipt. This exercised a domain-created
+test order; browser checkout and HTTP cancellation were not part of that run.
+The configured sender domain must be verified before normal email delivery;
+the live test used a temporary Resend test sender.
 
 See [Notification Messaging Architecture](docs/NotificationMessagingArchitecture.md)
 for the detailed delivery, ACK, retry, and processing diagrams.
+See [Notification Dispatch Delivery](docs/NotificationDispatchDelivery.md) for
+provider request snapshots, retry policy, and the bounded idempotency window.
+See [Phase 8 verification](docs/Phase8MessagingVerification.md) for the rollout
+checks, test commands, and remaining operational work.
+See [Commerce messaging rollout](docs/CommerceMessagingRollout.md) for all migrated
+outcomes, additive migrations, configuration, and the preserved synchronous calls.
+See [Shipment to Order fulfillment](docs/ShipmentOrderFulfillmentMessaging.md) for
+the complete event path, revision rules, consumer wiring and guide to adding an event.
+See [Order cancellation to Inventory](docs/OrderInventoryReservationCancellation.md)
+for reservation release, payment/cancellation safety, retries and deployment steps.
 
 ## Technology
 
@@ -672,8 +697,8 @@ active service configuration.
 | --- | --- | --- |
 | Commerce | Store, catalog, customer, pricing, orders, inventory, payments, and shipment workflows | Broader end-to-end validation and operational hardening |
 | Web application | Storefront, account, checkout, and merchant routes exist | Continue UX and integration refinement |
-| Messaging | OrderCancelled Outbox → RabbitMQ → Notification Inbox components and tests | Complete host activation and migrate selected synchronous calls |
-| Notification delivery | Existing direct sender plus Inbox-to-dispatch processing | Add a claim-based dispatch sender with persisted retry handling |
+| Messaging | Order, Payment, and Shipment notification outcomes use module-owned Outboxes and Notification Inbox | Phase 9 metrics, health checks, and centralized logs |
+| Notification delivery | All existing commerce notifications use queued delivery with request snapshots | Verify deployment sender domain and add read-only operational visibility |
 | Cross-module reliability | Contracts, explicit orchestration, compensation, and initial event pipeline | Expand event coverage and introduce process managers where workflows need them |
 | Product expansion | Ten current business modules | Consider Cart, Promotion, Return, and Review after the core flows mature |
 
@@ -682,6 +707,9 @@ active service configuration.
 | Document | Contents |
 | --- | --- |
 | [Notification messaging architecture](docs/NotificationMessagingArchitecture.md) | Detailed consumer, Inbox, retry, ACK, DLQ, and handler diagrams |
+| [Notification dispatch delivery](docs/NotificationDispatchDelivery.md) | Dispatch worker, durable delivery queue, provider idempotency, retries, and crash recovery |
+| [Phase 8 verification](docs/Phase8MessagingVerification.md) | Host activation, regression coverage, real email verification, and rollout boundaries |
+| [Commerce messaging rollout](docs/CommerceMessagingRollout.md) | Application-wide notification event coverage, preserved synchronous calls, and migrations |
 | [Order module design](docs/OrderModuleDesign.md) | Order ownership, snapshots, and lifecycle |
 | [Pricing module design](docs/PricingModuleDesign.md) | Price lists and price-resolution design |
 | [Notification module design](docs/NotificationModuleDesign.md) | Original module design and links to its asynchronous evolution |

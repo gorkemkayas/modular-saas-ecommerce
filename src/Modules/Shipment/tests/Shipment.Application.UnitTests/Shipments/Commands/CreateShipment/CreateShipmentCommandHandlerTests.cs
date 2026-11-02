@@ -11,14 +11,14 @@ namespace Shipment.Application.UnitTests.Shipments.Commands.CreateShipment;
 public sealed class CreateShipmentCommandHandlerTests
 {
     [TestMethod]
-    public async Task Handle_WithEligibleOrder_CreatesShipmentAndSyncsOrder()
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task Handle_WithEligibleOrder_CreatesShipmentWithFulfillmentEvent(bool hasStaleOrderProjection)
     {
         var repository = new Mock<IShipmentRepository>();
         var unitOfWork = new Mock<IUnitOfWork>();
         var numberGenerator = new Mock<IShipmentNumberGenerator>();
         var orderContextService = new Mock<IOrderShipmentContextService>();
-        var orderSyncService = new Mock<IOrderShipmentSyncService>();
-        var notificationService = new Mock<IShipmentNotificationService>();
 
         var storeId = Guid.NewGuid();
         var orderId = Guid.NewGuid();
@@ -27,39 +27,10 @@ public sealed class CreateShipmentCommandHandlerTests
             .Setup(x => x.GenerateAsync(storeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync("SHP-TEST-001");
 
-        var savedChanges = false;
-        var orderSynced = false;
-
         unitOfWork
             .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .Callback(() => savedChanges = true)
+
             .ReturnsAsync(1);
-
-        orderSyncService
-            .Setup(x => x.MarkShipmentCreatedAsync(storeId, orderId, "SHP-TEST-001", It.IsAny<CancellationToken>()))
-            .Callback(() =>
-            {
-                Assert.IsTrue(savedChanges);
-                orderSynced = true;
-            })
-            .Returns(Task.CompletedTask);
-
-        notificationService
-            .Setup(x => x.SendShipmentCreatedAsync(
-                storeId,
-                It.IsAny<Guid>(),
-                orderId,
-                It.IsAny<Guid>(),
-                "ORD-1001",
-                "SHP-TEST-001",
-                "customer@example.com",
-                "Jane Doe",
-                "Yurtici Kargo",
-                null,
-                null,
-                It.IsAny<CancellationToken>()))
-            .Callback(() => Assert.IsTrue(orderSynced))
-            .Returns(Task.CompletedTask);
 
         orderContextService
             .Setup(x => x.GetStoreOrderContextAsync(storeId, orderId, It.IsAny<CancellationToken>()))
@@ -72,8 +43,8 @@ public sealed class CreateShipmentCommandHandlerTests
                 "Jane Doe",
                 OrderShipmentStatus.Confirmed,
                 OrderShipmentPaymentStatus.Captured,
-                OrderShipmentFulfillmentStatus.Unfulfilled,
-                null,
+                hasStaleOrderProjection ? OrderShipmentFulfillmentStatus.Shipped : OrderShipmentFulfillmentStatus.Unfulfilled,
+                hasStaleOrderProjection ? "OLD-SHIPMENT" : null,
                 new OrderShipmentAddress(
                     "Jane Doe",
                     "+90 555 000 00 00",
@@ -100,8 +71,6 @@ public sealed class CreateShipmentCommandHandlerTests
             unitOfWork.Object,
             numberGenerator.Object,
             orderContextService.Object,
-            orderSyncService.Object,
-            notificationService.Object,
             NullLogger<CreateShipmentCommandHandler>.Instance);
 
         var shipmentId = await handler.Handle(new CreateShipmentCommand(storeId, orderId, "Fragile"), CancellationToken.None);
@@ -109,6 +78,5 @@ public sealed class CreateShipmentCommandHandlerTests
         Assert.AreNotEqual(Guid.Empty, shipmentId);
         repository.Verify(x => x.AddAsync(It.IsAny<Shipment.Domain.Entities.Shipment>(), It.IsAny<CancellationToken>()), Times.Once);
         unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-        orderSyncService.Verify(x => x.MarkShipmentCreatedAsync(storeId, orderId, "SHP-TEST-001", It.IsAny<CancellationToken>()), Times.Once);
     }
 }

@@ -14,6 +14,7 @@ public sealed class CreatePaymentForOrderCommandHandler : IRequestHandler<Create
     private readonly IUnitOfWork _unitOfWork;
     private readonly IOrderPaymentContextService _orderPaymentContextService;
     private readonly IPaymentGateway _paymentGateway;
+    private readonly IOrderPaymentOperationLock _orderOperationLock;
     private readonly ILogger<CreatePaymentForOrderCommandHandler> _logger;
 
     public CreatePaymentForOrderCommandHandler(
@@ -21,12 +22,14 @@ public sealed class CreatePaymentForOrderCommandHandler : IRequestHandler<Create
         IUnitOfWork unitOfWork,
         IOrderPaymentContextService orderPaymentContextService,
         IPaymentGateway paymentGateway,
+        IOrderPaymentOperationLock orderOperationLock,
         ILogger<CreatePaymentForOrderCommandHandler> logger)
     {
         _paymentRepository = paymentRepository;
         _unitOfWork = unitOfWork;
         _orderPaymentContextService = orderPaymentContextService;
         _paymentGateway = paymentGateway;
+        _orderOperationLock = orderOperationLock;
         _logger = logger;
     }
 
@@ -34,6 +37,9 @@ public sealed class CreatePaymentForOrderCommandHandler : IRequestHandler<Create
     {
         if (command.StoreId == Guid.Empty || command.OrderId == Guid.Empty || command.ExternalUserId == Guid.Empty)
             throw new PaymentValidationException("StoreId, ExternalUserId and OrderId are required.");
+
+        await using var operationLease = await _orderOperationLock.AcquireAsync(
+            command.StoreId, command.OrderId, cancellationToken);
 
         var orderContext = await _orderPaymentContextService.GetCustomerOrderContextAsync(
             command.StoreId,
@@ -62,7 +68,9 @@ public sealed class CreatePaymentForOrderCommandHandler : IRequestHandler<Create
             orderContext.GrandTotalAmount,
             orderContext.CurrencyCode,
             _paymentGateway.Provider,
-            command.MethodType);
+            command.MethodType,
+            orderContext.Customer.Email,
+            orderContext.Customer.FullName);
 
         await _paymentRepository.AddAsync(payment, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

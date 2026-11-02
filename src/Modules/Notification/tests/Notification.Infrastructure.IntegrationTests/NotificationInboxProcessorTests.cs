@@ -8,6 +8,7 @@ using Notification.Infrastructure.Options;
 using Notification.Infrastructure.Persistence;
 using Notification.Infrastructure.Persistence.Inbox;
 using Order.Contracts.IntegrationEvents;
+using Notification.Infrastructure.Persistence.Dispatch;
 
 namespace Notification.Infrastructure.IntegrationTests;
 
@@ -136,6 +137,7 @@ public sealed class NotificationInboxProcessorTests
             await dbContext.NotificationDispatches.CountAsync();
 
         Assert.AreEqual(0, dispatchCount);
+        Assert.AreEqual(0, await dbContext.NotificationDispatchDeliveries.CountAsync());
         Assert.AreEqual(
             InboxMessageStatus.Pending,
             inboxMessage.Status);
@@ -444,6 +446,8 @@ public sealed class NotificationInboxProcessorTests
                     recipientName: null);
 
             _dbContext.NotificationDispatches.Add(dispatch);
+            _dbContext.NotificationDispatchDeliveries.Add(
+                new NotificationDispatchDelivery(dispatch.Id, DateTime.UtcNow));
 
             await _dbContext.SaveChangesAsync(
                 cancellationToken);

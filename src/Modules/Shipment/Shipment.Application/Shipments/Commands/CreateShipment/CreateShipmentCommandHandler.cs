@@ -15,8 +15,6 @@ public sealed class CreateShipmentCommandHandler : IRequestHandler<CreateShipmen
     private readonly IUnitOfWork _unitOfWork;
     private readonly IShipmentNumberGenerator _shipmentNumberGenerator;
     private readonly IOrderShipmentContextService _orderShipmentContextService;
-    private readonly IOrderShipmentSyncService _orderShipmentSyncService;
-    private readonly IShipmentNotificationService _shipmentNotificationService;
     private readonly ILogger<CreateShipmentCommandHandler> _logger;
 
     public CreateShipmentCommandHandler(
@@ -24,16 +22,12 @@ public sealed class CreateShipmentCommandHandler : IRequestHandler<CreateShipmen
         IUnitOfWork unitOfWork,
         IShipmentNumberGenerator shipmentNumberGenerator,
         IOrderShipmentContextService orderShipmentContextService,
-        IOrderShipmentSyncService orderShipmentSyncService,
-        IShipmentNotificationService shipmentNotificationService,
         ILogger<CreateShipmentCommandHandler> logger)
     {
         _shipmentRepository = shipmentRepository;
         _unitOfWork = unitOfWork;
         _shipmentNumberGenerator = shipmentNumberGenerator;
         _orderShipmentContextService = orderShipmentContextService;
-        _orderShipmentSyncService = orderShipmentSyncService;
-        _shipmentNotificationService = shipmentNotificationService;
         _logger = logger;
     }
 
@@ -59,11 +53,7 @@ public sealed class CreateShipmentCommandHandler : IRequestHandler<CreateShipmen
         if (orderContext.PaymentStatus != OrderShipmentPaymentStatus.Captured)
             throw new ShipmentCreationNotAllowedException("Only captured orders can be shipped.");
 
-        if (orderContext.FulfillmentStatus is OrderShipmentFulfillmentStatus.Shipped or OrderShipmentFulfillmentStatus.Delivered)
-            throw new ShipmentCreationNotAllowedException("Order is already in a shipped fulfillment state.");
-
-        if (!string.IsNullOrWhiteSpace(orderContext.ShipmentReference))
-            throw new ShipmentCreationNotAllowedException("Order already has a shipment reference.");
+        // Active shipment ownership belongs to Shipment; Order is an asynchronous projection.
 
         var shipment = Shipment.Domain.Entities.Shipment.Create(
             command.StoreId,
@@ -91,7 +81,10 @@ public sealed class CreateShipmentCommandHandler : IRequestHandler<CreateShipmen
                     item.Sku,
                     item.Quantity))
                 .ToArray(),
-            command.InternalNote);
+            command.InternalNote,
+            orderContext.CustomerId,
+            orderContext.CustomerEmail,
+            orderContext.CustomerFullName);
 
         if (orderContext.ShippingCarrier is not null)
         {
@@ -105,37 +98,6 @@ public sealed class CreateShipmentCommandHandler : IRequestHandler<CreateShipmen
 
         await _shipmentRepository.AddAsync(shipment, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        await _orderShipmentSyncService.MarkShipmentCreatedAsync(
-            shipment.StoreId,
-            shipment.OrderId,
-            shipment.ShipmentNumber,
-            cancellationToken);
-
-        try
-        {
-            await _shipmentNotificationService.SendShipmentCreatedAsync(
-                shipment.StoreId,
-                shipment.Id,
-                shipment.OrderId,
-                orderContext.CustomerId,
-                shipment.OrderNumber,
-                shipment.ShipmentNumber,
-                orderContext.CustomerEmail,
-                orderContext.CustomerFullName,
-                shipment.CarrierName,
-                shipment.Packages.OrderBy(x => x.CreatedAtUtc).Select(x => x.TrackingNumber).FirstOrDefault(x => x != null),
-                shipment.TrackingUrl,
-                cancellationToken);
-        }
-        catch (Exception notificationException)
-        {
-            _logger.LogWarning(
-                notificationException,
-                "Shipment created notification failed | ShipmentId: {ShipmentId} | OrderId: {OrderId}",
-                shipment.Id,
-                shipment.OrderId);
-        }
 
         _logger.LogInformation(
             "Shipment created | ShipmentId: {ShipmentId} | ShipmentNumber: {ShipmentNumber} | StoreId: {StoreId} | OrderId: {OrderId}",

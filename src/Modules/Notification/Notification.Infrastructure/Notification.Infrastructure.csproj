@@ -24,4 +24,8 @@
     <ProjectReference Include="..\..\..\BuildingBlocks\BuildingBlocks.Messaging.RabbitMQ\BuildingBlocks.Messaging.RabbitMQ.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\Payment\Payment.Contracts\Payment.Contracts.csproj" />
+    <ProjectReference Include="..\..\Shipment\Shipment.Contracts\Shipment.Contracts.csproj" />
+  </ItemGroup>
 </Project>

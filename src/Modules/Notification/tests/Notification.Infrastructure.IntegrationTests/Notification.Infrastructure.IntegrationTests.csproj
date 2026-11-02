@@ -21,4 +21,10 @@
     <ProjectReference Include="..\..\Notification.Infrastructure\Notification.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Payment\Payment.Infrastructure\Payment.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\Shipment\Shipment.Infrastructure\Shipment.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\Order\Order.Infrastructure\Order.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\Inventory\Inventory.Infrastructure\Inventory.Infrastructure.csproj" />
+  </ItemGroup>
 </Project>

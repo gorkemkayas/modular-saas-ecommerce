@@ -16,9 +16,9 @@ public sealed class CapturePaymentCommandHandler : IRequestHandler<CapturePaymen
     private readonly IOrderPaymentContextService _orderPaymentContextService;
     private readonly IOrderPaymentSyncService _orderPaymentSyncService;
     private readonly IInventoryPaymentService _inventoryPaymentService;
-    private readonly IPaymentNotificationService _paymentNotificationService;
     private readonly IShipmentPaymentService _shipmentPaymentService;
     private readonly IPaymentGateway _paymentGateway;
+    private readonly IOrderPaymentOperationLock _orderOperationLock;
     private readonly ILogger<CapturePaymentCommandHandler> _logger;
 
     public CapturePaymentCommandHandler(
@@ -27,9 +27,9 @@ public sealed class CapturePaymentCommandHandler : IRequestHandler<CapturePaymen
         IOrderPaymentContextService orderPaymentContextService,
         IOrderPaymentSyncService orderPaymentSyncService,
         IInventoryPaymentService inventoryPaymentService,
-        IPaymentNotificationService paymentNotificationService,
         IShipmentPaymentService shipmentPaymentService,
         IPaymentGateway paymentGateway,
+        IOrderPaymentOperationLock orderOperationLock,
         ILogger<CapturePaymentCommandHandler> logger)
     {
         _paymentRepository = paymentRepository;
@@ -37,9 +37,9 @@ public sealed class CapturePaymentCommandHandler : IRequestHandler<CapturePaymen
         _orderPaymentContextService = orderPaymentContextService;
         _orderPaymentSyncService = orderPaymentSyncService;
         _inventoryPaymentService = inventoryPaymentService;
-        _paymentNotificationService = paymentNotificationService;
         _shipmentPaymentService = shipmentPaymentService;
         _paymentGateway = paymentGateway;
+        _orderOperationLock = orderOperationLock;
         _logger = logger;
     }
 
@@ -54,6 +54,9 @@ public sealed class CapturePaymentCommandHandler : IRequestHandler<CapturePaymen
         var payment = await _paymentRepository.GetByIdAsync(command.StoreId, command.PaymentId, cancellationToken)
             ?? throw new PaymentNotFoundException(command.PaymentId);
 
+        await using var operationLease = await _orderOperationLock.AcquireAsync(
+            payment.StoreId, payment.OrderId, cancellationToken);
+
         var orderContext = await _orderPaymentContextService.GetStoreOrderContextAsync(
             payment.StoreId,
             payment.OrderId,
@@ -64,6 +67,8 @@ public sealed class CapturePaymentCommandHandler : IRequestHandler<CapturePaymen
 
         PaymentOrderStateGuard.EnsureCanCapturePayment(orderContext);
 
+        if (payment.RecordProviderAttemptStarted())
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         var gatewayResult = await _paymentGateway.CaptureAsync(
             new PaymentGatewayCaptureRequest(
                 payment.Id,
@@ -130,49 +135,6 @@ public sealed class CapturePaymentCommandHandler : IRequestHandler<CapturePaymen
                 payment.OrderId,
                 payment.ExternalPaymentReference,
                 cancellationToken);
-        }
-
-        try
-        {
-            if (gatewayResult.Outcome == PaymentGatewayOutcome.Captured)
-            {
-                await _paymentNotificationService.SendPaymentCapturedAsync(
-                    payment.StoreId,
-                    payment.Id,
-                    payment.OrderId,
-                    payment.CustomerId,
-                    orderContext.OrderNumber,
-                    orderContext.Customer.Email,
-                    orderContext.Customer.FullName,
-                    payment.Amount,
-                    payment.CurrencyCode,
-                    payment.ExternalPaymentReference,
-                    cancellationToken);
-            }
-            else
-            {
-                await _paymentNotificationService.SendPaymentFailedAsync(
-                    payment.StoreId,
-                    payment.Id,
-                    payment.OrderId,
-                    payment.CustomerId,
-                    orderContext.OrderNumber,
-                    orderContext.Customer.Email,
-                    orderContext.Customer.FullName,
-                    payment.Amount,
-                    payment.CurrencyCode,
-                    gatewayResult.FailureMessage,
-                    cancellationToken);
-            }
-        }
-        catch (Exception notificationException)
-        {
-            _logger.LogWarning(
-                notificationException,
-                "Payment notification failed | PaymentId: {PaymentId} | OrderId: {OrderId} | Outcome: {Outcome}",
-                payment.Id,
-                payment.OrderId,
-                gatewayResult.Outcome);
         }
 
         _logger.LogInformation(

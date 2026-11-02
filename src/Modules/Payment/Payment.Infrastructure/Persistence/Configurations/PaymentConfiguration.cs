@@ -9,6 +9,9 @@ public sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment.Doma
     public void Configure(EntityTypeBuilder<Payment.Domain.Entities.Payment> builder)
     {
         builder.ToTable("Payments");
+        builder.Ignore(x => x.DomainEvents);
+        builder.Property(x => x.CustomerEmail).HasMaxLength(320);
+        builder.Property(x => x.CustomerFullName).HasMaxLength(200);
 
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedNever();

@@ -10,10 +10,12 @@ using Notification.Application.Notifications.Services;
 using Notification.Contracts;
 using Notification.Domain.Repositories;
 using Notification.Infrastructure.Messaging.Inbox;
+using Notification.Infrastructure.Messaging.Dispatch;
 using Notification.Infrastructure.Messaging.RabbitMq;
 using Notification.Infrastructure.Options;
 using Notification.Infrastructure.Persistence;
 using Notification.Infrastructure.Persistence.Inbox;
+using Notification.Infrastructure.Persistence.Dispatch;
 using Notification.Infrastructure.Persistence.Repositories;
 using Notification.Infrastructure.ReadServices;
 using Notification.Infrastructure.Seeding;
@@ -34,9 +36,23 @@ public static class NotificationInfrastructureServiceCollectionExtensions
         services.Configure<NotificationBrandingOptions>(
             configuration.GetSection(NotificationBrandingOptions.SectionName));
         services.AddOptions<NotificationIntegrationEventConsumerOptions>()
-            .Bind(
-                configuration.GetSection(
-                    NotificationIntegrationEventConsumerOptions.SectionName))
+            .Configure(options =>
+            {
+                IConfigurationSection section =
+                    configuration.GetSection(
+                        NotificationIntegrationEventConsumerOptions.SectionName);
+
+                section.Bind(options);
+
+                TimeSpan[]? configuredDelays = section
+                    .GetSection("Retry:Delays")
+                    .Get<TimeSpan[]>();
+
+                if (configuredDelays is not null)
+                {
+                    options.Retry.Delays = configuredDelays;
+                }
+            })
             .Validate(
                 options =>
                     !string.IsNullOrWhiteSpace(
@@ -107,6 +123,27 @@ public static class NotificationInfrastructureServiceCollectionExtensions
                 "Notification Inbox retry jitter factor must be between 0 and 1.")
             .ValidateOnStart();
 
+        services.AddOptions<NotificationDispatchOptions>()
+            .Bind(configuration.GetSection(NotificationDispatchOptions.SectionName))
+            .Validate(options => options.BatchSize is > 0 and <= 1000,
+                "Notification dispatch batch size must be between 1 and 1000.")
+            .Validate(options => options.PollingInterval > TimeSpan.Zero,
+                "Notification dispatch polling interval must be positive.")
+            .Validate(options => options.SendTimeout > TimeSpan.Zero &&
+                options.ClaimDuration > options.SendTimeout,
+                "Notification dispatch claim duration must exceed its positive send timeout.")
+            .Validate(options => options.MaximumAttempts is > 0 and <= 1000,
+                "Notification dispatch maximum attempts must be between 1 and 1000.")
+            .Validate(options => options.InitialRetryDelay > TimeSpan.Zero &&
+                options.MaximumRetryDelay >= options.InitialRetryDelay,
+                "Notification dispatch retry delays must be positive and ordered.")
+            .Validate(options => options.RetryJitterFactor is >= 0 and <= 1,
+                "Notification dispatch jitter must be between 0 and 1.")
+            .Validate(options => options.MaximumDeliveryAge > options.MaximumRetryDelay &&
+                options.MaximumDeliveryAge <= TimeSpan.FromHours(23),
+                "Notification dispatch delivery age must exceed retry delay and remain within 23 hours.")
+            .ValidateOnStart();
+
         services.AddDbContext<NotificationDbContext>((sp, options) =>
         {
             var dbOptions = sp.GetRequiredService<IOptions<NotificationDatabaseOptions>>().Value;
@@ -131,11 +168,20 @@ public static class NotificationInfrastructureServiceCollectionExtensions
         services.AddScoped<IInboxMessageWriter, InboxMessageWriter>();
         services.AddScoped<INotificationInboxStore, NotificationInboxStore>();
         services.AddScoped<INotificationInboxMessageHandler, OrderCancelledInboxMessageHandler>();
+        services.AddScoped<QueuedNotificationSender>();
+        services.AddScoped<IOrderRecipientReader, OrderRecipientReader>();
+        services.AddScoped<NotificationRecipientResolver>();
+        services.AddScoped<INotificationInboxMessageHandler, OrderPlacedInboxMessageHandler>();
+        services.AddScoped<INotificationInboxMessageHandler, PaymentStatusChangedInboxMessageHandler>();
+        services.AddScoped<INotificationInboxMessageHandler, ShipmentStatusChangedInboxMessageHandler>();
         services.AddScoped<NotificationInboxMessageHandlerResolver>();
         services.AddSingleton<NotificationInboxProcessor>();
+        services.AddScoped<INotificationDispatchStore, NotificationDispatchStore>();
+        services.AddSingleton<NotificationDispatchProcessor>();
         services.AddSingleton<NotificationIntegrationEventFailureRouter>();
 
         services.AddHostedService<NotificationInboxBackgroundService>();
+        services.AddHostedService<NotificationDispatchBackgroundService>();
         services.AddHostedService<NotificationIntegrationEventConsumer>();
 
         services.AddScoped<IContactFeedbackRepository, ContactFeedbackRepository>();

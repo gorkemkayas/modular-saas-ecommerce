@@ -1,3 +1,5 @@
+using BuildingBlocks.Infrastructure.Messaging.Outbox;
+using Order.Infrastructure.Persistence;
 using BuildingBlocks.Messaging.Abstractions.Publishing;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -25,6 +27,7 @@ public sealed class OrderOutboxProcessorTests
 
         var options = new OrderOutboxOptions
         {
+            RetryJitterFactor = 0,
             BatchSize = 25,
             ClaimDuration = TimeSpan.FromMinutes(3)
         };
@@ -41,6 +44,8 @@ public sealed class OrderOutboxProcessorTests
 
         var outboxStore =
             new Mock<IOrderOutboxStore>(MockBehavior.Strict);
+
+        outboxStore.Setup(x => x.RenewLeaseAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         outboxStore
             .Setup(store => store.ClaimAsync(
@@ -80,7 +85,7 @@ public sealed class OrderOutboxProcessorTests
             publisher.Object,
             Microsoft.Extensions.Options.Options.Create(options),
             new FixedTimeProvider(now),
-            NullLogger<OrderOutboxProcessor>.Instance);
+            NullLogger<ModuleOutboxProcessor<OrderDbContext, OrderOutboxPublisherIdentity>>.Instance);
 
         await processor.ProcessBatchAsync();
 
@@ -125,6 +130,8 @@ public sealed class OrderOutboxProcessorTests
                 CancellationToken.None),
             Times.Once);
 
+        outboxStore.Verify(x => x.RenewLeaseAsync(It.IsAny<Guid>(), It.IsAny<Guid>(),
+            It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Exactly(1));
         outboxStore.VerifyNoOtherCalls();
         publisher.VerifyNoOtherCalls();
     }
@@ -149,6 +156,7 @@ public sealed class OrderOutboxProcessorTests
 
         var options = new OrderOutboxOptions
         {
+            RetryJitterFactor = 0,
             BatchSize = 25,
             ClaimDuration = TimeSpan.FromMinutes(3),
             MaximumAttempts = 10,
@@ -176,6 +184,8 @@ public sealed class OrderOutboxProcessorTests
         var outboxStore =
             new Mock<IOrderOutboxStore>(
                 MockBehavior.Strict);
+
+        outboxStore.Setup(x => x.RenewLeaseAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         outboxStore
             .Setup(store => store.ClaimAsync(
@@ -212,7 +222,7 @@ public sealed class OrderOutboxProcessorTests
             publisher.Object,
             Microsoft.Extensions.Options.Options.Create(options),
             new FixedTimeProvider(now),
-            NullLogger<OrderOutboxProcessor>.Instance);
+            NullLogger<ModuleOutboxProcessor<OrderDbContext, OrderOutboxPublisherIdentity>>.Instance);
 
         await processor.ProcessBatchAsync();
 
@@ -243,6 +253,8 @@ public sealed class OrderOutboxProcessorTests
                 CancellationToken.None),
             Times.Once);
 
+        outboxStore.Verify(x => x.RenewLeaseAsync(It.IsAny<Guid>(), It.IsAny<Guid>(),
+            It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Exactly(1));
         outboxStore.VerifyNoOtherCalls();
         publisher.VerifyNoOtherCalls();
     }
@@ -261,6 +273,7 @@ public sealed class OrderOutboxProcessorTests
 
         var options = new OrderOutboxOptions
         {
+            RetryJitterFactor = 0,
             BatchSize = 25,
             ClaimDuration = TimeSpan.FromMinutes(3),
             MaximumAttempts = 3,
@@ -285,6 +298,8 @@ public sealed class OrderOutboxProcessorTests
         var outboxStore =
             new Mock<IOrderOutboxStore>(
                 MockBehavior.Strict);
+
+        outboxStore.Setup(x => x.RenewLeaseAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         outboxStore
             .Setup(store => store.ClaimAsync(
@@ -320,7 +335,7 @@ public sealed class OrderOutboxProcessorTests
             publisher.Object,
             Microsoft.Extensions.Options.Options.Create(options),
             new FixedTimeProvider(now),
-            NullLogger<OrderOutboxProcessor>.Instance);
+            NullLogger<ModuleOutboxProcessor<OrderDbContext, OrderOutboxPublisherIdentity>>.Instance);
 
         await processor.ProcessBatchAsync();
 
@@ -350,6 +365,8 @@ public sealed class OrderOutboxProcessorTests
                 CancellationToken.None),
             Times.Once);
 
+        outboxStore.Verify(x => x.RenewLeaseAsync(It.IsAny<Guid>(), It.IsAny<Guid>(),
+            It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Exactly(1));
         outboxStore.VerifyNoOtherCalls();
         publisher.VerifyNoOtherCalls();
     }
@@ -368,6 +385,7 @@ public sealed class OrderOutboxProcessorTests
 
         var options = new OrderOutboxOptions
         {
+            RetryJitterFactor = 0,
             BatchSize = 25,
             ClaimDuration = TimeSpan.FromMinutes(3),
             MaximumAttempts = 10
@@ -392,6 +410,8 @@ public sealed class OrderOutboxProcessorTests
         var outboxStore =
             new Mock<IOrderOutboxStore>(
                 MockBehavior.Strict);
+
+        outboxStore.Setup(x => x.RenewLeaseAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         outboxStore
             .Setup(store => store.ClaimAsync(
@@ -423,7 +443,7 @@ public sealed class OrderOutboxProcessorTests
             publisher.Object,
             Microsoft.Extensions.Options.Options.Create(options),
             new FixedTimeProvider(now),
-            NullLogger<OrderOutboxProcessor>.Instance);
+            NullLogger<ModuleOutboxProcessor<OrderDbContext, OrderOutboxPublisherIdentity>>.Instance);
 
         await Assert.ThrowsExactlyAsync<OperationCanceledException>(
             () => processor.ProcessBatchAsync(
@@ -445,6 +465,8 @@ public sealed class OrderOutboxProcessorTests
                     cancellationToken),
             Times.Once);
 
+        outboxStore.Verify(x => x.RenewLeaseAsync(It.IsAny<Guid>(), It.IsAny<Guid>(),
+            It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Exactly(1));
         outboxStore.VerifyNoOtherCalls();
         publisher.VerifyNoOtherCalls();
     }
@@ -463,6 +485,7 @@ public sealed class OrderOutboxProcessorTests
 
         var options = new OrderOutboxOptions
         {
+            RetryJitterFactor = 0,
             BatchSize = 25,
             ClaimDuration = TimeSpan.FromMinutes(3),
             MaximumAttempts = 10,
@@ -502,6 +525,8 @@ public sealed class OrderOutboxProcessorTests
         var outboxStore =
             new Mock<IOrderOutboxStore>(
                 MockBehavior.Strict);
+
+        outboxStore.Setup(x => x.RenewLeaseAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         outboxStore
             .Setup(store => store.ClaimAsync(
@@ -561,7 +586,7 @@ public sealed class OrderOutboxProcessorTests
             publisher.Object,
             Microsoft.Extensions.Options.Options.Create(options),
             new FixedTimeProvider(now),
-            NullLogger<OrderOutboxProcessor>.Instance);
+            NullLogger<ModuleOutboxProcessor<OrderDbContext, OrderOutboxPublisherIdentity>>.Instance);
 
         await processor.ProcessBatchAsync();
 
@@ -609,6 +634,8 @@ public sealed class OrderOutboxProcessorTests
                 CancellationToken.None),
             Times.Once);
 
+        outboxStore.Verify(x => x.RenewLeaseAsync(It.IsAny<Guid>(), It.IsAny<Guid>(),
+            It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
         outboxStore.VerifyNoOtherCalls();
         publisher.VerifyNoOtherCalls();
     }

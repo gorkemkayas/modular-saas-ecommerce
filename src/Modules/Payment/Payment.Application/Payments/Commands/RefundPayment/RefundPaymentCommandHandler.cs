@@ -13,27 +13,24 @@ public sealed class RefundPaymentCommandHandler : IRequestHandler<RefundPaymentC
 {
     private readonly IPaymentRepository _paymentRepository;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IOrderPaymentContextService _orderPaymentContextService;
     private readonly IOrderPaymentSyncService _orderPaymentSyncService;
-    private readonly IPaymentNotificationService _paymentNotificationService;
     private readonly IPaymentGateway _paymentGateway;
+    private readonly IPaymentRefundLock _refundLock;
     private readonly ILogger<RefundPaymentCommandHandler> _logger;
 
     public RefundPaymentCommandHandler(
         IPaymentRepository paymentRepository,
         IUnitOfWork unitOfWork,
-        IOrderPaymentContextService orderPaymentContextService,
         IOrderPaymentSyncService orderPaymentSyncService,
-        IPaymentNotificationService paymentNotificationService,
         IPaymentGateway paymentGateway,
+        IPaymentRefundLock refundLock,
         ILogger<RefundPaymentCommandHandler> logger)
     {
         _paymentRepository = paymentRepository;
         _unitOfWork = unitOfWork;
-        _orderPaymentContextService = orderPaymentContextService;
         _orderPaymentSyncService = orderPaymentSyncService;
-        _paymentNotificationService = paymentNotificationService;
         _paymentGateway = paymentGateway;
+        _refundLock = refundLock;
         _logger = logger;
     }
 
@@ -48,8 +45,17 @@ public sealed class RefundPaymentCommandHandler : IRequestHandler<RefundPaymentC
         if (string.IsNullOrWhiteSpace(command.Reason) || string.IsNullOrWhiteSpace(command.IdempotencyKey))
             throw new PaymentValidationException("Reason and IdempotencyKey are required.");
 
+        command = command with { IdempotencyKey = command.IdempotencyKey.Trim(), Reason = command.Reason.Trim() };
+        await using var refundLease = await _refundLock.AcquireAsync(command.StoreId, command.PaymentId, cancellationToken);
         var payment = await _paymentRepository.GetByIdAsync(command.StoreId, command.PaymentId, cancellationToken)
             ?? throw new PaymentNotFoundException(command.PaymentId);
+
+        payment.ValidateRefundRequest(command.IdempotencyKey, command.Amount, command.Reason);
+        if (payment.GetRefundByIdempotencyKey(command.IdempotencyKey) is not null)
+        {
+            await SyncFullRefundAsync(payment, cancellationToken);
+            return new RefundPaymentResult(payment.Id, payment.Status, payment.RefundedAmount);
+        }
 
         var gatewayResult = await _paymentGateway.RefundAsync(
             new PaymentGatewayRefundRequest(
@@ -71,9 +77,8 @@ public sealed class RefundPaymentCommandHandler : IRequestHandler<RefundPaymentC
 
         if (gatewayResult.Outcome != PaymentGatewayOutcome.Refunded)
         {
-            payment.MarkFailed(
+            payment.RecordRefundFailure(
                 command.IdempotencyKey,
-                PaymentOperationType.Refund,
                 gatewayResult.FailureCode,
                 gatewayResult.FailureMessage,
                 gatewayResult.ProviderRequestReference,
@@ -87,56 +92,10 @@ public sealed class RefundPaymentCommandHandler : IRequestHandler<RefundPaymentC
                 command.Reason,
                 gatewayResult.ExternalPaymentReference,
                 gatewayResult.ProviderRequestReference);
-
-            await _orderPaymentSyncService.MarkRefundedAsync(
-                payment.StoreId,
-                payment.OrderId,
-                payment.ExternalPaymentReference,
-                cancellationToken);
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        if (gatewayResult.Outcome == PaymentGatewayOutcome.Refunded)
-        {
-            try
-            {
-                var orderContext = await _orderPaymentContextService.GetStoreOrderContextAsync(
-                    payment.StoreId,
-                    payment.OrderId,
-                    cancellationToken);
-
-                if (orderContext is null)
-                {
-                    _logger.LogWarning(
-                        "Payment refunded notification skipped because order context was missing | PaymentId: {PaymentId} | OrderId: {OrderId}",
-                        payment.Id,
-                        payment.OrderId);
-                }
-                else
-                {
-                    await _paymentNotificationService.SendPaymentRefundedAsync(
-                        payment.StoreId,
-                        payment.Id,
-                        payment.OrderId,
-                        payment.CustomerId,
-                        orderContext.OrderNumber,
-                        orderContext.Customer.Email,
-                        orderContext.Customer.FullName,
-                        command.Amount,
-                        payment.CurrencyCode,
-                        cancellationToken);
-                }
-            }
-            catch (Exception notificationException)
-            {
-                _logger.LogWarning(
-                    notificationException,
-                    "Payment refunded notification failed | PaymentId: {PaymentId} | OrderId: {OrderId}",
-                    payment.Id,
-                    payment.OrderId);
-            }
-        }
+        await SyncFullRefundAsync(payment, cancellationToken);
 
         _logger.LogInformation(
             "Payment refund handled | PaymentId: {PaymentId} | Status: {Status} | RefundedAmount: {RefundedAmount}",
@@ -146,4 +105,10 @@ public sealed class RefundPaymentCommandHandler : IRequestHandler<RefundPaymentC
 
         return new RefundPaymentResult(payment.Id, payment.Status, payment.RefundedAmount);
     }
+
+    private Task SyncFullRefundAsync(Payment.Domain.Entities.Payment payment, CancellationToken cancellationToken) =>
+        payment.Status == PaymentStatus.Refunded
+            ? _orderPaymentSyncService.MarkRefundedAsync(payment.StoreId, payment.OrderId,
+                payment.ExternalPaymentReference, cancellationToken)
+            : Task.CompletedTask;
 }

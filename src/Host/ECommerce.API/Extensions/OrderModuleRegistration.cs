@@ -11,6 +11,8 @@ public static class OrderModuleRegistration
     {
         services.AddExceptionHandler<OrderExceptionHandler>();
 
-        return services.AddOrderInfrastructure(configuration);
+        services.AddOrderInfrastructure(configuration);
+
+        return services.AddOrderOutboxProcessing(configuration);
     }
 }

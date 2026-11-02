@@ -24,7 +24,7 @@ public sealed class OrderExceptionHandler : IExceptionHandler
         Exception exception,
         CancellationToken cancellationToken)
     {
-        if (exception is not OrderDomainException and not ApplicationException)
+        if (exception is not OrderDomainException and not ApplicationException and not Order.Contracts.OrderOperationInProgressException)
             return false;
 
         var traceId = Activity.Current?.Id ?? httpContext.TraceIdentifier;
@@ -40,6 +40,8 @@ public sealed class OrderExceptionHandler : IExceptionHandler
 
         var (statusCode, title) = exception switch
         {
+            Order.Contracts.OrderOperationInProgressException => (StatusCodes.Status409Conflict, "Order Operation In Progress"),
+            Order.Application.Exceptions.OrderCancellationNotAllowedException => (StatusCodes.Status409Conflict, "Order Cancellation Not Allowed"),
             Order.Application.Exceptions.OrderNotFoundException => (StatusCodes.Status404NotFound, "Order Not Found"),
             Order.Application.Exceptions.OrderValidationException => (StatusCodes.Status400BadRequest, "Order Validation Error"),
             Order.Application.Exceptions.OrderPricingUnavailableException => (StatusCodes.Status400BadRequest, "Order Pricing Unavailable"),

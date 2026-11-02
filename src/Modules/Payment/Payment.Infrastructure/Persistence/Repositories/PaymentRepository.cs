@@ -35,6 +35,18 @@ public sealed class PaymentRepository : IPaymentRepository
             .FirstOrDefaultAsync(x => x.StoreId == storeId && x.OrderId == orderId, cancellationToken);
     }
 
+    public Task<Payment.Domain.Entities.Payment?> GetSnapshotByProviderReferenceAsync(
+        PaymentProvider provider, string? externalConversationId, string? externalPaymentReference,
+        string? providerRequestReference, CancellationToken cancellationToken = default)
+    {
+        return _context.Payments.AsNoTracking().FirstOrDefaultAsync(
+            x => x.Provider == provider &&
+                ((!string.IsNullOrWhiteSpace(externalConversationId) && x.ExternalConversationId == externalConversationId) ||
+                 (!string.IsNullOrWhiteSpace(externalPaymentReference) && x.ExternalPaymentReference == externalPaymentReference) ||
+                 (!string.IsNullOrWhiteSpace(providerRequestReference) && x.Attempts.Any(a => a.ProviderRequestReference == providerRequestReference))),
+            cancellationToken);
+    }
+
     public Task<Payment.Domain.Entities.Payment?> GetByProviderReferenceAsync(
         PaymentProvider provider,
         string? externalConversationId,

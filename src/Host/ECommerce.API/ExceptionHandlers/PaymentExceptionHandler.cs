@@ -39,6 +39,7 @@ public sealed class PaymentExceptionHandler : IExceptionHandler
 
         var (statusCode, title) = exception switch
         {
+            Payment.Application.Exceptions.PaymentOperationInProgressException => (StatusCodes.Status409Conflict, "Payment Operation In Progress"),
             Payment.Application.Exceptions.PaymentNotFoundException => (StatusCodes.Status404NotFound, "Payment Not Found"),
             Payment.Application.Exceptions.PaymentValidationException => (StatusCodes.Status400BadRequest, "Payment Validation Error"),
             Payment.Application.Exceptions.UnauthorizedPaymentAccessException => (StatusCodes.Status403Forbidden, "Unauthorized Payment Access"),

@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging;
 using Order.Application.Abstractions;
 using Order.Application.Abstractions.Queries;
 using Order.Application.Integrations;
@@ -13,26 +12,17 @@ public sealed class OrderModuleApi : IOrderModuleApi
     private readonly IOrderCustomerContextService _orderCustomerContextService;
     private readonly IOrderRepository _orderRepository;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IOrderNotificationService _notificationService;
-    private readonly IOrderCatalogProductService _catalogProductService;
-    private readonly ILogger<OrderModuleApi> _logger;
 
     public OrderModuleApi(
         IOrderReadService orderReadService,
         IOrderCustomerContextService orderCustomerContextService,
         IOrderRepository orderRepository,
-        IUnitOfWork unitOfWork,
-        IOrderNotificationService notificationService,
-        IOrderCatalogProductService catalogProductService,
-        ILogger<OrderModuleApi> logger)
+        IUnitOfWork unitOfWork)
     {
         _orderReadService = orderReadService;
         _orderCustomerContextService = orderCustomerContextService;
         _orderRepository = orderRepository;
         _unitOfWork = unitOfWork;
-        _notificationService = notificationService;
-        _catalogProductService = catalogProductService;
-        _logger = logger;
     }
 
     public async Task<OrderPaymentContextResult?> GetCustomerOrderPaymentContextAsync(
@@ -75,7 +65,6 @@ public sealed class OrderModuleApi : IOrderModuleApi
         var order = await LoadOrderAsync(request, cancellationToken);
         order.MarkPaymentAuthorized(request.PaymentReference);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        await SendOrderConfirmationAsync(order, cancellationToken);
     }
 
     public async Task MarkPaymentCapturedAsync(
@@ -85,7 +74,6 @@ public sealed class OrderModuleApi : IOrderModuleApi
         var order = await LoadOrderAsync(request, cancellationToken);
         order.MarkPaymentCaptured(request.PaymentReference);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        await SendOrderConfirmationAsync(order, cancellationToken);
     }
 
     public async Task MarkPaymentFailedAsync(
@@ -139,98 +127,11 @@ public sealed class OrderModuleApi : IOrderModuleApi
         return order is null ? null : MapShipmentContext(order);
     }
 
-    public async Task MarkShipmentCreatedAsync(
-        UpdateOrderShipmentStatusRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        var order = await LoadOrderAsync(request.StoreId, request.OrderId, cancellationToken);
-        order.MarkShipmentCreated(request.ShipmentReference);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-    }
-
-    public async Task MarkShippedAsync(
-        UpdateOrderShipmentStatusRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        var order = await LoadOrderAsync(request.StoreId, request.OrderId, cancellationToken);
-        order.MarkShipped(request.ShipmentReference);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-    }
-
-    public async Task MarkDeliveredAsync(
-        UpdateOrderShipmentStatusRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        var order = await LoadOrderAsync(request.StoreId, request.OrderId, cancellationToken);
-        order.MarkDelivered(request.ShipmentReference);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-    }
-
-    public async Task MarkShipmentCancelledAsync(
-        UpdateOrderShipmentStatusRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        var order = await LoadOrderAsync(request.StoreId, request.OrderId, cancellationToken);
-        order.MarkShipmentCancelled(request.ShipmentReference);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-    }
-
     private async Task<Order.Domain.Entities.Order> LoadOrderAsync(
         UpdateOrderPaymentStatusRequest request,
         CancellationToken cancellationToken)
     {
         return await LoadOrderAsync(request.StoreId, request.OrderId, cancellationToken);
-    }
-
-    // Sends the order confirmation email once payment has succeeded. Notification
-    // dispatch is deduplicated by business key, so calling this on both the
-    // authorized and captured transitions still results in a single email.
-    private async Task SendOrderConfirmationAsync(
-        Order.Domain.Entities.Order order,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            var items = new List<OrderNotificationLineItem>(order.Items.Count);
-
-            foreach (var item in order.Items)
-            {
-                var sellableItem = await _catalogProductService.GetSellableItemAsync(
-                    order.StoreId,
-                    item.ProductId,
-                    item.ProductVariantId,
-                    cancellationToken);
-
-                items.Add(new OrderNotificationLineItem(
-                    item.ProductName,
-                    item.VariantName,
-                    item.Quantity,
-                    item.LineTotalAmount,
-                    sellableItem?.ImageUrl));
-            }
-
-            await _notificationService.SendOrderPlacedAsync(
-                order.StoreId,
-                order.Id,
-                order.CustomerId,
-                order.OrderNumber.Value,
-                order.CustomerSnapshot.Email,
-                order.CustomerSnapshot.FullName,
-                order.Totals.GrandTotalAmount,
-                order.CurrencyCode,
-                items,
-                order.Totals.SubtotalAmount,
-                order.Totals.ShippingAmount,
-                cancellationToken);
-        }
-        catch (Exception notificationException)
-        {
-            _logger.LogWarning(
-                notificationException,
-                "Order confirmation notification failed | OrderId: {OrderId} | StoreId: {StoreId}",
-                order.Id,
-                order.StoreId);
-        }
     }
 
     private async Task<Order.Domain.Entities.Order> LoadOrderAsync(

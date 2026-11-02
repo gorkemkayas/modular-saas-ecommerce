@@ -1,3 +1,5 @@
+using BuildingBlocks.Infrastructure.Messaging.Outbox;
+using Payment.Infrastructure.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,7 +13,6 @@ using Payment.Domain.Enums;
 using Payment.Domain.Repositories;
 using Payment.Infrastructure.Gateways;
 using Payment.Infrastructure.Integrations.Inventory;
-using Payment.Infrastructure.Integrations.Notification;
 using Payment.Infrastructure.Integrations.Order;
 using Payment.Infrastructure.Integrations.Shipment;
 using Payment.Infrastructure.Options;
@@ -48,14 +49,15 @@ public static class PaymentInfrastructureServiceCollectionExtensions
         services.AddHttpClient<IyzicoPaymentGateway>();
 
         services.AddScoped<IOrderPaymentContextService, OrderPaymentContextService>();
+        services.AddScoped<IOrderPaymentOperationLock, OrderPaymentOperationLock>();
         services.AddScoped<IOrderPaymentSyncService, OrderPaymentSyncService>();
         services.AddScoped<IInventoryPaymentService, PaymentInventoryService>();
-        services.AddScoped<IPaymentNotificationService, PaymentNotificationService>();
         services.AddScoped<IShipmentPaymentService, PaymentShipmentService>();
         services.AddScoped<IPaymentWebhookParser, PaymentWebhookParser>();
         services.AddScoped<IPaymentWebhookSignatureValidator, PaymentWebhookSignatureValidator>();
         services.AddScoped<MockPaymentGateway>();
         services.AddScoped<IPaymentRepository, PaymentRepository>();
+        services.AddScoped<IPaymentRefundLock, PostgreSqlPaymentRefundLock>();
         services.AddScoped<IPaymentProviderAccountRepository, PaymentProviderAccountRepository>();
         services.AddScoped<IPaymentReadService, PaymentReadService>();
         services.AddScoped<IPaymentCredentialProtector, DataProtectionPaymentCredentialProtector>();
@@ -76,6 +78,7 @@ public static class PaymentInfrastructureServiceCollectionExtensions
             return sp.GetRequiredService<MockPaymentGateway>();
         });
 
-        return services;
+        return services.AddModuleOutbox<PaymentDbContext, PaymentOutboxPublisherIdentity>(
+            configuration, "Modules:Payment:Outbox");
     }
 }

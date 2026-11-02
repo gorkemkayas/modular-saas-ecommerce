@@ -12,11 +12,10 @@ namespace Shipment.Application.UnitTests.Shipments.Commands.CancelShipment;
 public sealed class CancelShipmentCommandHandlerTests
 {
     [TestMethod]
-    public async Task Handle_SavesBeforeSync()
+    public async Task Handle_PersistsShipmentChange()
     {
         var repository = new Mock<IShipmentRepository>();
         var unitOfWork = new Mock<IUnitOfWork>();
-        var orderSyncService = new Mock<IOrderShipmentSyncService>();
 
         var shipment = Shipment.Domain.Entities.Shipment.Create(
             Guid.NewGuid(),
@@ -43,27 +42,18 @@ public sealed class CancelShipmentCommandHandlerTests
             .Setup(x => x.GetByIdAsync(shipment.StoreId, shipment.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(shipment);
 
-        var savedChanges = false;
-
         unitOfWork
             .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .Callback(() => savedChanges = true)
-            .ReturnsAsync(1);
 
-        orderSyncService
-            .Setup(x => x.MarkShipmentCancelledAsync(shipment.StoreId, shipment.OrderId, shipment.ShipmentNumber, It.IsAny<CancellationToken>()))
-            .Callback(() => Assert.IsTrue(savedChanges))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync(1);
 
         var handler = new CancelShipmentCommandHandler(
             repository.Object,
-            unitOfWork.Object,
-            orderSyncService.Object);
+            unitOfWork.Object);
 
         await handler.Handle(new CancelShipmentCommand(shipment.StoreId, shipment.Id, "Customer requested cancellation"), CancellationToken.None);
 
         Assert.AreEqual(Shipment.Domain.Enums.ShipmentStatus.Cancelled, shipment.Status);
         unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-        orderSyncService.Verify(x => x.MarkShipmentCancelledAsync(shipment.StoreId, shipment.OrderId, shipment.ShipmentNumber, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

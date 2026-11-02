@@ -25,6 +25,16 @@ public sealed class OrderDomainEventDispatcher : IOrderDomainEventDispatcher
 
             switch (domainEvent)
             {
+                case OrderReservationCancelledDomainEvent reservationCancelled:
+                    await _publisher.Publish(
+                        new DomainEventNotification<OrderReservationCancelledDomainEvent>(reservationCancelled), cancellationToken);
+                    break;
+
+                case OrderPlacedDomainEvent orderPlaced:
+                    await _publisher.Publish(
+                        new DomainEventNotification<OrderPlacedDomainEvent>(orderPlaced), cancellationToken);
+                    break;
+
                 case OrderCancelledDomainEvent orderCancelled:
                     await _publisher.Publish(
                         new DomainEventNotification<OrderCancelledDomainEvent>(

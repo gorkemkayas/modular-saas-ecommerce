@@ -18,7 +18,8 @@ public sealed class OrderItem
         string? variantName,
         string? sku,
         int quantity,
-        OrderPriceSnapshot unitPriceSnapshot)
+        OrderPriceSnapshot unitPriceSnapshot,
+        string? imageUrl)
     {
         if (orderId == Guid.Empty)
             throw new OrderDomainException("Order id is required.");
@@ -36,6 +37,7 @@ public sealed class OrderItem
         ProductName = NormalizeRequired(productName, "Product name");
         VariantName = NormalizeOptional(variantName, 200);
         Sku = NormalizeOptional(sku, 100);
+        ImageUrl = NormalizeOptional(imageUrl, 2000);
         Quantity = quantity;
         UnitPriceSnapshot = unitPriceSnapshot ?? throw new ArgumentNullException(nameof(unitPriceSnapshot));
         LineSubtotalAmount = quantity * unitPriceSnapshot.Amount;
@@ -51,6 +53,7 @@ public sealed class OrderItem
     public string ProductName { get; private set; } = default!;
     public string? VariantName { get; private set; }
     public string? Sku { get; private set; }
+    public string? ImageUrl { get; private set; }
     public int Quantity { get; private set; }
     public OrderPriceSnapshot UnitPriceSnapshot { get; private set; } = default!;
     public decimal LineSubtotalAmount { get; private set; }
@@ -66,7 +69,8 @@ public sealed class OrderItem
         string? variantName,
         string? sku,
         int quantity,
-        OrderPriceSnapshot unitPriceSnapshot)
+        OrderPriceSnapshot unitPriceSnapshot,
+        string? imageUrl = null)
     {
         return new OrderItem(
             Guid.NewGuid(),
@@ -77,7 +81,8 @@ public sealed class OrderItem
             variantName,
             sku,
             quantity,
-            unitPriceSnapshot);
+            unitPriceSnapshot,
+            imageUrl);
     }
 
     private static string NormalizeRequired(string value, string fieldName)

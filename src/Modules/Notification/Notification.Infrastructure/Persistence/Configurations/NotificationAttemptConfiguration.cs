@@ -11,6 +11,7 @@ public sealed class NotificationAttemptConfiguration : IEntityTypeConfiguration<
         builder.ToTable("NotificationAttempts");
 
         builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id).ValueGeneratedNever();
 
         builder.Property(x => x.ProviderName).HasMaxLength(100).IsRequired();
         builder.Property(x => x.ProviderRequestReference).HasMaxLength(200);

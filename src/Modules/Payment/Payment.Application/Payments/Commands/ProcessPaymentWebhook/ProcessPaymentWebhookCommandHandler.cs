@@ -15,11 +15,11 @@ public sealed class ProcessPaymentWebhookCommandHandler : IRequestHandler<Proces
     private readonly IOrderPaymentContextService _orderPaymentContextService;
     private readonly IOrderPaymentSyncService _orderPaymentSyncService;
     private readonly IInventoryPaymentService _inventoryPaymentService;
-    private readonly IPaymentNotificationService _paymentNotificationService;
     private readonly IShipmentPaymentService _shipmentPaymentService;
     private readonly IPaymentWebhookParser _paymentWebhookParser;
     private readonly IPaymentWebhookSignatureValidator _paymentWebhookSignatureValidator;
     private readonly ILogger<ProcessPaymentWebhookCommandHandler> _logger;
+    private readonly IPaymentRefundLock _refundLock;
 
     public ProcessPaymentWebhookCommandHandler(
         IPaymentRepository paymentRepository,
@@ -27,10 +27,10 @@ public sealed class ProcessPaymentWebhookCommandHandler : IRequestHandler<Proces
         IOrderPaymentContextService orderPaymentContextService,
         IOrderPaymentSyncService orderPaymentSyncService,
         IInventoryPaymentService inventoryPaymentService,
-        IPaymentNotificationService paymentNotificationService,
         IShipmentPaymentService shipmentPaymentService,
         IPaymentWebhookParser paymentWebhookParser,
         IPaymentWebhookSignatureValidator paymentWebhookSignatureValidator,
+        IPaymentRefundLock refundLock,
         ILogger<ProcessPaymentWebhookCommandHandler> logger)
     {
         _paymentRepository = paymentRepository;
@@ -38,11 +38,11 @@ public sealed class ProcessPaymentWebhookCommandHandler : IRequestHandler<Proces
         _orderPaymentContextService = orderPaymentContextService;
         _orderPaymentSyncService = orderPaymentSyncService;
         _inventoryPaymentService = inventoryPaymentService;
-        _paymentNotificationService = paymentNotificationService;
         _shipmentPaymentService = shipmentPaymentService;
         _paymentWebhookParser = paymentWebhookParser;
         _paymentWebhookSignatureValidator = paymentWebhookSignatureValidator;
         _logger = logger;
+        _refundLock = refundLock;
     }
 
     public async Task Handle(ProcessPaymentWebhookCommand command, CancellationToken cancellationToken)
@@ -56,14 +56,14 @@ public sealed class ProcessPaymentWebhookCommandHandler : IRequestHandler<Proces
             command.Signature,
             cancellationToken);
 
-        var payment = await _paymentRepository.GetByProviderReferenceAsync(
+        var matchedPayment = await _paymentRepository.GetSnapshotByProviderReferenceAsync(
             webhook.Provider,
             webhook.ExternalConversationId,
             webhook.ExternalPaymentReference,
             webhook.IdempotencyKey,
             cancellationToken);
 
-        if (payment is null)
+        if (matchedPayment is null)
         {
             _logger.LogWarning(
                 "Payment webhook ignored because payment could not be matched | Provider: {Provider} | ConversationId: {ConversationId} | PaymentReference: {PaymentReference}",
@@ -72,6 +72,12 @@ public sealed class ProcessPaymentWebhookCommandHandler : IRequestHandler<Proces
                 webhook.ExternalPaymentReference);
             return;
         }
+
+        await using var refundLease = webhook.Outcome == PaymentGatewayOutcome.Refunded
+            ? await _refundLock.AcquireAsync(matchedPayment.StoreId, matchedPayment.Id, cancellationToken)
+            : null;
+        var payment = await _paymentRepository.GetByIdAsync(matchedPayment.StoreId, matchedPayment.Id, cancellationToken)
+            ?? throw new PaymentNotFoundException(matchedPayment.Id);
 
         await _paymentWebhookSignatureValidator.ValidateAsync(
             command.Provider,
@@ -115,7 +121,7 @@ public sealed class ProcessPaymentWebhookCommandHandler : IRequestHandler<Proces
             case PaymentGatewayOutcome.Refunded:
                 payment.Refund(
                     webhook.IdempotencyKey,
-                    webhook.RefundAmount ?? payment.Amount,
+                    webhook.RefundAmount ?? payment.GetRefundByIdempotencyKey(webhook.IdempotencyKey)?.Amount ?? payment.Amount,
                     "Payment refunded via webhook.",
                     webhook.ExternalPaymentReference);
                 break;
@@ -195,11 +201,9 @@ public sealed class ProcessPaymentWebhookCommandHandler : IRequestHandler<Proces
                 break;
 
             case PaymentGatewayOutcome.Refunded:
-                await _orderPaymentSyncService.MarkRefundedAsync(
-                    payment.StoreId,
-                    payment.OrderId,
-                    payment.ExternalPaymentReference,
-                    cancellationToken);
+                if (payment.Status == Payment.Domain.Enums.PaymentStatus.Refunded)
+                    await _orderPaymentSyncService.MarkRefundedAsync(
+                        payment.StoreId, payment.OrderId, payment.ExternalPaymentReference, cancellationToken);
                 break;
 
             case PaymentGatewayOutcome.Failed:
@@ -211,100 +215,5 @@ public sealed class ProcessPaymentWebhookCommandHandler : IRequestHandler<Proces
                 break;
         }
 
-        try
-        {
-            if (webhook.Outcome is PaymentGatewayOutcome.Authorized
-                or PaymentGatewayOutcome.Captured
-                or PaymentGatewayOutcome.Failed
-                or PaymentGatewayOutcome.Refunded)
-            {
-                var notificationOrderContext = await _orderPaymentContextService.GetStoreOrderContextAsync(
-                    payment.StoreId,
-                    payment.OrderId,
-                    cancellationToken);
-
-                if (notificationOrderContext is null)
-                {
-                    _logger.LogWarning(
-                        "Payment notification skipped because order context was missing | PaymentId: {PaymentId} | OrderId: {OrderId} | Outcome: {Outcome}",
-                        payment.Id,
-                        payment.OrderId,
-                        webhook.Outcome);
-                }
-                else
-                {
-                    switch (webhook.Outcome)
-                    {
-                        case PaymentGatewayOutcome.Authorized:
-                            await _paymentNotificationService.SendPaymentAuthorizedAsync(
-                                payment.StoreId,
-                                payment.Id,
-                                payment.OrderId,
-                                payment.CustomerId,
-                                notificationOrderContext.OrderNumber,
-                                notificationOrderContext.Customer.Email,
-                                notificationOrderContext.Customer.FullName,
-                                payment.Amount,
-                                payment.CurrencyCode,
-                                payment.ExternalPaymentReference,
-                                cancellationToken);
-                            break;
-
-                        case PaymentGatewayOutcome.Captured:
-                            await _paymentNotificationService.SendPaymentCapturedAsync(
-                                payment.StoreId,
-                                payment.Id,
-                                payment.OrderId,
-                                payment.CustomerId,
-                                notificationOrderContext.OrderNumber,
-                                notificationOrderContext.Customer.Email,
-                                notificationOrderContext.Customer.FullName,
-                                payment.Amount,
-                                payment.CurrencyCode,
-                                payment.ExternalPaymentReference,
-                                cancellationToken);
-                            break;
-
-                        case PaymentGatewayOutcome.Failed:
-                            await _paymentNotificationService.SendPaymentFailedAsync(
-                                payment.StoreId,
-                                payment.Id,
-                                payment.OrderId,
-                                payment.CustomerId,
-                                notificationOrderContext.OrderNumber,
-                                notificationOrderContext.Customer.Email,
-                                notificationOrderContext.Customer.FullName,
-                                payment.Amount,
-                                payment.CurrencyCode,
-                                webhook.FailureMessage,
-                                cancellationToken);
-                            break;
-
-                        case PaymentGatewayOutcome.Refunded:
-                            await _paymentNotificationService.SendPaymentRefundedAsync(
-                                payment.StoreId,
-                                payment.Id,
-                                payment.OrderId,
-                                payment.CustomerId,
-                                notificationOrderContext.OrderNumber,
-                                notificationOrderContext.Customer.Email,
-                                notificationOrderContext.Customer.FullName,
-                                webhook.RefundAmount ?? payment.RefundedAmount,
-                                payment.CurrencyCode,
-                                cancellationToken);
-                            break;
-                    }
-                }
-            }
-        }
-        catch (Exception notificationException)
-        {
-            _logger.LogWarning(
-                notificationException,
-                "Payment notification failed | PaymentId: {PaymentId} | OrderId: {OrderId} | Outcome: {Outcome}",
-                payment.Id,
-                payment.OrderId,
-                webhook.Outcome);
-        }
     }
 }

@@ -1,4 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using BuildingBlocks.Infrastructure.Messaging.Inbox;
+using BuildingBlocks.Messaging.RabbitMQ.DependencyInjection;
+using Order.Infrastructure.Messaging.Shipment;
+using Shipment.Contracts.IntegrationEvents;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -12,8 +16,8 @@ using Order.Domain.Repositories;
 using Order.Infrastructure.Integrations.Catalog;
 using Order.Infrastructure.Integrations.Customer;
 using Order.Infrastructure.Integrations.Inventory;
-using Order.Infrastructure.Integrations.Notification;
 using Order.Infrastructure.Integrations.Pricing;
+using Order.Infrastructure.Integrations.Payment;
 using Order.Infrastructure.Integrations.Shipment;
 using Order.Infrastructure.Options;
 using Order.Infrastructure.Persistence;
@@ -47,8 +51,9 @@ public static class OrderInfrastructureServiceCollectionExtensions
         services.AddScoped<IOrderCatalogProductService, OrderCatalogProductService>();
         services.AddScoped<IOrderPricingService, OrderPricingService>();
         services.AddScoped<IOrderInventoryService, OrderInventoryService>();
+        services.AddScoped<IOrderOperationLock, PostgreSqlOrderOperationLock>();
+        services.AddScoped<IOrderCancellationPaymentGuard, OrderCancellationPaymentGuard>();
         services.AddScoped<IOrderShippingCarrierService, OrderShippingCarrierService>();
-        services.AddScoped<IOrderNotificationService, OrderNotificationService>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IOrderReadService, OrderReadService>();
         services.AddScoped<IOrderModuleApi, OrderModuleApi>();
@@ -57,6 +62,11 @@ public static class OrderInfrastructureServiceCollectionExtensions
         services.AddScoped<IOrderDomainEventDispatcher, OrderDomainEventDispatcher>();
         services.AddScoped<IOrderOutboxWriter, OrderOutboxWriter>();
 
-        return services;
+        services.AddScoped<IModuleInboxMessageHandler<OrderFulfillmentConsumerIdentity>, ShipmentFulfillmentInboxHandler>();
+        services.AddModuleInbox<OrderDbContext, OrderFulfillmentConsumerIdentity>(
+            configuration, "Modules:Order:InboxProcessor");
+        return services.AddRabbitMqConsumer<OrderFulfillmentConsumerIdentity>(
+            configuration, "Modules:Order:IntegrationEventConsumer",
+            ShipmentFulfillmentChangedIntegrationEvent.EventType);
     }
 }

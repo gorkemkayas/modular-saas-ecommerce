@@ -113,6 +113,7 @@ public sealed class PaymentModuleApi : IPaymentModuleApi
                 payment.Amount,
                 payment.CurrencyCode,
                 payment.ExternalPaymentReference,
-                payment.ExternalConversationId);
+                payment.ExternalConversationId,
+                payment.HasProviderAttempt);
     }
 }

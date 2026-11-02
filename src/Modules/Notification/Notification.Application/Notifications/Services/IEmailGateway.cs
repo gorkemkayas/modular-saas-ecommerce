@@ -15,11 +15,17 @@ public sealed record EmailSendRequest(
     string? ToName,
     string Subject,
     string Body,
-    string HtmlBody);
+    string HtmlBody,
+    string? IdempotencyKey = null,
+    EmailSender? Sender = null);
+
+public sealed record EmailSender(string From, string? ReplyTo);
 
 public sealed record EmailSendResult(
     bool IsSuccess,
     string? ProviderRequestReference,
     string? ProviderMessageId,
     string? FailureCode,
-    string? FailureMessage);
+    string? FailureMessage,
+    bool IsTransientFailure = false,
+    TimeSpan? RetryAfter = null);

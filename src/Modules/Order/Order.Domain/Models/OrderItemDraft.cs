@@ -9,4 +9,5 @@ public sealed record OrderItemDraft(
     string? VariantName,
     string? Sku,
     int Quantity,
-    OrderPriceSnapshot UnitPriceSnapshot);
+    OrderPriceSnapshot UnitPriceSnapshot,
+    string? ImageUrl = null);

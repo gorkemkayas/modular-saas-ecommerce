@@ -1,10 +1,12 @@
+using BuildingBlocks.Domain.Common;
+using Payment.Domain.Events;
 using Payment.Domain.Common;
 using Payment.Domain.Enums;
 using Payment.Domain.Exceptions;
 
 namespace Payment.Domain.Entities;
 
-public sealed class Payment : IAggregateRoot
+public sealed class Payment : AggregateRoot, IAggregateRoot
 {
     private readonly List<PaymentAttempt> _attempts = new();
     private readonly List<PaymentRefund> _refunds = new();
@@ -22,7 +24,9 @@ public sealed class Payment : IAggregateRoot
         decimal amount,
         string currencyCode,
         PaymentProvider provider,
-        PaymentMethodType methodType)
+        PaymentMethodType methodType,
+        string? customerEmail = null,
+        string? customerFullName = null)
     {
         if (storeId == Guid.Empty)
             throw new PaymentDomainException("Store id is required.");
@@ -41,6 +45,8 @@ public sealed class Payment : IAggregateRoot
         OrderId = orderId;
         OrderNumber = NormalizeRequired(orderNumber, "Order number", 50);
         CustomerId = customerId;
+        CustomerEmail = NormalizeOptional(customerEmail, 320);
+        CustomerFullName = NormalizeOptional(customerFullName, 200);
         Amount = decimal.Round(amount, 2, MidpointRounding.AwayFromZero);
         CurrencyCode = NormalizeCurrency(currencyCode);
         Provider = provider;
@@ -55,9 +61,12 @@ public sealed class Payment : IAggregateRoot
     public Guid OrderId { get; private set; }
     public string OrderNumber { get; private set; } = default!;
     public Guid CustomerId { get; private set; }
+    public string? CustomerEmail { get; private set; }
+    public string? CustomerFullName { get; private set; }
     public decimal Amount { get; private set; }
     public string CurrencyCode { get; private set; } = default!;
     public PaymentStatus Status { get; private set; }
+    public bool HasProviderAttempt { get; private set; }
     public PaymentProvider Provider { get; private set; }
     public Guid? ProviderAccountId { get; private set; }
     public PaymentMethodType MethodType { get; private set; }
@@ -84,7 +93,9 @@ public sealed class Payment : IAggregateRoot
         decimal amount,
         string currencyCode,
         PaymentProvider provider,
-        PaymentMethodType methodType)
+        PaymentMethodType methodType,
+        string? customerEmail = null,
+        string? customerFullName = null)
     {
         return new Payment(
             Guid.NewGuid(),
@@ -95,7 +106,9 @@ public sealed class Payment : IAggregateRoot
             amount,
             currencyCode,
             provider,
-            methodType);
+            methodType,
+            customerEmail,
+            customerFullName);
     }
 
     public void AssignProviderAccount(Guid providerAccountId)
@@ -108,6 +121,15 @@ public sealed class Payment : IAggregateRoot
 
         ProviderAccountId = providerAccountId;
         Touch();
+    }
+
+    public bool RecordProviderAttemptStarted()
+    {
+        EnsureNotTerminalForPaymentOperation();
+        if (HasProviderAttempt) return false;
+        HasProviderAttempt = true;
+        Touch();
+        return true;
     }
 
     public void MarkRequiresAction(
@@ -142,6 +164,7 @@ public sealed class Payment : IAggregateRoot
         string? providerRequestReference = null)
     {
         EnsureCanTransitionToAuthorized();
+        var notify = Status != PaymentStatus.Authorized;
         ExternalConversationId = NormalizeOptional(externalConversationId, 200);
         ExternalPaymentReference = NormalizeOptional(externalPaymentReference, 200);
         Status = PaymentStatus.Authorized;
@@ -157,6 +180,7 @@ public sealed class Payment : IAggregateRoot
             null,
             null);
         Touch();
+        if (notify) RaiseStatusEvent(PaymentEventKind.Authorized, Amount, null);
     }
 
     public void MarkCaptured(
@@ -186,6 +210,7 @@ public sealed class Payment : IAggregateRoot
             null,
             null);
         Touch();
+        RaiseStatusEvent(PaymentEventKind.Captured, Amount, null);
     }
 
     public void MarkFailed(
@@ -196,8 +221,15 @@ public sealed class Payment : IAggregateRoot
         string? providerRequestReference = null,
         string? providerTransactionReference = null)
     {
-        if (Status == PaymentStatus.Captured && operationType != PaymentOperationType.Refund)
-            throw new PaymentDomainException("Captured payment cannot be marked failed for this operation.");
+        if (operationType == PaymentOperationType.Refund)
+        {
+            RecordRefundFailure(idempotencyKey, failureCode, failureMessage,
+                providerRequestReference, providerTransactionReference);
+            return;
+        }
+
+        if (Status is PaymentStatus.Captured or PaymentStatus.PartiallyRefunded or PaymentStatus.Refunded or PaymentStatus.Cancelled)
+            throw new PaymentDomainException("Captured, cancelled or refunded payment cannot be marked failed for this operation.");
 
         Status = PaymentStatus.Failed;
         FailureCode = NormalizeOptional(failureCode, 100);
@@ -212,6 +244,7 @@ public sealed class Payment : IAggregateRoot
             failureCode,
             failureMessage);
         Touch();
+        RaiseStatusEvent(PaymentEventKind.Failed, Amount, FailureMessage);
     }
 
     public void Cancel(
@@ -249,17 +282,19 @@ public sealed class Payment : IAggregateRoot
         string? providerRefundReference,
         string? providerRequestReference = null)
     {
-        if (Status is not PaymentStatus.Captured and not PaymentStatus.PartiallyRefunded)
-            throw new PaymentDomainException("Only captured payment can be refunded.");
-
+        var existing = GetRefundByIdempotencyKey(idempotencyKey);
+        if (existing is not null)
+        {
+            if (existing.Amount != amount)
+                throw new PaymentDomainException("The refund key was already used for a different amount.");
+            return;
+        }
+        ValidateRefundRequest(idempotencyKey, amount, reason);
         var remainingAmount = Amount - RefundedAmount;
+        var refund = PaymentRefund.Create(Id, amount, reason, providerRefundReference, idempotencyKey.Trim());
+        _refunds.Add(refund);
 
-        if (amount > remainingAmount)
-            throw new PaymentDomainException("Refund amount cannot exceed remaining captured amount.");
-
-        _refunds.Add(PaymentRefund.Create(Id, amount, reason, providerRefundReference));
-
-        Status = amount == remainingAmount
+        Status = refund.Amount == remainingAmount
             ? PaymentStatus.Refunded
             : PaymentStatus.PartiallyRefunded;
 
@@ -272,6 +307,63 @@ public sealed class Payment : IAggregateRoot
             null,
             null);
         Touch();
+        RaiseStatusEvent(PaymentEventKind.Refunded, refund.Amount, reason, refund.Id);
+    }
+
+    public PaymentRefund? GetRefundByIdempotencyKey(string idempotencyKey)
+    {
+        var key = NormalizeRequired(idempotencyKey, "Idempotency key", 120);
+        var refund = _refunds.SingleOrDefault(x => x.IdempotencyKey == key);
+        if (refund is not null) return refund;
+
+        // Older refunds lack the key column. Only use legacy history when it
+        // identifies exactly one result; never guess and issue another refund.
+        var attempt = _attempts.LastOrDefault(x => x.OperationType == PaymentOperationType.Refund &&
+            x.Status == PaymentAttemptStatus.Succeeded && x.IdempotencyKey == key);
+        if (attempt is null) return null;
+        var matches = _refunds.Where(x => x.IdempotencyKey is null &&
+            x.ProviderRefundReference == attempt.ProviderTransactionReference).ToArray();
+        return matches.Length == 1 ? matches[0] :
+            throw new PaymentDomainException("The prior refund result is ambiguous and requires reconciliation.");
+    }
+
+    public void ValidateRefundRequest(string idempotencyKey, decimal amount, string reason)
+    {
+        var key = NormalizeRequired(idempotencyKey, "Idempotency key", 120);
+        var normalizedReason = NormalizeRequired(reason, "Refund reason", 500);
+        var normalizedAmount = decimal.Round(amount, 2, MidpointRounding.AwayFromZero);
+        if (normalizedAmount <= 0 || normalizedAmount != amount)
+            throw new PaymentDomainException("Refund amount must be positive with at most two decimal places.");
+        var existing = GetRefundByIdempotencyKey(key);
+        if (existing is not null)
+        {
+            if (existing.Amount != normalizedAmount || existing.Reason != normalizedReason)
+                throw new PaymentDomainException("The refund key was already used for a different request.");
+            return;
+        }
+        if (Status is not PaymentStatus.Captured and not PaymentStatus.PartiallyRefunded)
+            throw new PaymentDomainException("Only captured payment can be refunded.");
+        if (normalizedAmount > Amount - RefundedAmount)
+            throw new PaymentDomainException("Refund amount cannot exceed remaining captured amount.");
+    }
+
+    public void RecordRefundFailure(string idempotencyKey, string? failureCode, string? failureMessage,
+        string? providerRequestReference = null, string? providerTransactionReference = null)
+    {
+        if (GetRefundByIdempotencyKey(idempotencyKey) is not null) return;
+        if (Status is not PaymentStatus.Captured and not PaymentStatus.PartiallyRefunded)
+            throw new PaymentDomainException("Refund failure requires a captured payment.");
+        AddAttempt(PaymentOperationType.Refund, PaymentAttemptStatus.Failed, idempotencyKey,
+            providerRequestReference, providerTransactionReference, failureCode, failureMessage);
+        Touch();
+    }
+
+    private void RaiseStatusEvent(PaymentEventKind kind, decimal amount, string? description, Guid? refundId = null)
+    {
+        RaiseDomainEvent(new PaymentStatusChangedDomainEvent(
+            Guid.NewGuid(), DateTime.UtcNow, Id, StoreId, OrderId, CustomerId,
+            OrderNumber, kind, amount, CurrencyCode, ExternalPaymentReference, description, refundId,
+            CustomerEmail, CustomerFullName));
     }
 
     private void EnsureNotTerminalForPaymentOperation()
@@ -298,9 +390,10 @@ public sealed class Payment : IAggregateRoot
         string? failureCode,
         string? failureMessage)
     {
-        var existingAttempt = _attempts.FirstOrDefault(x => x.IdempotencyKey == idempotencyKey && x.OperationType == operationType);
+        idempotencyKey = NormalizeRequired(idempotencyKey, "Idempotency key", 120);
+        var existingAttempt = _attempts.LastOrDefault(x => x.IdempotencyKey == idempotencyKey && x.OperationType == operationType);
 
-        if (existingAttempt is not null)
+        if (existingAttempt is not null && existingAttempt.Status == status)
             return;
 
         _attempts.Add(PaymentAttempt.Create(

@@ -1,3 +1,4 @@
+using Notification.Application.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Notification.Application.Notifications.Services;
@@ -8,6 +9,8 @@ using Notification.Infrastructure.Persistence;
 using Notification.Infrastructure.Persistence.Inbox;
 using Notification.Infrastructure.Persistence.Repositories;
 using Notification.Infrastructure.Services;
+using Notification.Infrastructure.Persistence.Dispatch;
+using Notification.Infrastructure.Messaging.Dispatch;
 
 namespace Notification.Infrastructure.IntegrationTests;
 
@@ -16,7 +19,8 @@ internal static class NotificationIntegrationTestHost
     public static ServiceProvider CreateServiceProvider(
         Action<IServiceCollection>? configureServices = null,
         NotificationInboxOptions? inboxOptions = null,
-        TimeProvider? timeProvider = null)
+        TimeProvider? timeProvider = null,
+        NotificationDispatchOptions? dispatchOptions = null)
     {
         var services = new ServiceCollection();
 
@@ -51,9 +55,26 @@ internal static class NotificationIntegrationTestHost
         services.AddScoped<
             INotificationInboxMessageHandler,
             OrderCancelledInboxMessageHandler>();
+        services.AddScoped<QueuedNotificationSender>();
+        services.AddScoped<IOrderRecipientReader, NoLegacyRecipientReader>();
+        services.AddScoped<NotificationRecipientResolver>();
+        services.AddScoped<INotificationInboxMessageHandler, OrderPlacedInboxMessageHandler>();
+        services.AddScoped<INotificationInboxMessageHandler, PaymentStatusChangedInboxMessageHandler>();
+        services.AddScoped<INotificationInboxMessageHandler, ShipmentStatusChangedInboxMessageHandler>();
 
         services.AddScoped<
             NotificationInboxMessageHandlerResolver>();
+
+        services.AddScoped<INotificationDispatchStore, NotificationDispatchStore>();
+        services.AddSingleton<NotificationDispatchProcessor>();
+        services.AddSingleton(Microsoft.Extensions.Options.Options.Create(
+            dispatchOptions ?? new NotificationDispatchOptions()));
+        services.AddSingleton(Microsoft.Extensions.Options.Options.Create(
+            new NotificationEmailOptions { FromEmail = "sender@example.com" }));
+        services.AddScoped<IEmailGateway, MockEmailGateway>();
+        services.AddScoped<IEmailLayoutComposer, BrandedEmailComposer>();
+        services.AddSingleton(Microsoft.Extensions.Options.Options.Create(new NotificationBrandingOptions()));
+        services.AddScoped<IStoreBrandingProvider, TestStoreBrandingProvider>();
 
         services.AddSingleton(
             Microsoft.Extensions.Options.Options.Create(
@@ -71,5 +92,17 @@ internal static class NotificationIntegrationTestHost
             {
                 ValidateScopes = true,
             });
+    }
+
+    private sealed class NoLegacyRecipientReader : IOrderRecipientReader
+    {
+        public Task<OrderNotificationRecipient?> GetAsync(Guid storeId, Guid orderId, CancellationToken cancellationToken = default)
+            => throw new InvalidOperationException("Unexpected legacy recipient lookup in test.");
+    }
+
+    private sealed class TestStoreBrandingProvider : IStoreBrandingProvider
+    {
+        public Task<StoreBrandingInfo?> GetAsync(Guid storeId, CancellationToken cancellationToken = default)
+            => Task.FromResult<StoreBrandingInfo?>(null);
     }
 }

@@ -8,7 +8,10 @@ internal static class NotificationIntegrationEventTopology
 {
     private static readonly string[] RoutingKeys =
     [
-        OrderCancelledIntegrationEvent.EventType
+        OrderCancelledIntegrationEvent.EventType,
+        OrderPlacedIntegrationEvent.EventType,
+        Payment.Contracts.IntegrationEvents.PaymentStatusChangedIntegrationEvent.EventType,
+        Shipment.Contracts.IntegrationEvents.ShipmentStatusChangedIntegrationEvent.EventType
     ];
 
     public static async Task DeclareAsync(
@@ -126,7 +129,7 @@ internal static class NotificationIntegrationEventTopology
 
             long retryDelayMilliseconds = checked((long)retryDelay.TotalMilliseconds);
 
-            var queueArguments = 
+            var queueArguments =
                 new Dictionary<string, object?>
                 {
                     ["x-message-ttl"] = retryDelayMilliseconds,
@@ -143,14 +146,14 @@ internal static class NotificationIntegrationEventTopology
                 passive: false,
                 noWait: false,
                 cancellationToken: cancellationToken);
-            
+
             var bindingArguments =
                 new Dictionary<string, object?>
                 {
                     ["x-match"] = "all",
                     [RabbitMqRetryHeaders.RetryAttempt] = retryAttempt
                 };
-            
+
             await channel.QueueBindAsync(
                 queue: retryQueueName,
                 exchange: retryExchangeName,

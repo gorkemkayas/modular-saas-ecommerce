@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Payment.Application.Integrations;
+using Payment.Application.Exceptions;
 using Payment.Domain.Enums;
 
 namespace Payment.Infrastructure.Gateways;
@@ -19,9 +20,18 @@ public sealed class PaymentWebhookParser : IPaymentWebhookParser
             ?? GetString(root, "status")
             ?? GetString(root, "iyziEventType");
 
-        var idempotencyKey = GetString(root, "token")
-            ?? GetString(root, "eventId")
-            ?? GetString(root, "iyziPaymentId");
+        var outcome = MapOutcome(status, GetNullableInt(root, "fraudStatus"));
+        var idempotencyKey = GetString(root, "idempotencyKey")
+            ?? GetString(root, "refundId")
+            ?? GetString(root, "token")
+            ?? GetString(root, "eventId");
+
+        // A payment reference identifies the payment, not one of its partial
+        // refunds. Never invent a fresh refund key or conflate distinct refunds.
+        if (outcome == PaymentGatewayOutcome.Refunded && string.IsNullOrWhiteSpace(idempotencyKey))
+            throw new PaymentWebhookValidationException("Refund webhook requires a stable operation identifier.");
+
+        idempotencyKey ??= GetString(root, "iyziPaymentId");
 
         if (string.IsNullOrWhiteSpace(idempotencyKey))
             idempotencyKey = $"{provider}-webhook-{Guid.NewGuid():N}";
@@ -32,7 +42,7 @@ public sealed class PaymentWebhookParser : IPaymentWebhookParser
 
         return Task.FromResult(new ParsedPaymentWebhook(
             provider,
-            MapOutcome(status, GetNullableInt(root, "fraudStatus")),
+            outcome,
             idempotencyKey,
             GetString(root, "paymentReference")
                 ?? GetString(root, "paymentId")

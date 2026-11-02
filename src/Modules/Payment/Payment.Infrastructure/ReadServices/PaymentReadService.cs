@@ -121,6 +121,7 @@ public sealed class PaymentReadService : IPaymentReadService
                     x.Reason,
                     x.ProviderRefundReference,
                     x.CreatedAtUtc))
-                .ToArray());
+                .ToArray(),
+            payment.HasProviderAttempt);
     }
 }
